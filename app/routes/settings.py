@@ -1,9 +1,12 @@
 import asyncio
+import io
+import json
 from datetime import datetime
 from typing import Optional
 from urllib.parse import urlparse
 
 import httpx
+import qrcode
 from bs4 import BeautifulSoup
 from fastapi import APIRouter, Depends, File, Request, UploadFile
 from fastapi.responses import HTMLResponse, RedirectResponse, Response
@@ -17,6 +20,7 @@ from ..models import Group, Link, LinkGroupLink, LinkTagLink, Tag, User
 from ..ratelimit import rate_limit
 from ..templates_cfg import templates
 from ..utils import get_or_create_tag, refresh_link_fts, sidebar_data
+from .links import _fetch_meta
 
 router = APIRouter()
 
@@ -102,6 +106,53 @@ async def settings_page(
             **sidebar_data(session, user.id),
         },
     )
+
+
+# ── QR code Android ───────────────────────────────────────────────────────────
+
+@router.get("/settings/android-qr.png")
+async def android_qr(
+    user: User = Depends(get_current_user),
+):
+    data = json.dumps({"server": cfg.base_url, "key": user.api_key})
+    img = qrcode.make(data)
+    buf = io.BytesIO()
+    img.save(buf, format="PNG")
+    return Response(content=buf.getvalue(), media_type="image/png",
+                    headers={"Cache-Control": "no-store"})
+
+
+# ── Refresh métadonnées ────────────────────────────────────────────────────────
+
+@router.post("/settings/refresh-metadata", dependencies=[Depends(rate_limit(2, 3600))])
+async def refresh_metadata(
+    user: User = Depends(get_current_user),
+    session: Session = Depends(get_session),
+):
+    links = list(session.exec(select(Link).where(Link.user_id == user.id)).all())
+    updated = 0
+    for link in links:
+        if link.thumbnail_url and link.description:
+            continue
+        try:
+            meta = await _fetch_meta(link.url)
+            changed = False
+            if not link.thumbnail_url and meta.get("thumbnail_url"):
+                link.thumbnail_url = meta["thumbnail_url"]
+                changed = True
+            if not link.description and meta.get("description"):
+                link.description = meta["description"]
+                changed = True
+            if not link.favicon_url and meta.get("favicon_url"):
+                link.favicon_url = meta["favicon_url"]
+                changed = True
+            if changed:
+                session.add(link)
+                updated += 1
+        except Exception:
+            continue
+    session.commit()
+    return RedirectResponse(url=f"/settings?refreshed={updated}", status_code=303)
 
 
 # ── Import ────────────────────────────────────────────────────────────────────
