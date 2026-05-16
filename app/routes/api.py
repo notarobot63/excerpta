@@ -4,7 +4,7 @@ from sqlmodel import Session, select
 from typing import List, Optional
 
 from ..database import get_session
-from ..models import Link, LinkTagLink, Tag, User
+from ..models import Link, LinkGroupLink, LinkTagLink, Tag, Group, User
 from ..utils import get_or_create_tag, refresh_link_fts
 from .links import MAX_TAGS_PER_LINK, _safe_url
 
@@ -69,6 +69,7 @@ async def api_add_link(
 async def api_list_links(
     q: Optional[str] = Query(default=None),
     tag: Optional[str] = Query(default=None),
+    group_id: Optional[int] = Query(default=None),
     page: int = Query(default=1, ge=1),
     per_page: int = Query(default=30, ge=1, le=100),
     user: User = Depends(_get_api_user),
@@ -81,11 +82,17 @@ async def api_list_links(
             select(Tag).where(Tag.user_id == user.id, Tag.name == tag.lower())
         ).first()
         if not tag_obj:
-            return {"links": [], "total": 0, "page": page, "per_page": per_page}
+            return {"links": [], "total": 0, "page": page, "per_page": per_page, "total_pages": 1}
         stmt = (
             select(Link)
             .join(LinkTagLink, LinkTagLink.link_id == Link.id)
             .where(Link.user_id == user.id, LinkTagLink.tag_id == tag_obj.id)
+        )
+    elif group_id:
+        stmt = (
+            select(Link)
+            .join(LinkGroupLink, LinkGroupLink.link_id == Link.id)
+            .where(Link.user_id == user.id, LinkGroupLink.group_id == group_id)
         )
 
     if q:
@@ -128,4 +135,33 @@ async def api_list_tags(
     session: Session = Depends(get_session),
 ):
     tags = session.exec(select(Tag).where(Tag.user_id == user.id).order_by(Tag.name)).all()
-    return {"tags": [t.name for t in tags]}
+    return {"tags": [{"name": t.name, "count": len(t.links)} for t in tags]}
+
+
+@router.get("/groups")
+async def api_list_groups(
+    user: User = Depends(_get_api_user),
+    session: Session = Depends(get_session),
+):
+    groups = session.exec(select(Group).where(Group.user_id == user.id).order_by(Group.name)).all()
+    id_map = {g.id: g for g in groups}
+
+    def depth(g):
+        d, cur = 0, g
+        while cur.parent_id and cur.parent_id in id_map:
+            d += 1
+            cur = id_map[cur.parent_id]
+        return d
+
+    result: list = []
+
+    def add_group(g, d):
+        result.append({"id": g.id, "name": g.name, "parent_id": g.parent_id,
+                        "count": len(g.links), "depth": d})
+        for child in sorted([x for x in groups if x.parent_id == g.id], key=lambda x: x.name):
+            add_group(child, d + 1)
+
+    for root in sorted([g for g in groups if g.parent_id is None], key=lambda x: x.name):
+        add_group(root, 0)
+
+    return {"groups": result}
