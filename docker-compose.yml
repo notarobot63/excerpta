@@ -5,12 +5,7 @@ services:
     restart: unless-stopped
     ports:
       - "8070:8000"
-    environment:
-      - SECRET_KEY=SECRET_KEY_REDACTED
-      - BASE_URL=http://localhost:8070
-      - OIDC_CLIENT_ID=OIDC_CLIENT_ID_REDACTED
-      - OIDC_CLIENT_SECRET=OIDC_CLIENT_SECRET_REDACTED
-      - OIDC_ISSUER=https://AUTH_HOST
+    env_file: .env
     volumes:
       - linky_data:/app/data
 
