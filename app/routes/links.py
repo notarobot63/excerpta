@@ -38,11 +38,15 @@ _PRIVATE_NETS = [
 
 
 def _is_private_host(host: str) -> bool:
+    if not host:
+        return True
+    if host.lower() in ("localhost", "local", "broadcasthost", "0.0.0.0"):
+        return True
     try:
         ip = ipaddress.ip_address(host)
         return any(ip in net for net in _PRIVATE_NETS)
     except ValueError:
-        return False  # hostname, not raw IP — allow
+        return False  # hostname DNS valide — autorisé
 
 
 def _fts_escape(q: str) -> str:

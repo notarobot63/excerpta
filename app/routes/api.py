@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, Header, HTTPException, Query
 from pydantic import BaseModel
+from sqlalchemy import text
 from sqlmodel import Session, select
 from typing import List, Optional
 
@@ -134,8 +135,18 @@ async def api_list_tags(
     user: User = Depends(_get_api_user),
     session: Session = Depends(get_session),
 ):
-    tags = session.exec(select(Tag).where(Tag.user_id == user.id).order_by(Tag.name)).all()
-    return {"tags": [{"name": t.name, "count": len(t.links)} for t in tags]}
+    rows = session.execute(
+        text("""
+            SELECT t.name, COUNT(lt.link_id) AS cnt
+            FROM tags t
+            LEFT JOIN link_tags lt ON lt.tag_id = t.id
+            WHERE t.user_id = :uid
+            GROUP BY t.id, t.name
+            ORDER BY t.name
+        """),
+        {"uid": user.id},
+    ).fetchall()
+    return {"tags": [{"name": r[0], "count": r[1]} for r in rows]}
 
 
 @router.get("/groups")
@@ -143,25 +154,28 @@ async def api_list_groups(
     user: User = Depends(_get_api_user),
     session: Session = Depends(get_session),
 ):
-    groups = session.exec(select(Group).where(Group.user_id == user.id).order_by(Group.name)).all()
-    id_map = {g.id: g for g in groups}
+    rows = session.execute(
+        text("""
+            SELECT g.id, g.name, g.parent_id, COUNT(lg.link_id) AS cnt
+            FROM groups g
+            LEFT JOIN link_groups lg ON lg.group_id = g.id
+            WHERE g.user_id = :uid
+            GROUP BY g.id, g.name, g.parent_id
+            ORDER BY g.name
+        """),
+        {"uid": user.id},
+    ).fetchall()
 
-    def depth(g):
-        d, cur = 0, g
-        while cur.parent_id and cur.parent_id in id_map:
-            d += 1
-            cur = id_map[cur.parent_id]
-        return d
+    groups = [{"id": r[0], "name": r[1], "parent_id": r[2], "count": r[3]} for r in rows]
 
     result: list = []
 
     def add_group(g, d):
-        result.append({"id": g.id, "name": g.name, "parent_id": g.parent_id,
-                        "count": len(g.links), "depth": d})
-        for child in sorted([x for x in groups if x.parent_id == g.id], key=lambda x: x.name):
+        result.append({**g, "depth": d})
+        for child in sorted([x for x in groups if x["parent_id"] == g["id"]], key=lambda x: x["name"]):
             add_group(child, d + 1)
 
-    for root in sorted([g for g in groups if g.parent_id is None], key=lambda x: x.name):
+    for root in sorted([g for g in groups if g["parent_id"] is None], key=lambda x: x["name"]):
         add_group(root, 0)
 
     return {"groups": result}

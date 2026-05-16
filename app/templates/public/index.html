@@ -70,7 +70,7 @@
       <div class="link-description">{{ link.description }}</div>
       {% endif %}
       {% if link.note %}
-      <div class="link-note">{{ link.note | markdown | safe }}</div>
+      <div class="link-note">{{ link.note | markdown }}</div>
       {% endif %}
       <div class="link-footer">
         {% for t in link.tags %}

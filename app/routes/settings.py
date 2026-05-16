@@ -4,6 +4,7 @@ import json
 from datetime import datetime
 from typing import Optional
 from urllib.parse import urlparse
+from .links import _safe_url
 
 import httpx
 import qrcode
@@ -204,7 +205,7 @@ async def import_links(
     }
 
     for item in items:
-        if item["url"] in existing_urls:
+        if item["url"] in existing_urls or not _safe_url(item["url"]):
             skipped += 1
             continue
 
