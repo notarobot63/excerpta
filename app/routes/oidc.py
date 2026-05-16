@@ -3,6 +3,7 @@ from fastapi import APIRouter, Depends, Request
 from fastapi.responses import RedirectResponse
 from sqlalchemy import text
 from sqlmodel import Session, select
+from threading import Lock
 
 from ..config import settings
 from ..database import get_session
@@ -11,6 +12,7 @@ from ..models import User
 router = APIRouter()
 
 _oauth: OAuth | None = None
+_first_user_lock = Lock()
 
 
 def _get_client() -> OAuth:
@@ -32,9 +34,11 @@ def _get_client() -> OAuth:
 
 def _maybe_promote_admin(session: Session, user: User, is_new: bool) -> None:
     if settings.admin_email:
-        if user.email == settings.admin_email and not user.is_admin:
+        # admin_email configured: promote only if email matches exactly
+        if user.email and user.email == settings.admin_email and not user.is_admin:
             user.is_admin = True
     elif is_new:
+        # No admin_email: first user ever gets admin (COUNT includes the flushed user)
         count = session.execute(text("SELECT COUNT(*) FROM users")).scalar()
         if count == 1:
             user.is_admin = True
@@ -70,26 +74,37 @@ async def oidc_callback(request: Request, session: Session = Depends(get_session
     is_new = existing is None
 
     if is_new:
-        user = User(
-            oidc_sub=sub,
-            email=userinfo.get("email", ""),
-            name=userinfo.get("name", "") or userinfo.get("preferred_username", ""),
-        )
-        session.add(user)
-        session.flush()
+        with _first_user_lock:
+            # Re-check under lock to avoid race on first-user admin promotion
+            existing2 = session.exec(select(User).where(User.oidc_sub == sub)).first()
+            if existing2:
+                user = existing2
+                is_new = False
+            else:
+                user = User(
+                    oidc_sub=sub,
+                    email=userinfo.get("email", ""),
+                    name=userinfo.get("name", "") or userinfo.get("preferred_username", ""),
+                )
+                session.add(user)
+                session.flush()
+                _maybe_promote_admin(session, user, is_new=True)
+                session.commit()
+                session.refresh(user)
     else:
         user = existing
+
+    if not is_new:
         user.email = userinfo.get("email", user.email)
         user.name = userinfo.get("name", "") or userinfo.get("preferred_username", "") or user.name
+        _maybe_promote_admin(session, user, is_new=False)
         session.add(user)
-
-    _maybe_promote_admin(session, user, is_new)
-
-    session.commit()
-    session.refresh(user)
+        session.commit()
+        session.refresh(user)
 
     if not user.is_active:
         return RedirectResponse(url="/auth/login?error=inactive", status_code=303)
 
     request.session["user_id"] = user.id
+    request.session["session_version"] = user.session_version
     return RedirectResponse(url="/", status_code=303)

@@ -1,3 +1,4 @@
+import ipaddress
 import re
 from datetime import datetime
 from typing import List, Optional
@@ -20,6 +21,28 @@ from ..utils import get_or_create_tag, refresh_link_fts, sidebar_data
 router = APIRouter()
 
 PER_PAGE = 30
+MAX_TAGS_PER_LINK = 50
+
+_PRIVATE_NETS = [
+    ipaddress.ip_network("10.0.0.0/8"),
+    ipaddress.ip_network("172.16.0.0/12"),
+    ipaddress.ip_network("192.168.0.0/16"),
+    ipaddress.ip_network("127.0.0.0/8"),
+    ipaddress.ip_network("169.254.0.0/16"),
+    ipaddress.ip_network("0.0.0.0/8"),
+    ipaddress.ip_network("100.64.0.0/10"),
+    ipaddress.ip_network("::1/128"),
+    ipaddress.ip_network("fc00::/7"),
+    ipaddress.ip_network("fe80::/10"),
+]
+
+
+def _is_private_host(host: str) -> bool:
+    try:
+        ip = ipaddress.ip_address(host)
+        return any(ip in net for net in _PRIVATE_NETS)
+    except ValueError:
+        return False  # hostname, not raw IP — allow
 
 
 def _fts_escape(q: str) -> str:
@@ -30,9 +53,13 @@ def _fts_escape(q: str) -> str:
 
 
 def _safe_url(url: str) -> bool:
+    if not url or url.startswith("//"):
+        return False
     try:
         p = urlparse(url)
-        return p.scheme in ("http", "https") and bool(p.netloc)
+        if p.scheme not in ("http", "https") or not p.netloc:
+            return False
+        return not _is_private_host(p.hostname or "")
     except Exception:
         return False
 
@@ -50,16 +77,19 @@ async def _fetch_meta(url: str) -> dict:
         )
         icon = soup.find("link", rel=lambda r: r and "icon" in r)
         parsed = urlparse(url)
+        favicon = ""
         if icon and icon.get("href"):
             href = icon["href"]
-            if href.startswith("http"):
+            if href.startswith("//"):
+                href = f"{parsed.scheme}:{href}"
+            elif not href.startswith("http"):
+                href = f"{parsed.scheme}://{parsed.netloc}{href}"
+            if _safe_url(href):  # reject protocol-relative & private IPs in favicon
                 favicon = href
-            elif href.startswith("//"):
-                favicon = f"{parsed.scheme}:{href}"
-            else:
-                favicon = f"{parsed.scheme}://{parsed.netloc}{href}"
-        else:
-            favicon = f"{parsed.scheme}://{parsed.netloc}/favicon.ico"
+        if not favicon:
+            candidate = f"{parsed.scheme}://{parsed.netloc}/favicon.ico"
+            if _safe_url(candidate):
+                favicon = candidate
         return {
             "title": title.text.strip() if title else "",
             "description": desc.get("content", "").strip() if desc else "",
@@ -223,7 +253,7 @@ async def add_link(
     session.add(link)
     session.flush()
 
-    tag_names = [t.strip() for t in tags.split(",") if t.strip()]
+    tag_names = [t.strip() for t in tags.split(",") if t.strip()][:MAX_TAGS_PER_LINK]
     link_tags = _get_or_create_tags(session, user.id, tag_names)
     for t in link_tags:
         session.add(LinkTagLink(link_id=link.id, tag_id=t.id))
@@ -300,7 +330,7 @@ async def edit_link(
 
     session.execute(text("DELETE FROM link_tags WHERE link_id = :id"), {"id": link_id})
     session.flush()
-    tag_names = [t.strip() for t in tags.split(",") if t.strip()]
+    tag_names = [t.strip() for t in tags.split(",") if t.strip()][:MAX_TAGS_PER_LINK]
     link_tags = _get_or_create_tags(session, user.id, tag_names)
     for t in link_tags:
         session.add(LinkTagLink(link_id=link.id, tag_id=t.id))

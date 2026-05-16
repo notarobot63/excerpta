@@ -16,6 +16,9 @@ async def get_current_user(request: Request, session: Session = Depends(get_sess
     user = session.get(User, user_id)
     if not user or not user.is_active:
         raise NotAuthenticated()
+    if request.session.get("session_version") != user.session_version:
+        request.session.clear()
+        raise NotAuthenticated()
     return user
 
 

@@ -34,7 +34,8 @@
 
   <h3 style="font-size:0.9rem;font-weight:600;color:var(--text-muted);margin:0 0 0.75rem;">Clé API</h3>
   <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;">
-    <code style="font-size:0.78rem;background:var(--bg-alt);border:1px solid var(--border);padding:0.3rem 0.5rem;border-radius:4px;word-break:break-all;">{{ target.api_key }}</code>
+    <code id="apikey-display" style="font-size:0.78rem;background:var(--bg-alt);border:1px solid var(--border);padding:0.3rem 0.5rem;border-radius:4px;word-break:break-all;">{{ target.api_key[:8] }}…</code>
+    <button class="btn btn-ghost btn-sm" onclick="document.getElementById('apikey-display').textContent='{{ target.api_key }}';this.style.display='none';return false;">Révéler</button>
     <button class="btn btn-ghost btn-sm" onclick="navigator.clipboard.writeText('{{ target.api_key }}').then(()=>this.textContent='Copié!');return false;">Copier</button>
   </div>
   <form action="/admin/users/{{ target.id }}/regen-key" method="post" style="margin-top:0.5rem;"

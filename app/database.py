@@ -61,6 +61,8 @@ def init_db():
         con.execute("ALTER TABLE users ADD COLUMN is_admin INTEGER NOT NULL DEFAULT 0")
     if "is_active" not in ucols:
         con.execute("ALTER TABLE users ADD COLUMN is_active INTEGER NOT NULL DEFAULT 1")
+    if "session_version" not in ucols:
+        con.execute("ALTER TABLE users ADD COLUMN session_version INTEGER NOT NULL DEFAULT 0")
     con.commit()
     con.close()
 

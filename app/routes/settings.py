@@ -142,7 +142,7 @@ async def import_links(
     if b"<!doctype" not in snippet and b"<html" not in snippet and b"<dl" not in snippet and b"<a href" not in snippet:
         from fastapi import HTTPException
         raise HTTPException(status_code=400, detail="Format non reconnu — fichier HTML Netscape attendu")
-    items = _parse_netscape(content.decode("utf-8", errors="replace"))
+    items = _parse_netscape(content.decode("utf-8", errors="replace"))[:10_000]
 
     imported = skipped = 0
     existing_urls = {

@@ -1,3 +1,4 @@
+import logging
 import secrets
 
 from fastapi import APIRouter, Depends, HTTPException, Request
@@ -9,8 +10,11 @@ from ..auth import get_admin_user
 from ..config import settings as cfg
 from ..database import get_session
 from ..models import User
+from ..ratelimit import rate_limit
 from ..templates_cfg import templates
 from ..utils import sidebar_data
+
+_log = logging.getLogger("linky.admin")
 
 router = APIRouter(prefix="/admin")
 
@@ -126,7 +130,10 @@ async def user_detail(
 
 # ── Actions ───────────────────────────────────────────────────────────────────
 
-@router.post("/users/{uid}/toggle-active")
+_admin_post_rl = [Depends(rate_limit(30, 3600))]
+
+
+@router.post("/users/{uid}/toggle-active", dependencies=_admin_post_rl)
 async def toggle_active(
     uid: int,
     admin: User = Depends(get_admin_user),
@@ -138,12 +145,14 @@ async def toggle_active(
     if target.id == admin.id:
         raise HTTPException(status_code=400, detail="Impossible de se désactiver soi-même")
     target.is_active = not target.is_active
+    target.session_version += 1  # invalide les sessions actives
     session.add(target)
     session.commit()
+    _log.info("admin#%s toggled active for user#%s → %s", admin.id, uid, target.is_active)
     return RedirectResponse(url=f"/admin/users/{uid}", status_code=303)
 
 
-@router.post("/users/{uid}/toggle-admin")
+@router.post("/users/{uid}/toggle-admin", dependencies=_admin_post_rl)
 async def toggle_admin(
     uid: int,
     admin: User = Depends(get_admin_user),
@@ -158,12 +167,14 @@ async def toggle_admin(
     if target.is_admin and admin_count <= 1:
         raise HTTPException(status_code=400, detail="Il doit rester au moins un administrateur")
     target.is_admin = not target.is_admin
+    target.session_version += 1  # invalide les sessions actives
     session.add(target)
     session.commit()
+    _log.info("admin#%s toggled admin for user#%s → %s", admin.id, uid, target.is_admin)
     return RedirectResponse(url=f"/admin/users/{uid}", status_code=303)
 
 
-@router.post("/users/{uid}/regen-key")
+@router.post("/users/{uid}/regen-key", dependencies=_admin_post_rl)
 async def regen_key(
     uid: int,
     admin: User = Depends(get_admin_user),
@@ -175,10 +186,11 @@ async def regen_key(
     target.api_key = secrets.token_urlsafe(32)
     session.add(target)
     session.commit()
+    _log.info("admin#%s regenerated API key for user#%s", admin.id, uid)
     return RedirectResponse(url=f"/admin/users/{uid}", status_code=303)
 
 
-@router.post("/users/{uid}/delete")
+@router.post("/users/{uid}/delete", dependencies=_admin_post_rl)
 async def delete_user(
     uid: int,
     admin: User = Depends(get_admin_user),
@@ -189,15 +201,15 @@ async def delete_user(
         raise HTTPException(status_code=404)
     if target.id == admin.id:
         raise HTTPException(status_code=400, detail="Impossible de supprimer son propre compte")
-    # Cascade manuelle
+    target_name = target.name
+    # Cascade manuelle dans l'ordre des dépendances FK
     session.execute(text("DELETE FROM fts_links   WHERE link_id IN (SELECT id FROM links WHERE user_id=:id)"), {"id": uid})
     session.execute(text("DELETE FROM link_tags   WHERE link_id IN (SELECT id FROM links WHERE user_id=:id)"), {"id": uid})
     session.execute(text("DELETE FROM link_groups WHERE link_id IN (SELECT id FROM links WHERE user_id=:id)"), {"id": uid})
-    session.execute(text("DELETE FROM links  WHERE user_id=:id"), {"id": uid})
-    session.execute(text("DELETE FROM link_tags   WHERE tag_id  IN (SELECT id FROM tags   WHERE user_id=:id)"), {"id": uid})
-    session.execute(text("DELETE FROM tags   WHERE user_id=:id"), {"id": uid})
-    session.execute(text("DELETE FROM link_groups WHERE group_id IN (SELECT id FROM groups WHERE user_id=:id)"), {"id": uid})
-    session.execute(text("DELETE FROM groups WHERE user_id=:id"), {"id": uid})
-    session.execute(text("DELETE FROM users  WHERE id=:id"), {"id": uid})
+    session.execute(text("DELETE FROM links       WHERE user_id=:id"), {"id": uid})
+    session.execute(text("DELETE FROM tags        WHERE user_id=:id"), {"id": uid})
+    session.execute(text("DELETE FROM groups      WHERE user_id=:id"), {"id": uid})
+    session.execute(text("DELETE FROM users       WHERE id=:id"), {"id": uid})
     session.commit()
+    _log.warning("admin#%s deleted user#%s (%s) and all their data", admin.id, uid, target_name)
     return RedirectResponse(url="/admin/users", status_code=303)
