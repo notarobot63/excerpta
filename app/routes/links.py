@@ -16,7 +16,7 @@ from ..database import get_session
 from ..models import Group, Link, LinkGroupLink, LinkTagLink, Tag, User
 from ..ratelimit import rate_limit
 from ..templates_cfg import templates
-from ..utils import get_or_create_tag, refresh_link_fts, sidebar_data
+from ..utils import descendant_group_ids, get_or_create_tag, refresh_link_fts, sidebar_data
 
 router = APIRouter()
 
@@ -169,7 +169,9 @@ async def list_links(
     if tag:
         links = [lk for lk in links if any(t.name == tag for t in lk.tags)]
     if group_id:
-        links = [lk for lk in links if any(g.id == group_id for g in lk.groups)]
+        all_grps = list(session.exec(select(Group).where(Group.user_id == user.id)).all())
+        gids = set(descendant_group_ids(all_grps, group_id))
+        links = [lk for lk in links if any(g.id in gids for g in lk.groups)]
 
     total = len(links)
     page = max(1, min(page, max(1, (total + PER_PAGE - 1) // PER_PAGE)))

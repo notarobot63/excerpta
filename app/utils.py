@@ -26,6 +26,20 @@ def refresh_link_fts(session: Session, link: Link, tags: list[Tag]):
     )
 
 
+def descendant_group_ids(all_groups: list[Group], root_id: int) -> list[int]:
+    """Retourne root_id + tous les IDs enfants récursivement."""
+    by_parent: dict = {}
+    for g in all_groups:
+        by_parent.setdefault(g.parent_id, []).append(g.id)
+    result: list[int] = []
+    queue = [root_id]
+    while queue:
+        gid = queue.pop(0)
+        result.append(gid)
+        queue.extend(by_parent.get(gid, []))
+    return result
+
+
 def build_group_tree(groups: list[Group]) -> list[tuple]:
     """Retourne [(group, depth), ...] en ordre arborescent."""
     result = []

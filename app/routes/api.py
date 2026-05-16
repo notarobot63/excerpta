@@ -6,7 +6,7 @@ from typing import List, Optional
 
 from ..database import get_session
 from ..models import Link, LinkGroupLink, LinkTagLink, Tag, Group, User
-from ..utils import get_or_create_tag, refresh_link_fts
+from ..utils import descendant_group_ids, get_or_create_tag, refresh_link_fts
 from .links import MAX_TAGS_PER_LINK, _safe_url
 
 router = APIRouter(prefix="/api/v1")
@@ -90,10 +90,13 @@ async def api_list_links(
             .where(Link.user_id == user.id, LinkTagLink.tag_id == tag_obj.id)
         )
     elif group_id:
+        all_grps = list(session.exec(select(Group).where(Group.user_id == user.id)).all())
+        gids = descendant_group_ids(all_grps, group_id)
         stmt = (
             select(Link)
             .join(LinkGroupLink, LinkGroupLink.link_id == Link.id)
-            .where(Link.user_id == user.id, LinkGroupLink.group_id == group_id)
+            .where(Link.user_id == user.id, LinkGroupLink.group_id.in_(gids))
+            .distinct()
         )
 
     if q:
@@ -179,6 +182,29 @@ async def api_list_groups(
         add_group(root, 0)
 
     return {"groups": result}
+
+
+class LinkPatch(BaseModel):
+    is_public: Optional[bool] = None
+
+
+@router.patch("/links/{link_id}")
+async def api_patch_link(
+    link_id: int = Path(..., ge=1),
+    body: LinkPatch,
+    user: User = Depends(_get_api_user),
+    session: Session = Depends(get_session),
+):
+    link = session.exec(
+        select(Link).where(Link.id == link_id, Link.user_id == user.id)
+    ).first()
+    if not link:
+        raise HTTPException(status_code=404, detail="Lien introuvable")
+    if body.is_public is not None:
+        link.is_public = body.is_public
+    session.add(link)
+    session.commit()
+    return {"id": link.id, "is_public": link.is_public}
 
 
 @router.delete("/links/{link_id}", status_code=204)
