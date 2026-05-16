@@ -55,15 +55,16 @@ async def add_form(
 async def add_group(
     name: str = Form(...),
     is_public: Optional[str] = Form(default=None),
-    parent_id: Optional[int] = Form(default=None),
+    parent_id: Optional[str] = Form(default=None),
     user: User = Depends(get_current_user),
     session: Session = Depends(get_session),
 ):
+    pid = int(parent_id) if parent_id and parent_id.strip().isdigit() else None
     group = Group(
         user_id=user.id,
         name=name,
         is_public=is_public is not None,
-        parent_id=_validate_parent(session, parent_id, user.id),
+        parent_id=_validate_parent(session, pid, user.id),
     )
     session.add(group)
     session.commit()
@@ -92,16 +93,17 @@ async def edit_group(
     group_id: int,
     name: str = Form(...),
     is_public: Optional[str] = Form(default=None),
-    parent_id: Optional[int] = Form(default=None),
+    parent_id: Optional[str] = Form(default=None),
     user: User = Depends(get_current_user),
     session: Session = Depends(get_session),
 ):
     group = session.get(Group, group_id)
     if not group or group.user_id != user.id:
         raise HTTPException(status_code=404)
+    pid = int(parent_id) if parent_id and parent_id.strip().isdigit() else None
     group.name = name
     group.is_public = is_public is not None
-    group.parent_id = _validate_parent(session, parent_id, user.id, exclude_id=group_id)
+    group.parent_id = _validate_parent(session, pid, user.id, exclude_id=group_id)
     session.add(group)
     session.commit()
     return RedirectResponse(url="/groups", status_code=303)

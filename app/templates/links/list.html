@@ -22,12 +22,18 @@
 <div class="links-list">
 {% for link in links %}
 <article class="link-card">
+  <div class="link-thumb" data-initial="{{ (link.url | domain)[:1] | upper }}">
+    {% if link.favicon_url %}
+    <img class="link-favicon"
+         src="{{ link.favicon_url }}"
+         onerror="this.parentElement.classList.add('no-favicon')"
+         alt="">
+    {% else %}
+    <span class="link-thumb-initial">{{ (link.url | domain)[:1] | upper }}</span>
+    {% endif %}
+  </div>
   <div class="link-body">
     <div class="link-source">
-      <img class="link-favicon"
-           src="{{ link.favicon_url }}"
-           onerror="this.style.visibility='hidden'"
-           alt="">
       <span class="link-domain">{{ link.url | domain }}</span>
     </div>
     <a class="link-title" href="{{ link.url }}" target="_blank" rel="noopener">{{ link.title or link.url }}</a>
