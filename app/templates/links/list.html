@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+
+{% block title %}
+  {% if current_tag %}#{{ current_tag }} — {% elif current_group %}Groupe — {% endif %}Linky
+{% endblock %}
+
+{% block content %}
+
+{% if q %}
+<p style="color: var(--text-muted); font-size: 0.8rem; margin: 0 0 1rem;">
+  {{ total }} résultat{% if total > 1 %}s{% endif %} pour « {{ q }} »
+  — <a href="/">effacer</a>
+</p>
+{% elif current_tag %}
+<p style="color: var(--text-muted); font-size: 0.8rem; margin: 0 0 1rem;">
+  Tag : <strong>#{{ current_tag }}</strong> — {{ total }} lien{% if total > 1 %}s{% endif %}
+  — <a href="/">voir tout</a>
+</p>
+{% endif %}
+
+{% if links %}
+<div class="links-list">
+{% for link in links %}
+<article class="link-card">
+  <div class="link-body">
+    <div class="link-source">
+      <img class="link-favicon"
+           src="{{ link.favicon_url }}"
+           onerror="this.style.visibility='hidden'"
+           alt="">
+      <span class="link-domain">{{ link.url | domain }}</span>
+    </div>
+    <a class="link-title" href="{{ link.url }}" target="_blank" rel="noopener">{{ link.title or link.url }}</a>
+    {% if link.description %}
+    <div class="link-description">{{ link.description }}</div>
+    {% endif %}
+    {% if link.note %}
+    <div class="link-note">{{ link.note | markdown | safe }}</div>
+    {% endif %}
+    <div class="link-footer">
+      {% for tag in link.tags %}
+      <a href="/?tag={{ tag.name|urlencode }}" class="tag">{{ tag.name }}</a>
+      {% endfor %}
+      <span class="link-date">{{ link.created_at.strftime('%d/%m/%Y') }}</span>
+    </div>
+  </div>
+  <div class="link-actions">
+    <a href="/links/{{ link.id }}/edit" class="btn btn-ghost btn-sm" title="Modifier">✏️</a>
+    <form action="/links/{{ link.id }}/delete" method="post"
+          onsubmit="return confirm('Supprimer ce lien ?')">
+      {{ csrf_input(request) }}
+      <button type="submit" class="btn btn-ghost btn-sm" title="Supprimer">🗑️</button>
+    </form>
+  </div>
+</article>
+{% endfor %}
+</div>
+
+{% if total_pages > 1 %}
+<div class="pagination">
+  {% if has_prev %}
+  <a href="/?{{ prev_qs }}" class="btn btn-ghost btn-sm">← Précédent</a>
+  {% else %}
+  <span class="btn btn-ghost btn-sm" style="opacity:0.4;cursor:default;">← Précédent</span>
+  {% endif %}
+
+  <span class="pagination-info">{{ page }} / {{ total_pages }} — {{ total }} liens</span>
+
+  {% if has_next %}
+  <a href="/?{{ next_qs }}" class="btn btn-ghost btn-sm">Suivant →</a>
+  {% else %}
+  <span class="btn btn-ghost btn-sm" style="opacity:0.4;cursor:default;">Suivant →</span>
+  {% endif %}
+</div>
+{% endif %}
+
+{% else %}
+<div class="empty-state">
+  {% if q %}
+  <p>Aucun résultat pour « {{ q }} ».</p>
+  {% elif current_tag %}
+  <p>Aucun lien avec le tag <strong>#{{ current_tag }}</strong>.</p>
+  {% else %}
+  <p>Pas encore de liens.<br><a href="/links/add">Ajouter le premier</a></p>
+  {% endif %}
+</div>
+{% endif %}
+
+{% endblock %}

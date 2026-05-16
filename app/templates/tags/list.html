@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+
+{% block title %}Tags — Linky{% endblock %}
+
+{% block content %}
+<h2>Tags ({{ all_tags|length }})</h2>
+
+{% if all_tags %}
+<table class="form-card" style="width:100%; border-collapse: collapse;">
+  <thead>
+    <tr style="border-bottom: 1px solid var(--border);">
+      <th style="text-align: left; padding: 0.5rem;">Tag</th>
+      <th style="padding: 0.5rem;">Liens</th>
+      <th style="padding: 0.5rem;">Action</th>
+    </tr>
+  </thead>
+  <tbody>
+  {% for tag in all_tags %}
+    <tr style="border-bottom: 1px solid var(--border);">
+      <td style="padding: 0.5rem;">
+        <a href="/?tag={{ tag.name|urlencode }}" class="tag">#{{ tag.name }}</a>
+      </td>
+      <td style="padding: 0.5rem; text-align: center;">
+        {{ tag_counts.get(tag.name, 0) }}
+      </td>
+      <td style="padding: 0.5rem; text-align: center;">
+        <form action="/tags/{{ tag.id }}/delete" method="post" style="display:inline;"
+              onsubmit="return confirm('{% if tag_counts.get(tag.name, 0) > 0 %}Ce tag est utilisé par {{ tag_counts[tag.name] }} lien(s). Supprimer quand même ?{% else %}Supprimer ce tag ?{% endif %}')">
+          {{ csrf_input(request) }}
+          <button type="submit" class="btn btn-danger btn-sm">Supprimer</button>
+        </form>
+      </td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="empty-state">
+  <p>Aucun tag pour l'instant.</p>
+</div>
+{% endif %}
+{% endblock %}

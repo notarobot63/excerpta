@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Connexion — Linky</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <script>
+    (function() {
+      var t = localStorage.getItem('theme') || 'light';
+      document.documentElement.setAttribute('data-theme', t);
+    })();
+  </script>
+</head>
+<body style="display:flex; align-items:center; justify-content:center; min-height:100vh;">
+  <div style="text-align:center; padding:2rem; max-width:320px; width:100%;">
+    <div style="font-size:2.5rem; margin-bottom:0.5rem;">🔖</div>
+    <h1 style="font-size:1.5rem; font-weight:700; margin:0 0 0.25rem;">Linky</h1>
+    <p style="color:var(--text-muted); font-size:0.875rem; margin:0 0 2rem;">Gestionnaire de liens</p>
+
+    {% if error %}
+    <div style="background:rgba(239,68,68,0.1); border:1px solid #ef4444; border-radius:0.5rem;
+                padding:0.75rem; margin-bottom:1.5rem; font-size:0.875rem; color:#ef4444;">
+      Erreur d'authentification. Veuillez réessayer.
+    </div>
+    {% endif %}
+
+    <a href="/auth/oidc/start" class="btn btn-primary" style="width:100%; justify-content:center;">
+      Se connecter via PocketID
+    </a>
+  </div>
+</body>
+</html>

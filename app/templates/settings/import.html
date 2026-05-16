@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block title %}Importer des liens — Linky{% endblock %}
+
+{% block content %}
+<div class="form-card" style="max-width: 700px;">
+  <h2 style="font-size: 1.1rem; font-weight: 600; margin: 0 0 1.25rem;">Importer des liens</h2>
+
+  {% if imported is not none %}
+  <div class="alert alert-success" style="background:#d4edda;color:#155724;padding:0.75rem 1.25rem;border-radius:4px;margin-bottom:1rem;">
+    Import terminé : {{ imported }} liens importés, {{ skipped }} doublons ignorés.
+  </div>
+  {% endif %}
+
+  <p style="margin-bottom:1rem;color:#555;">
+    Format supporté : Netscape HTML (export Linkding, Pinboard, Firefox, Chrome). Les doublons (même URL) sont ignorés.
+  </p>
+
+  <form method="post" action="/settings/import" enctype="multipart/form-data">
+    {{ csrf_input(request) }}
+    <div class="form-group">
+      <label class="form-label" for="file">Fichier de bookmarks (.html)</label>
+      <input id="file" name="file" type="file" accept=".html,.htm" required
+             class="form-input" style="padding:0.35rem 0.5rem;">
+    </div>
+
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary">Importer</button>
+      <a href="/settings" class="btn btn-ghost">Annuler</a>
+    </div>
+  </form>
+
+  <p style="margin-top:1.5rem;font-size:0.85rem;color:#888;">
+    Les métadonnées (favicon) seront chargées à la prochaine visite du lien. Les tags sont importés automatiquement.
+  </p>
+</div>
+{% endblock %}

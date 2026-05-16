@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Linky{% endblock %}</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <script defer src="/static/alpine.min.js"></script>
+  <script>
+    (function() {
+      var t = localStorage.getItem('theme') || 'light';
+      document.documentElement.setAttribute('data-theme', t);
+    })();
+  </script>
+</head>
+<body x-data="{ sidebarOpen: false }" @keydown.escape="sidebarOpen = false">
+
+<div class="layout">
+
+  <!-- Sidebar -->
+  <aside class="sidebar" :class="{ 'open': sidebarOpen }" id="sidebar">
+    <div class="sidebar-logo">
+      🔖 Linky
+    </div>
+
+    <nav style="padding: 0.5rem 0; flex: 1;">
+      <a href="/" class="sidebar-item {% if not current_tag and not current_group and not q %}active{% endif %}">
+        <span>Tous les liens</span>
+        <span class="sidebar-count">{{ links|length if links is defined else '' }}</span>
+      </a>
+      <a href="/tags" class="sidebar-item {% if request.url.path == '/tags' %}active{% endif %}">
+        <span>🏷 Gérer les tags</span>
+      </a>
+      <a href="/groups" class="sidebar-item {% if request.url.path.startswith('/groups') %}active{% endif %}">
+        <span>📂 Gérer les groupes</span>
+      </a>
+      <a href="/settings" class="sidebar-item {% if request.url.path.startswith('/settings') %}active{% endif %}">
+        <span>⚙️ Paramètres</span>
+      </a>
+
+      {% if all_tags %}
+      <div class="sidebar-section">Tags</div>
+      {% for tag in all_tags %}
+      <a href="/?tag={{ tag.name|urlencode }}"
+         class="sidebar-item {% if current_tag == tag.name %}active{% endif %}">
+        <span># {{ tag.name }}</span>
+        <span class="sidebar-count">{{ tag_counts.get(tag.name, 0) }}</span>
+      </a>
+      {% endfor %}
+      {% endif %}
+
+      {% if group_tree %}
+      <div class="sidebar-section">Groupes</div>
+      {% for group, depth in group_tree %}
+      <a href="/?group_id={{ group.id }}"
+         class="sidebar-item {% if current_group == group.id %}active{% endif %}"
+         style="padding-left: {{ 0.75 + depth * 0.875 }}rem;">
+        <span>{% if depth > 0 %}<span style="color:var(--text-muted);margin-right:0.2rem">↳</span>{% else %}📁 {% endif %}{{ group.name }}</span>
+        <span class="sidebar-count">{{ group_counts.get(group.id, 0) }}</span>
+      </a>
+      {% endfor %}
+      {% endif %}
+    </nav>
+
+    <div class="sidebar-bottom">
+      <select class="theme-select" onchange="applyTheme(this.value)" id="theme-select">
+        <option value="light">☀️ Light</option>
+        <option value="dark">🌙 Dark</option>
+        <option value="dracula">🧛 Dracula</option>
+      </select>
+      {% if user is defined %}
+      <a href="/auth/logout" class="btn btn-ghost btn-sm" title="Déconnexion">↪</a>
+      {% endif %}
+    </div>
+  </aside>
+
+  <!-- Overlay mobile -->
+  <div class="mobile-overlay" :class="{ 'open': sidebarOpen }" @click="sidebarOpen = false"></div>
+
+  <!-- Contenu principal -->
+  <div class="main">
+    <header class="topbar">
+      <button class="hamburger" @click="sidebarOpen = !sidebarOpen" aria-label="Menu">
+        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path d="M4 6h16M4 12h16M4 18h16"/>
+        </svg>
+      </button>
+
+      <form action="/" method="get" style="flex:1; display:flex; gap:0.5rem; max-width:500px;">
+        {% if current_tag %}<input type="hidden" name="tag" value="{{ current_tag }}">{% endif %}
+        {% if current_group %}<input type="hidden" name="group_id" value="{{ current_group }}">{% endif %}
+        <input type="search" name="q" value="{{ q|default('') }}"
+               placeholder="Rechercher…" class="search-input">
+        {% if q %}
+        <a href="/" class="btn btn-ghost btn-sm">✕</a>
+        {% endif %}
+      </form>
+
+      <a href="/links/add" class="btn btn-primary">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+          <path d="M12 5v14M5 12h14"/>
+        </svg>
+        Ajouter
+      </a>
+    </header>
+
+    <main class="content">
+      <div class="content-wrap">
+        {% block content %}{% endblock %}
+      </div>
+    </main>
+  </div>
+
+</div>
+
+<script>
+  function applyTheme(t) {
+    document.documentElement.setAttribute('data-theme', t);
+    localStorage.setItem('theme', t);
+  }
+  (function() {
+    var t = localStorage.getItem('theme') || 'light';
+    var sel = document.getElementById('theme-select');
+    if (sel) sel.value = t;
+  })();
+</script>
+
+</body>
+</html>

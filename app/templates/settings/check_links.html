@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+
+{% block title %}Vérification des liens — Linky{% endblock %}
+
+{% block content %}
+<div class="form-card">
+  <h2 style="font-size: 1.1rem; font-weight: 600; margin: 0 0 0.5rem;">Vérifier les liens</h2>
+  <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0 0 1.5rem;">
+    Teste chaque lien et signale ceux qui renvoient une erreur (4xx/5xx) ou sont inaccessibles.
+  </p>
+
+  {% if results is none %}
+  <form method="post" action="/settings/check-links">
+    {{ csrf_input(request) }}
+    <button type="submit" class="btn btn-primary">Lancer la vérification</button>
+    <a href="/settings" class="btn btn-ghost" style="margin-left: 0.5rem;">Annuler</a>
+  </form>
+
+  {% else %}
+  <div style="margin-bottom: 1.25rem; display: flex; align-items: center; gap: 1.5rem; flex-wrap: wrap;">
+    <span style="font-size: 0.85rem; color: var(--text-muted);">
+      {{ total }} lien{% if total > 1 %}s{% endif %} vérifiés
+    </span>
+    {% if broken %}
+    <span style="font-size: 0.875rem; font-weight: 600; color: var(--btn-danger);">
+      {{ broken|length }} lien{% if broken|length > 1 %}s{% endif %} cassé{% if broken|length > 1 %}s{% endif %}
+    </span>
+    {% else %}
+    <span style="font-size: 0.875rem; font-weight: 600; color: #16a34a;">Tous les liens sont valides ✓</span>
+    {% endif %}
+    <form method="post" action="/settings/check-links" style="margin-left: auto;">
+      {{ csrf_input(request) }}
+      <button type="submit" class="btn btn-ghost btn-sm">Relancer</button>
+    </form>
+  </div>
+
+  {% if broken %}
+  <div class="links-list" style="border-top: 1px solid var(--border);">
+    {% for r in broken %}
+    <div class="link-card">
+      <div class="link-body">
+        <div class="link-source">
+          <img class="link-favicon" src="{{ r.link.favicon_url }}"
+               onerror="this.style.visibility='hidden'" alt="">
+          <span class="link-domain">{{ r.link.url | domain }}</span>
+        </div>
+        <a class="link-title" href="{{ r.link.url }}" target="_blank" rel="noopener">
+          {{ r.link.title or r.link.url }}
+        </a>
+        <div style="margin-top: 0.3rem; font-size: 0.78rem;">
+          {% if r.status %}
+          <span style="background: var(--btn-danger); color: #fff; border-radius: 4px; padding: 0.1rem 0.4rem; font-weight: 600;">
+            {{ r.status }}
+          </span>
+          {% else %}
+          <span style="background: var(--btn-danger); color: #fff; border-radius: 4px; padding: 0.1rem 0.4rem; font-weight: 600;">
+            Erreur réseau
+          </span>
+          {% endif %}
+          {% if r.error %}
+          <span style="color: var(--text-muted); margin-left: 0.4rem;">{{ r.error }}</span>
+          {% endif %}
+        </div>
+      </div>
+      <div class="link-actions" style="opacity: 1;">
+        <a href="/links/{{ r.link.id }}/edit" class="btn btn-ghost btn-sm" title="Modifier">✏️</a>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {% endif %}
+</div>
+{% endblock %}
