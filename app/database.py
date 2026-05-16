@@ -52,10 +52,15 @@ def init_db():
     con = sqlite3.connect(db_path)
     for stmt in _FTS_SETUP:
         con.execute(stmt)
-    # Migration : ajout parent_id sur groups si absent
-    cols = [row[1] for row in con.execute("PRAGMA table_info(groups)").fetchall()]
-    if "parent_id" not in cols:
+    # Migrations idempotentes
+    gcols = [r[1] for r in con.execute("PRAGMA table_info(groups)").fetchall()]
+    if "parent_id" not in gcols:
         con.execute("ALTER TABLE groups ADD COLUMN parent_id INTEGER DEFAULT NULL")
+    ucols = [r[1] for r in con.execute("PRAGMA table_info(users)").fetchall()]
+    if "is_admin" not in ucols:
+        con.execute("ALTER TABLE users ADD COLUMN is_admin INTEGER NOT NULL DEFAULT 0")
+    if "is_active" not in ucols:
+        con.execute("ALTER TABLE users ADD COLUMN is_active INTEGER NOT NULL DEFAULT 1")
     con.commit()
     con.close()
 

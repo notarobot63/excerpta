@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Liens publics — Linky</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <script>
+    (function() {
+      var t = localStorage.getItem('theme') || 'light';
+      document.documentElement.setAttribute('data-theme', t);
+    })();
+  </script>
+</head>
+<body>
+
+<div style="max-width: 780px; margin: 0 auto; padding: 1.5rem 1rem;">
+
+  <header style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1.5rem; gap:1rem; flex-wrap:wrap;">
+    <div style="font-size:1.1rem; font-weight:700;">🔖 Liens publics</div>
+
+    <form action="/public" method="get" style="display:flex; gap:0.5rem; flex:1; max-width:400px;">
+      {% if current_tag %}<input type="hidden" name="tag" value="{{ current_tag }}">{% endif %}
+      <input type="search" name="q" value="{{ q }}"
+             placeholder="Rechercher…" class="search-input">
+      {% if q %}<a href="/public" class="btn btn-ghost btn-sm">✕</a>{% endif %}
+    </form>
+
+    <select class="theme-select" onchange="(function(t){document.documentElement.setAttribute('data-theme',t);localStorage.setItem('theme',t);})(this.value)" id="theme-select">
+      <option value="light">☀️ Light</option>
+      <option value="dark">🌙 Dark</option>
+      <option value="dracula">🧛 Dracula</option>
+    </select>
+  </header>
+
+  {% if all_tags %}
+  <div style="display:flex; gap:0.4rem; flex-wrap:wrap; margin-bottom:1rem;">
+    <a href="/public{% if q %}?q={{ q }}{% endif %}"
+       class="tag" style="{% if not current_tag %}opacity:1{% else %}opacity:0.5{% endif %}">Tous</a>
+    {% for t in all_tags %}
+    <a href="/public?tag={{ t|urlencode }}{% if q %}&q={{ q }}{% endif %}"
+       class="tag" style="{% if current_tag == t %}outline:2px solid var(--tag-text){% endif %}">{{ t }}</a>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {% if q or current_tag %}
+  <p style="font-size:0.8rem; color:var(--text-muted); margin-bottom:1rem;">
+    {{ total }} lien{% if total != 1 %}s{% endif %}
+    {% if current_tag %} — tag <strong>#{{ current_tag }}</strong>{% endif %}
+    {% if q %} — recherche « {{ q }} »{% endif %}
+    — <a href="/public">voir tout</a>
+  </p>
+  {% endif %}
+
+  {% if links %}
+  <div class="links-list">
+  {% for link in links %}
+  <article class="link-card">
+    <div class="link-body">
+      <div class="link-source">
+        <img class="link-favicon" src="{{ link.favicon_url }}"
+             onerror="this.style.visibility='hidden'" alt="">
+        <span class="link-domain">{{ link.url | domain }}</span>
+      </div>
+      <a class="link-title" href="{{ link.url }}" target="_blank" rel="noopener">
+        {{ link.title or link.url }}
+      </a>
+      {% if link.description %}
+      <div class="link-description">{{ link.description }}</div>
+      {% endif %}
+      {% if link.note %}
+      <div class="link-note">{{ link.note | markdown | safe }}</div>
+      {% endif %}
+      <div class="link-footer">
+        {% for t in link.tags %}
+        <a href="/public?tag={{ t.name|urlencode }}" class="tag">{{ t.name }}</a>
+        {% endfor %}
+        <span class="link-date">{{ link.created_at.strftime('%d/%m/%Y') }}</span>
+      </div>
+    </div>
+  </article>
+  {% endfor %}
+  </div>
+
+  {% else %}
+  <div class="empty-state">
+    {% if q or current_tag %}
+    <p>Aucun résultat.</p>
+    {% else %}
+    <p>Aucun lien public pour l'instant.</p>
+    {% endif %}
+  </div>
+  {% endif %}
+
+</div>
+
+<script>
+  (function() {
+    var t = localStorage.getItem('theme') || 'light';
+    var sel = document.getElementById('theme-select');
+    if (sel) sel.value = t;
+  })();
+</script>
+</body>
+</html>

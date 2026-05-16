@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}Administration — Linky{% endblock %}
+{% block content %}
+<div style="max-width:900px;">
+  <h2 style="font-size:1.1rem;font-weight:600;margin:0 0 1.5rem;">🛡 Administration</h2>
+
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1rem;margin-bottom:2rem;">
+    {% for label, val in [
+        ('Utilisateurs', stats.users),
+        ('Liens', stats.links),
+        ('Tags', stats.tags),
+        ('Groupes', stats.groups),
+        ('Base de données', stats.db_size),
+    ] %}
+    <div style="background:var(--bg-alt);border:1px solid var(--border);border-radius:0.5rem;padding:1rem;text-align:center;">
+      <div style="font-size:1.5rem;font-weight:700;color:var(--text);">{{ val }}</div>
+      <div style="font-size:0.75rem;color:var(--text-muted);margin-top:0.25rem;">{{ label }}</div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem;">
+    <h3 style="font-size:0.9rem;font-weight:600;color:var(--text-muted);margin:0;">10 derniers liens ajoutés</h3>
+    <a href="/admin/users" class="btn btn-ghost btn-sm">Gérer les utilisateurs →</a>
+  </div>
+
+  {% if recent %}
+  <div class="links-list" style="border-top:1px solid var(--border);">
+    {% for title, url, uname, created_at in recent %}
+    <div class="link-card">
+      <div class="link-body">
+        <div class="link-source">
+          <span class="link-domain">{{ uname }}</span>
+        </div>
+        <a class="link-title" href="{{ url }}" target="_blank" rel="noopener">{{ title or url }}</a>
+        <div class="link-footer">
+          <span class="link-date">{{ created_at[:10] if created_at else '' }}</span>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty-state"><p>Aucun lien pour l'instant.</p></div>
+  {% endif %}
+</div>
+{% endblock %}

@@ -25,6 +25,8 @@ class User(SQLModel, table=True):
     name: str = Field(default="")
     api_key: str = Field(default_factory=lambda: secrets.token_urlsafe(32))
     theme: str = Field(default="light")
+    is_admin: bool = Field(default=False)
+    is_active: bool = Field(default=True)
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
     links: List["Link"] = Relationship(back_populates="user")

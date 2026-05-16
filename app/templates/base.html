@@ -37,6 +37,14 @@
       <a href="/settings" class="sidebar-item {% if request.url.path.startswith('/settings') %}active{% endif %}">
         <span>⚙️ Paramètres</span>
       </a>
+      <a href="/public" class="sidebar-item {% if request.url.path == '/public' %}active{% endif %}" target="_blank">
+        <span>🌐 Page publique</span>
+      </a>
+      {% if user is defined and user.is_admin %}
+      <a href="/admin/" class="sidebar-item {% if request.url.path.startswith('/admin') %}active{% endif %}">
+        <span>🛡 Administration</span>
+      </a>
+      {% endif %}
 
       {% if all_tags %}
       <div class="sidebar-section">Tags</div>
@@ -100,7 +108,7 @@
         <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
           <path d="M12 5v14M5 12h14"/>
         </svg>
-        Ajouter
+        <span class="btn-label">Ajouter</span>
       </a>
     </header>
 

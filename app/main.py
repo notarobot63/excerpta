@@ -16,6 +16,8 @@ from .routes import tags as tags_router
 from .routes import groups as groups_router
 from .routes import oidc as oidc_router
 from .routes import settings as settings_router
+from .routes import public as public_router
+from .routes import admin as admin_router
 
 _CSP = (
     "default-src 'self'; "
@@ -71,6 +73,8 @@ app.include_router(links_router.router, dependencies=_csrf)
 app.include_router(tags_router.router, dependencies=_csrf)
 app.include_router(groups_router.router, dependencies=_csrf)
 app.include_router(settings_router.router, dependencies=_csrf)
+app.include_router(public_router.router)  # pas de CSRF ni auth
+app.include_router(admin_router.router, dependencies=_csrf)
 
 
 @app.get("/health")

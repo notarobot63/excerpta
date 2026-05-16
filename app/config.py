@@ -17,6 +17,7 @@ class Settings(BaseSettings):
     oidc_client_secret: str = ""
     oidc_issuer: str = ""
     app_name: str = "Linky"
+    admin_email: str = ""
 
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
 

@@ -402,4 +402,9 @@ a:hover { text-decoration: underline; }
   .mobile-overlay.open { display: block; }
   .hamburger { display: block; }
   .link-actions { opacity: 1; flex-direction: row; }
+  .btn-label { display: none; }
+  .topbar form { max-width: none; }
+  .content { padding: 0.75rem; }
+  .pagination { gap: 0.5rem; flex-wrap: wrap; }
+  .pagination-info { width: 100%; text-align: center; order: -1; }
 }

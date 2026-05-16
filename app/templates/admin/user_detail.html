@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% block title %}{{ target.name }} — Admin — Linky{% endblock %}
+{% block content %}
+<div style="max-width:700px;">
+  <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1.5rem;flex-wrap:wrap;">
+    <h2 style="font-size:1.1rem;font-weight:600;margin:0;">{{ target.name }}</h2>
+    {% if target.is_admin %}<span class="tag">admin</span>{% endif %}
+    {% if not target.is_active %}<span style="background:var(--btn-danger);color:#fff;border-radius:4px;padding:0.1rem 0.45rem;font-size:0.7rem;font-weight:600;">désactivé</span>{% endif %}
+    <a href="/admin/users" class="btn btn-ghost btn-sm" style="margin-left:auto;">← Utilisateurs</a>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.5rem;">
+    <div style="background:var(--bg-alt);border:1px solid var(--border);border-radius:0.5rem;padding:1rem;">
+      <div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:0.5rem;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;">Infos</div>
+      <div style="font-size:0.85rem;"><strong>Email</strong> : {{ target.email }}</div>
+      <div style="font-size:0.85rem;margin-top:0.25rem;"><strong>Inscrit</strong> : {{ target.created_at.strftime('%d/%m/%Y') }}</div>
+      <div style="font-size:0.85rem;margin-top:0.25rem;"><strong>OIDC sub</strong> : <code style="font-size:0.75em;">{{ target.oidc_sub[:24] }}…</code></div>
+    </div>
+    <div style="background:var(--bg-alt);border:1px solid var(--border);border-radius:0.5rem;padding:1rem;">
+      <div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:0.5rem;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;">Données</div>
+      <div style="font-size:0.85rem;"><strong>Liens</strong> : {{ stats.links }}</div>
+      <div style="font-size:0.85rem;margin-top:0.25rem;"><strong>Tags</strong> : {{ stats.tags }}</div>
+      <div style="font-size:0.85rem;margin-top:0.25rem;"><strong>Groupes</strong> : {{ stats.groups }}</div>
+    </div>
+  </div>
+
+  <hr style="border:none;border-top:1px solid var(--border);margin:1.5rem 0;">
+
+  <h3 style="font-size:0.9rem;font-weight:600;color:var(--text-muted);margin:0 0 0.75rem;">Bookmarklet</h3>
+  <a href="{{ bookmarklet|e }}" class="btn btn-primary btn-sm" onclick="return false;" style="margin-bottom:0.5rem;">📌 Ajouter à Linky</a>
+  <p style="font-size:0.78rem;color:var(--text-muted);margin:0.25rem 0 0;">À glisser dans la barre de favoris du navigateur.</p>
+
+  <hr style="border:none;border-top:1px solid var(--border);margin:1.5rem 0;">
+
+  <h3 style="font-size:0.9rem;font-weight:600;color:var(--text-muted);margin:0 0 0.75rem;">Clé API</h3>
+  <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;">
+    <code style="font-size:0.78rem;background:var(--bg-alt);border:1px solid var(--border);padding:0.3rem 0.5rem;border-radius:4px;word-break:break-all;">{{ target.api_key }}</code>
+    <button class="btn btn-ghost btn-sm" onclick="navigator.clipboard.writeText('{{ target.api_key }}').then(()=>this.textContent='Copié!');return false;">Copier</button>
+  </div>
+  <form action="/admin/users/{{ target.id }}/regen-key" method="post" style="margin-top:0.5rem;"
+        onsubmit="return confirm('Régénérer la clé API ? L\'ancienne sera invalidée.')">
+    {{ csrf_input(request) }}
+    <button type="submit" class="btn btn-ghost btn-sm">🔄 Régénérer</button>
+  </form>
+
+  {% if recent_links %}
+  <hr style="border:none;border-top:1px solid var(--border);margin:1.5rem 0;">
+  <h3 style="font-size:0.9rem;font-weight:600;color:var(--text-muted);margin:0 0 0.75rem;">5 derniers liens</h3>
+  <div class="links-list" style="border-top:1px solid var(--border);">
+    {% for title, url, created_at in recent_links %}
+    <div class="link-card">
+      <div class="link-body">
+        <a class="link-title" href="{{ url }}" target="_blank" rel="noopener">{{ title or url }}</a>
+        <div class="link-footer">
+          <span class="link-date">{{ created_at[:10] if created_at else '' }}</span>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <hr style="border:none;border-top:1px solid var(--border);margin:1.5rem 0;">
+  <h3 style="font-size:0.9rem;font-weight:600;color:var(--text-muted);margin:0 0 0.75rem;">Actions</h3>
+  <div style="display:flex;gap:0.75rem;flex-wrap:wrap;align-items:center;">
+
+    {% if target.id != user.id %}
+    <form action="/admin/users/{{ target.id }}/toggle-active" method="post"
+          onsubmit="return confirm('{% if target.is_active %}Désactiver{% else %}Réactiver{% endif %} cet utilisateur ?')">
+      {{ csrf_input(request) }}
+      <button type="submit" class="btn btn-ghost btn-sm">
+        {% if target.is_active %}⏸ Désactiver{% else %}▶ Réactiver{% endif %}
+      </button>
+    </form>
+
+    <form action="/admin/users/{{ target.id }}/toggle-admin" method="post"
+          onsubmit="return confirm('{% if target.is_admin %}Retirer{% else %}Donner{% endif %} les droits admin ?')"
+          {% if target.is_admin and admin_count <= 1 %}title="Dernier admin — impossible de retirer"{% endif %}>
+      {{ csrf_input(request) }}
+      <button type="submit" class="btn btn-ghost btn-sm"
+              {% if target.is_admin and admin_count <= 1 %}disabled{% endif %}>
+        {% if target.is_admin %}👤 Retirer admin{% else %}🛡 Donner admin{% endif %}
+      </button>
+    </form>
+
+    <form action="/admin/users/{{ target.id }}/delete" method="post" style="margin-left:auto;"
+          onsubmit="return confirm('Supprimer définitivement {{ target.name }} et toutes ses données ?')">
+      {{ csrf_input(request) }}
+      <button type="submit" class="btn btn-danger btn-sm">Supprimer</button>
+    </form>
+    {% else %}
+    <span style="font-size:0.8rem;color:var(--text-muted);">Votre propre compte — actions restreintes.</span>
+    {% endif %}
+
+  </div>
+</div>
+{% endblock %}

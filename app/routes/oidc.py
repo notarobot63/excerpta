@@ -1,6 +1,7 @@
 from authlib.integrations.starlette_client import OAuth
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import RedirectResponse
+from sqlalchemy import text
 from sqlmodel import Session, select
 
 from ..config import settings
@@ -29,6 +30,16 @@ def _get_client() -> OAuth:
     return _oauth
 
 
+def _maybe_promote_admin(session: Session, user: User, is_new: bool) -> None:
+    if settings.admin_email:
+        if user.email == settings.admin_email and not user.is_admin:
+            user.is_admin = True
+    elif is_new:
+        count = session.execute(text("SELECT COUNT(*) FROM users")).scalar()
+        if count == 1:
+            user.is_admin = True
+
+
 @router.get("/auth/oidc/start")
 async def oidc_start(request: Request):
     if not settings.oidc_client_id:
@@ -55,23 +66,30 @@ async def oidc_callback(request: Request, session: Session = Depends(get_session
     if not sub:
         return RedirectResponse(url="/auth/login?error=1", status_code=303)
 
-    user = session.exec(select(User).where(User.oidc_sub == sub)).first()
-    if not user:
+    existing = session.exec(select(User).where(User.oidc_sub == sub)).first()
+    is_new = existing is None
+
+    if is_new:
         user = User(
             oidc_sub=sub,
             email=userinfo.get("email", ""),
             name=userinfo.get("name", "") or userinfo.get("preferred_username", ""),
         )
         session.add(user)
+        session.flush()
     else:
+        user = existing
         user.email = userinfo.get("email", user.email)
-        user.name = (
-            userinfo.get("name", "") or userinfo.get("preferred_username", "") or user.name
-        )
+        user.name = userinfo.get("name", "") or userinfo.get("preferred_username", "") or user.name
         session.add(user)
+
+    _maybe_promote_admin(session, user, is_new)
 
     session.commit()
     session.refresh(user)
+
+    if not user.is_active:
+        return RedirectResponse(url="/auth/login?error=inactive", status_code=303)
 
     request.session["user_id"] = user.id
     return RedirectResponse(url="/", status_code=303)
