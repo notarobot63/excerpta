@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Paramètres — Linky{% endblock %}
+{% block title %}Paramètres — Excerpta{% endblock %}
 
 {% block content %}
 <div class="form-card" style="max-width: 700px;">
@@ -32,7 +32,7 @@
 
   <h3 style="font-size:0.9rem;font-weight:600;margin:0 0 0.75rem;color:var(--text-muted)">Bookmarklet</h3>
   <p>Glisse ce lien dans ta barre de favoris :</p>
-  <a href="{{ bookmarklet|e }}" class="btn btn-primary" onclick="return false;">📌 Ajouter à Linky</a>
+  <a href="{{ bookmarklet|e }}" class="btn btn-primary" onclick="return false;">📌 Ajouter à Excerpta</a>
   <p style="margin-top:0.5rem;font-size:0.85rem;color:var(--text-muted)">Fais glisser le bouton ci-dessus dans la barre de favoris de ton navigateur.</p>
 
   <hr style="border:none;border-top:1px solid var(--border);margin:1.5rem 0">
@@ -46,7 +46,7 @@
   <hr style="border:none;border-top:1px solid var(--border);margin:1.5rem 0">
 
   <h3 style="font-size:0.9rem;font-weight:600;margin:0 0 0.75rem;color:var(--text-muted)">App Android</h3>
-  <p style="font-size:0.85rem;color:var(--text-muted);margin:0 0 0.75rem;">Scanne ce QR code depuis l'app Linky pour la configurer automatiquement.</p>
+  <p style="font-size:0.85rem;color:var(--text-muted);margin:0 0 0.75rem;">Scanne ce QR code depuis l'app Excerpta pour la configurer automatiquement.</p>
   <img src="/settings/android-qr.png" alt="QR code Android"
        style="width:180px;height:180px;border:1px solid var(--border);border-radius:8px;display:block;">
 

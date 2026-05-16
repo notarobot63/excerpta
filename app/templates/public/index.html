@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Liens publics — Linky</title>
+  <title>Liens publics — Excerpta</title>
+  <link rel="icon" type="image/svg+xml" href="/static/logo.svg">
   <link rel="stylesheet" href="/static/style.css">
   <script>
     (function() {
@@ -17,7 +18,7 @@
 <div style="max-width: 780px; margin: 0 auto; padding: 1.5rem 1rem;">
 
   <header style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1.5rem; gap:1rem; flex-wrap:wrap;">
-    <div style="font-size:1.1rem; font-weight:700;">🔖 Liens publics</div>
+    <div style="font-size:1.1rem; font-weight:700;display:flex;align-items:center;gap:6px;"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" style="fill:currentColor"><path d="M17,3H7C5.9,3 5,3.9 5,5v16l7,-3 7,3V5C19,3.9 18.1,3 17,3z"/></svg>Liens publics</div>
 
     <form action="/public" method="get" style="display:flex; gap:0.5rem; flex:1; max-width:400px;">
       {% if current_tag %}<input type="hidden" name="tag" value="{{ current_tag }}">{% endif %}
