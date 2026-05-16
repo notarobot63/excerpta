@@ -373,6 +373,7 @@ a:hover { text-decoration: underline; }
 }
 
 .link-title {
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
   font-weight: 600;
   color: var(--text);
   font-size: 0.975rem;
