@@ -46,17 +46,6 @@
       </a>
       {% endif %}
 
-      {% if all_tags %}
-      <div class="sidebar-section">Tags</div>
-      {% for tag in all_tags %}
-      <a href="/?tag={{ tag.name|urlencode }}"
-         class="sidebar-item {% if current_tag == tag.name %}active{% endif %}">
-        <span># {{ tag.name }}</span>
-        <span class="sidebar-count">{{ tag_counts.get(tag.name, 0) }}</span>
-      </a>
-      {% endfor %}
-      {% endif %}
-
       {% if group_tree %}
       <div class="sidebar-section">Groupes</div>
       {% for group, depth in group_tree %}
@@ -65,6 +54,17 @@
          style="padding-left: {{ 0.75 + depth * 0.875 }}rem;">
         <span>{% if depth > 0 %}<span style="color:var(--text-muted);margin-right:0.2rem">↳</span>{% else %}📁 {% endif %}{{ group.name }}</span>
         <span class="sidebar-count">{{ group_counts.get(group.id, 0) }}</span>
+      </a>
+      {% endfor %}
+      {% endif %}
+
+      {% if all_tags %}
+      <div class="sidebar-section">Tags</div>
+      {% for tag in all_tags %}
+      <a href="/?tag={{ tag.name|urlencode }}"
+         class="sidebar-item {% if current_tag == tag.name %}active{% endif %}">
+        <span># {{ tag.name }}</span>
+        <span class="sidebar-count">{{ tag_counts.get(tag.name, 0) }}</span>
       </a>
       {% endfor %}
       {% endif %}
