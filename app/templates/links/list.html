@@ -22,6 +22,13 @@
 <div class="links-list">
 {% for link in links %}
 <article class="link-card">
+  {% if link.thumbnail_url %}
+  <a href="{{ link.url }}" target="_blank" rel="noopener" class="link-thumbnail">
+    <img src="{{ link.thumbnail_url }}"
+         onerror="this.parentElement.style.display='none'"
+         alt="">
+  </a>
+  {% endif %}
   <div class="link-body">
     <div class="link-source">
       <img class="link-favicon"
@@ -44,13 +51,6 @@
       <span class="link-date">{{ link.created_at.strftime('%d/%m/%Y') }}</span>
     </div>
   </div>
-  {% if link.thumbnail_url %}
-  <a href="{{ link.url }}" target="_blank" rel="noopener" class="link-thumbnail">
-    <img src="{{ link.thumbnail_url }}"
-         onerror="this.parentElement.style.display='none'"
-         alt="">
-  </a>
-  {% endif %}
   <div class="link-actions">
     <a href="/links/{{ link.id }}/edit" class="btn btn-ghost btn-sm" title="Modifier">✏️</a>
     <form action="/links/{{ link.id }}/delete" method="post"
