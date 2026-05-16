@@ -198,59 +198,48 @@ a:hover { text-decoration: underline; }
 .links-list { display: flex; flex-direction: column; }
 
 .link-card {
-  padding: 0.85rem 1.1rem;
+  padding: 0.9rem 1.25rem;
   border-bottom: 1px solid var(--border);
-  display: grid;
-  grid-template-columns: 44px 1fr auto;
+  display: flex;
   gap: 0.85rem;
-  align-items: start;
+  align-items: flex-start;
 }
 
 .link-card:hover { background: var(--card-hover); }
 .link-card:hover .link-actions { opacity: 1; }
 
-.link-thumb {
-  width: 44px;
-  height: 44px;
-  border-radius: 10px;
-  border: 1px solid var(--border);
-  background: var(--bg-alt);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
+.link-body { flex: 1; min-width: 0; }
+
+.link-thumbnail {
   flex-shrink: 0;
-  margin-top: 2px;
+  width: 100px;
+  height: 68px;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  display: block;
+  align-self: center;
 }
 
-.link-thumb.no-favicon img { display: none; }
-.link-thumb.no-favicon::after {
-  content: attr(data-initial);
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: var(--text-muted);
+.link-thumbnail img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
-
-.link-thumb-initial {
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: var(--text-muted);
-}
-
-.link-favicon {
-  width: 44px;
-  height: 44px;
-  object-fit: contain;
-  padding: 6px;
-}
-
-.link-body { min-width: 0; }
 
 .link-source {
   display: flex;
   align-items: center;
   gap: 0.35rem;
-  margin-bottom: 0.2rem;
+  margin-bottom: 0.25rem;
+}
+
+.link-favicon {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  border-radius: 2px;
 }
 
 .link-domain {

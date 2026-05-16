@@ -90,10 +90,22 @@ async def _fetch_meta(url: str) -> dict:
             candidate = f"{parsed.scheme}://{parsed.netloc}/favicon.ico"
             if _safe_url(candidate):
                 favicon = candidate
+        og_img = soup.find("meta", attrs={"property": "og:image"}) or \
+                 soup.find("meta", attrs={"name": "twitter:image"})
+        thumbnail = ""
+        if og_img:
+            raw = og_img.get("content", "").strip()
+            if raw.startswith("//"):
+                raw = f"{parsed.scheme}:{raw}"
+            elif raw.startswith("/"):
+                raw = f"{parsed.scheme}://{parsed.netloc}{raw}"
+            if _safe_url(raw):
+                thumbnail = raw
         return {
             "title": title.text.strip() if title else "",
             "description": desc.get("content", "").strip() if desc else "",
             "favicon_url": favicon,
+            "thumbnail_url": thumbnail,
         }
     except Exception:
         return {"title": "", "description": "", "favicon_url": ""}
@@ -230,16 +242,13 @@ async def add_link(
     if not _safe_url(url):
         raise HTTPException(status_code=400, detail="URL invalide")
 
-    if not title or not description:
-        meta = await _fetch_meta(url)
-        if not title:
-            title = meta.get("title", "")
-        if not description:
-            description = meta.get("description", "")
-        favicon_url = meta.get("favicon_url", "")
-    else:
-        parsed = urlparse(url)
-        favicon_url = f"{parsed.scheme}://{parsed.netloc}/favicon.ico" if parsed.netloc else ""
+    meta = await _fetch_meta(url)
+    if not title:
+        title = meta.get("title", "")
+    if not description:
+        description = meta.get("description", "")
+    favicon_url = meta.get("favicon_url", "")
+    thumbnail_url = meta.get("thumbnail_url", "")
 
     link = Link(
         user_id=user.id,
@@ -247,6 +256,7 @@ async def add_link(
         title=title or url,
         description=description,
         favicon_url=favicon_url,
+        thumbnail_url=thumbnail_url,
         note=note,
         is_public=is_public is not None,
     )
@@ -319,12 +329,15 @@ async def edit_link(
     if not _safe_url(url):
         raise HTTPException(status_code=400, detail="URL invalide")
 
+    meta = await _fetch_meta(url)
     link.url = url
     link.title = title or url
     link.description = description
     link.note = note
     link.is_public = is_public is not None
     link.updated_at = datetime.utcnow()
+    if not link.thumbnail_url:
+        link.thumbnail_url = meta.get("thumbnail_url", "")
     session.add(link)
     session.flush()
 

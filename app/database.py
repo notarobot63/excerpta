@@ -63,6 +63,9 @@ def init_db():
         con.execute("ALTER TABLE users ADD COLUMN is_active INTEGER NOT NULL DEFAULT 1")
     if "session_version" not in ucols:
         con.execute("ALTER TABLE users ADD COLUMN session_version INTEGER NOT NULL DEFAULT 0")
+    lcols = [r[1] for r in con.execute("PRAGMA table_info(links)").fetchall()]
+    if "thumbnail_url" not in lcols:
+        con.execute("ALTER TABLE links ADD COLUMN thumbnail_url TEXT NOT NULL DEFAULT ''")
     con.commit()
     con.close()
 

@@ -65,6 +65,7 @@ class Link(SQLModel, table=True):
     title: str = Field(default="")
     description: str = Field(default="")
     favicon_url: str = Field(default="")
+    thumbnail_url: str = Field(default="")
     note: str = Field(default="")
     is_public: bool = Field(default=False)
     archived_url: Optional[str] = Field(default=None)
