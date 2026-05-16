@@ -420,6 +420,7 @@ a:hover { text-decoration: underline; }
   .mobile-overlay.open { display: block; }
   .hamburger { display: block; }
   .link-actions { opacity: 1; flex-direction: row; }
+  .link-thumbnail { display: none; }
   .btn-label { display: none; }
   .topbar form { max-width: none; }
   .content { padding: 0.75rem; }
