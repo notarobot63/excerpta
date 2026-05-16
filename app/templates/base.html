@@ -71,11 +71,6 @@
     </nav>
 
     <div class="sidebar-bottom">
-      <select class="theme-select" onchange="applyTheme(this.value)" id="theme-select">
-        <option value="light">☀️ Light</option>
-        <option value="dark">🌙 Dark</option>
-        <option value="dracula">🧛 Dracula</option>
-      </select>
       {% if user is defined %}
       <a href="/auth/logout" class="btn btn-ghost btn-sm" title="Déconnexion">↪</a>
       {% endif %}

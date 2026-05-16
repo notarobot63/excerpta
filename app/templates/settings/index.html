@@ -8,6 +8,28 @@
 
   <hr style="border:none;border-top:1px solid var(--border);margin:1.5rem 0">
 
+  <h3 style="font-size:0.9rem;font-weight:600;margin:0 0 0.75rem;color:var(--text-muted)">Apparence</h3>
+  <div style="display:flex;flex-wrap:wrap;gap:0.5rem;" id="theme-picker">
+    <button class="btn btn-ghost btn-sm" onclick="applyTheme('light')">☀️ Light</button>
+    <button class="btn btn-ghost btn-sm" onclick="applyTheme('dark')">🌙 Dark</button>
+    <button class="btn btn-ghost btn-sm" onclick="applyTheme('dracula')">🧛 Dracula</button>
+    <button class="btn btn-ghost btn-sm" onclick="applyTheme('nord')">❄️ Nord</button>
+    <button class="btn btn-ghost btn-sm" onclick="applyTheme('nord-dark')">🌌 Nord Dark</button>
+    <button class="btn btn-ghost btn-sm" onclick="applyTheme('catppuccin')">🐱 Catppuccin</button>
+    <button class="btn btn-ghost btn-sm" onclick="applyTheme('gruvbox')">🪵 Gruvbox</button>
+    <button class="btn btn-ghost btn-sm" onclick="applyTheme('solarized')">🌞 Solarized</button>
+    <button class="btn btn-ghost btn-sm" onclick="applyTheme('rosepine')">🌹 Rosé Pine</button>
+  </div>
+  <p id="theme-label" style="font-size:0.78rem;color:var(--text-muted);margin:0.5rem 0 0;"></p>
+  <script>
+    (function(){
+      var cur = localStorage.getItem('theme') || 'light';
+      document.getElementById('theme-label').textContent = 'Thème actif : ' + cur;
+    })();
+  </script>
+
+  <hr style="border:none;border-top:1px solid var(--border);margin:1.5rem 0">
+
   <h3 style="font-size:0.9rem;font-weight:600;margin:0 0 0.75rem;color:var(--text-muted)">Bookmarklet</h3>
   <p>Glisse ce lien dans ta barre de favoris :</p>
   <a href="{{ bookmarklet|e }}" class="btn btn-primary" onclick="return false;">📌 Ajouter à Linky</a>
