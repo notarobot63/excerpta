@@ -18,6 +18,7 @@ from .routes import oidc as oidc_router
 from .routes import settings as settings_router
 from .routes import public as public_router
 from .routes import admin as admin_router
+from .routes import api as api_router
 
 _CSP = (
     "default-src 'self'; "
@@ -74,6 +75,7 @@ app.include_router(groups_router.router, dependencies=_csrf)
 app.include_router(settings_router.router, dependencies=_csrf)
 app.include_router(public_router.router)  # pas de CSRF ni auth
 app.include_router(admin_router.router, dependencies=_csrf)
+app.include_router(api_router.router)  # JSON API — pas de CSRF, auth par X-API-Key
 
 
 @app.get("/health")
