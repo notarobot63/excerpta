@@ -75,6 +75,13 @@ async def _fetch_meta(url: str) -> dict:
         desc = soup.find("meta", attrs={"property": "og:description"}) or soup.find(
             "meta", attrs={"name": "description"}
         )
+        description_text = desc.get("content", "").strip() if desc else ""
+        if not description_text:
+            for p in soup.find_all("p"):
+                text = p.get_text(" ", strip=True)
+                if len(text) > 80:
+                    description_text = text[:400]
+                    break
         icon = soup.find("link", rel=lambda r: r and "icon" in r)
         parsed = urlparse(url)
         favicon = ""
@@ -103,7 +110,7 @@ async def _fetch_meta(url: str) -> dict:
                 thumbnail = raw
         return {
             "title": title.text.strip() if title else "",
-            "description": desc.get("content", "").strip() if desc else "",
+            "description": description_text,
             "favicon_url": favicon,
             "thumbnail_url": thumbnail,
         }
