@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Header, HTTPException, Path, Query
+from fastapi import APIRouter, Body, Depends, Header, HTTPException, Path, Query
 from pydantic import BaseModel
 from sqlalchemy import text
 from sqlmodel import Session, select
@@ -191,7 +191,7 @@ class LinkPatch(BaseModel):
 @router.patch("/links/{link_id}")
 async def api_patch_link(
     link_id: int = Path(..., ge=1),
-    body: LinkPatch,
+    body: LinkPatch = Body(...),
     user: User = Depends(_get_api_user),
     session: Session = Depends(get_session),
 ):
