@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Header, HTTPException, Query
+from fastapi import APIRouter, Depends, Header, HTTPException, Path, Query
 from pydantic import BaseModel
 from sqlalchemy import text
 from sqlmodel import Session, select
@@ -179,3 +179,18 @@ async def api_list_groups(
         add_group(root, 0)
 
     return {"groups": result}
+
+
+@router.delete("/links/{link_id}", status_code=204)
+async def api_delete_link(
+    link_id: int = Path(..., ge=1),
+    user: User = Depends(_get_api_user),
+    session: Session = Depends(get_session),
+):
+    link = session.exec(
+        select(Link).where(Link.id == link_id, Link.user_id == user.id)
+    ).first()
+    if not link:
+        raise HTTPException(status_code=404, detail="Lien introuvable")
+    session.delete(link)
+    session.commit()

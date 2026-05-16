@@ -11,7 +11,9 @@ _lock = Lock()
 def rate_limit(calls: int, period_seconds: int):
     """Dépendance FastAPI : max `calls` appels par `period_seconds` et par endpoint."""
     def dependency(request: Request) -> None:
-        key = request.url.path
+        client_ip = (request.headers.get("X-Forwarded-For") or "").split(",")[0].strip() \
+            or (request.client.host if request.client else "unknown")
+        key = f"{client_ip}:{request.url.path}"
         now = time.monotonic()
         with _lock:
             window = [t for t in _calls[key] if now - t < period_seconds]

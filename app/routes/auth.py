@@ -37,6 +37,7 @@ async def logout(request: Request):
 async def login_page(request: Request, error: Optional[str] = None):
     if not settings.oidc_client_id:
         return RedirectResponse(url="/auth/dev-login", status_code=303)
+    safe_error = error if error in ("1", "inactive") else None
     return templates.TemplateResponse(
-        "auth/login.html", {"request": request, "error": error}
+        "auth/login.html", {"request": request, "error": safe_error}
     )
