@@ -46,7 +46,7 @@ def _is_private_host(host: str) -> bool:
         ip = ipaddress.ip_address(host)
         return any(ip in net for net in _PRIVATE_NETS)
     except ValueError:
-        return False  # hostname DNS valide — autorisé
+        return False  # hostname DNS valide - autorisé
 
 
 def _fts_escape(q: str) -> str:

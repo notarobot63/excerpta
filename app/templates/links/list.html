@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block title %}
-  {% if current_tag %}#{{ current_tag }} — {% elif current_group %}Groupe — {% endif %}Excerpta
+  {% if current_tag %}#{{ current_tag }} - {% elif current_group %}Groupe - {% endif %}Excerpta
 {% endblock %}
 
 {% block content %}
@@ -9,12 +9,12 @@
 {% if q %}
 <p style="color: var(--text-muted); font-size: 0.8rem; margin: 0 0 1rem;">
   {{ total }} résultat{% if total > 1 %}s{% endif %} pour « {{ q }} »
-  — <a href="/">effacer</a>
+  - <a href="/">effacer</a>
 </p>
 {% elif current_tag %}
 <p style="color: var(--text-muted); font-size: 0.8rem; margin: 0 0 1rem;">
-  Tag : <strong>#{{ current_tag }}</strong> — {{ total }} lien{% if total > 1 %}s{% endif %}
-  — <a href="/">voir tout</a>
+  Tag : <strong>#{{ current_tag }}</strong> - {{ total }} lien{% if total > 1 %}s{% endif %}
+  - <a href="/">voir tout</a>
 </p>
 {% endif %}
 
@@ -71,7 +71,7 @@
   <span class="btn btn-ghost btn-sm" style="opacity:0.4;cursor:default;">← Précédent</span>
   {% endif %}
 
-  <span class="pagination-info">{{ page }} / {{ total_pages }} — {{ total }} liens</span>
+  <span class="pagination-info">{{ page }} / {{ total_pages }} - {{ total }} liens</span>
 
   {% if has_next %}
   <a href="/?{{ next_qs }}" class="btn btn-ghost btn-sm">Suivant →</a>

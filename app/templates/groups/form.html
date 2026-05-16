@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}{% if group %}Modifier{% else %}Nouveau{% endif %} groupe — Excerpta{% endblock %}
+{% block title %}{% if group %}Modifier{% else %}Nouveau{% endif %} groupe - Excerpta{% endblock %}
 
 {% block content %}
 <div class="form-card">
@@ -22,7 +22,7 @@
     <div class="form-group">
       <label class="form-label" for="parent_id">Groupe parent</label>
       <select id="parent_id" name="parent_id" class="form-input">
-        <option value="">— Aucun (groupe racine) —</option>
+        <option value="">- Aucun (groupe racine) -</option>
         {% for g, depth in group_tree %}
           {% if not group or g.id != group.id %}
           <option value="{{ g.id }}" {% if group and group.parent_id == g.id %}selected{% endif %}>

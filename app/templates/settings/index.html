@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Paramètres — Excerpta{% endblock %}
+{% block title %}Paramètres - Excerpta{% endblock %}
 
 {% block content %}
 <div class="form-card" style="max-width: 700px;">
@@ -70,7 +70,7 @@
   <hr style="border:none;border-top:1px solid var(--border);margin:1.5rem 0">
 
   <h3 style="font-size:0.9rem;font-weight:600;margin:0 0 0.75rem;color:var(--text-muted)">Compte</h3>
-  <p><strong>{{ user.name|e }}</strong> — {{ user.email|e }}</p>
+  <p><strong>{{ user.name|e }}</strong> - {{ user.email|e }}</p>
   <p><a href="/auth/logout" class="btn btn-ghost btn-sm">Se déconnecter</a></p>
 </div>
 {% endblock %}

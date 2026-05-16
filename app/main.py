@@ -75,7 +75,7 @@ app.include_router(groups_router.router, dependencies=_csrf)
 app.include_router(settings_router.router, dependencies=_csrf)
 app.include_router(public_router.router)  # pas de CSRF ni auth
 app.include_router(admin_router.router, dependencies=_csrf)
-app.include_router(api_router.router)  # JSON API — pas de CSRF, auth par X-API-Key
+app.include_router(api_router.router)  # JSON API - pas de CSRF, auth par X-API-Key
 
 
 @app.get("/health")

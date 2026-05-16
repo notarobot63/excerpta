@@ -27,7 +27,7 @@ class Settings(BaseSettings):
             generated = secrets.token_hex(32)
             logger.warning(
                 "⚠️  SECRET_KEY absente ou non sécurisée. "
-                "Clé temporaire générée — les sessions expireront au prochain redémarrage. "
+                "Clé temporaire générée - les sessions expireront au prochain redémarrage. "
                 "Définissez SECRET_KEY=%s dans docker-compose.yml",
                 generated,
             )

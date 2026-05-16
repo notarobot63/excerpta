@@ -14,7 +14,7 @@ router = APIRouter()
 
 @router.get("/auth/dev-login")
 async def dev_login(request: Request, session: Session = Depends(get_session)):
-    """Connexion de développement — désactivé quand OIDC est configuré."""
+    """Connexion de développement - désactivé quand OIDC est configuré."""
     if settings.oidc_client_id:
         raise HTTPException(status_code=403, detail="OIDC est configuré")
     user = session.exec(select(User).where(User.oidc_sub == "dev")).first()

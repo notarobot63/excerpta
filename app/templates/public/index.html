@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Liens publics — Excerpta</title>
+  <title>Liens publics - Excerpta</title>
   <link rel="icon" type="image/svg+xml" href="/static/logo.svg">
   <link rel="stylesheet" href="/static/style.css">
   <script>
@@ -48,9 +48,9 @@
   {% if q or current_tag %}
   <p style="font-size:0.8rem; color:var(--text-muted); margin-bottom:1rem;">
     {{ total }} lien{% if total != 1 %}s{% endif %}
-    {% if current_tag %} — tag <strong>#{{ current_tag }}</strong>{% endif %}
-    {% if q %} — recherche « {{ q }} »{% endif %}
-    — <a href="/public">voir tout</a>
+    {% if current_tag %} - tag <strong>#{{ current_tag }}</strong>{% endif %}
+    {% if q %} - recherche « {{ q }} »{% endif %}
+    - <a href="/public">voir tout</a>
   </p>
   {% endif %}
 

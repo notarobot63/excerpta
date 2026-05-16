@@ -20,7 +20,7 @@ def rate_limit(calls: int, period_seconds: int):
             if len(window) >= calls:
                 raise HTTPException(
                     status_code=429,
-                    detail=f"Trop de requêtes — réessayez dans {period_seconds // 60} min.",
+                    detail=f"Trop de requêtes - réessayez dans {period_seconds // 60} min.",
                     headers={"Retry-After": str(period_seconds)},
                 )
             window.append(now)
