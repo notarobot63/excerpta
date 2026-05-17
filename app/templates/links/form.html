@@ -114,6 +114,11 @@ function linkForm() {
     titleDirty: !!document.getElementById('title').value,
     loading: false,
 
+    init() {
+      var urlEl = document.getElementById('url');
+      if (urlEl.value) this.fetchMeta();
+    },
+
     async fetchMeta() {
       var urlEl = document.getElementById('url');
       var titleEl = document.getElementById('title');

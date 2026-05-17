@@ -223,11 +223,7 @@ async def add_form(
     user: User = Depends(get_current_user),
     session: Session = Depends(get_session),
 ):
-    meta = {}
-    if url:
-        meta = await _fetch_meta(url)
-    if title and not meta.get("title"):
-        meta["title"] = title
+    meta = {"title": title or "", "description": "", "favicon_url": "", "thumbnail_url": ""}
     sidebar = sidebar_data(session, user.id)
     return templates.TemplateResponse(
         "links/form.html",
