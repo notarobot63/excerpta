@@ -61,21 +61,23 @@ def _parse_netscape(html: str) -> list[dict]:
 
 
 def _build_netscape(links: list[Link]) -> str:
+    from html import escape
     lines = [
         "<!DOCTYPE NETSCAPE-Bookmark-file-1>",
         '<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=UTF-8">',
-        "<TITLE>Linky Export</TITLE>",
+        "<TITLE>Excerpta Export</TITLE>",
         "<H1>Bookmarks</H1>",
         "<DL><p>",
     ]
     for lk in links:
-        tags = ",".join(t.name for t in lk.tags)
+        tags = escape(",".join(t.name for t in lk.tags), quote=True)
         ts = int(lk.created_at.timestamp())
-        title = lk.title.replace("<", "&lt;").replace(">", "&gt;")
-        lines.append(f'    <DT><A HREF="{lk.url}" ADD_DATE="{ts}" TAGS="{tags}">{title}</A>')
+        title = escape(lk.title)
+        url = escape(lk.url, quote=True)
+        lines.append(f'    <DT><A HREF="{url}" ADD_DATE="{ts}" TAGS="{tags}">{title}</A>')
         body = lk.note or lk.description
         if body:
-            lines.append(f"    <DD>{body}")
+            lines.append(f"    <DD>{escape(body)}")
     lines.append("</DL><p>")
     return "\n".join(lines)
 
@@ -242,7 +244,7 @@ async def export_links(
 ):
     links = list(session.exec(select(Link).where(Link.user_id == user.id).order_by(Link.created_at.desc())).all())
     content = _build_netscape(links)
-    filename = f"linky-export-{datetime.utcnow().strftime('%Y%m%d')}.html"
+    filename = f"excerpta-export-{datetime.utcnow().strftime('%Y%m%d')}.html"
     return Response(
         content=content.encode("utf-8"),
         media_type="text/html",
@@ -269,7 +271,7 @@ async def _check_all(links) -> list[dict]:
         async with sem:
             return await _check_link(client, link)
 
-    headers = {"User-Agent": "Mozilla/5.0 (compatible; Linky/1.0; link-checker)"}
+    headers = {"User-Agent": "Mozilla/5.0 (compatible; Excerpta/1.0; link-checker)"}
     async with httpx.AsyncClient(timeout=10, follow_redirects=True, headers=headers) as client:
         return await asyncio.gather(*[_guarded(client, lk) for lk in links])
 
@@ -326,7 +328,7 @@ async def archive_link(
         async with httpx.AsyncClient(timeout=20, follow_redirects=False) as client:
             resp = await client.post(
                 f"https://web.archive.org/save/{link.url}",
-                headers={"User-Agent": "Linky/1.0"},
+                headers={"User-Agent": "Excerpta/1.0"},
             )
         location = resp.headers.get("location", "") or resp.headers.get("content-location", "")
         if location:

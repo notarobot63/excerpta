@@ -1,21 +1,28 @@
-from fastapi import APIRouter, Body, Depends, Header, HTTPException, Path, Query
-from pydantic import BaseModel
+from fastapi import APIRouter, Body, Depends, Header, HTTPException, Path, Query, Request
+from pydantic import BaseModel, Field
 from sqlalchemy import text
 from sqlmodel import Session, select
 from typing import List, Optional
 
 from ..database import get_session
 from ..models import Link, LinkGroupLink, LinkTagLink, Tag, Group, User
+from ..ratelimit import rate_limit
 from ..utils import descendant_group_ids, get_or_create_tag, refresh_link_fts
 from .links import MAX_TAGS_PER_LINK, _safe_url
 
 router = APIRouter(prefix="/api/v1")
 
+_api_rate_limit = rate_limit(calls=60, period_seconds=60)
+
 
 async def _get_api_user(
-    x_api_key: str = Header(..., alias="X-API-Key"),
+    request: Request,
+    x_api_key: Optional[str] = Header(None, alias="X-API-Key"),
     session: Session = Depends(get_session),
 ) -> User:
+    if not x_api_key:
+        raise HTTPException(status_code=401, detail="Authentification requise")
+    _api_rate_limit(request)
     user = session.exec(select(User).where(User.api_key == x_api_key)).first()
     if not user or not user.is_active:
         raise HTTPException(status_code=401, detail="Clé API invalide")
@@ -24,13 +31,13 @@ async def _get_api_user(
 
 @router.get("/me")
 async def api_me(user: User = Depends(_get_api_user)):
-    return {"id": user.id, "name": user.name, "email": user.email}
+    return {"id": user.id, "name": user.name}
 
 
 class LinkIn(BaseModel):
     url: str
-    title: str = ""
-    note: str = ""
+    title: str = Field("", max_length=500)
+    note: str = Field("", max_length=50_000)
     tags: List[str] = []
 
 

@@ -22,6 +22,9 @@ router = APIRouter()
 
 PER_PAGE = 30
 MAX_TAGS_PER_LINK = 50
+MAX_TITLE_LEN = 500
+MAX_DESC_LEN = 2000
+MAX_NOTE_LEN = 50_000
 
 _PRIVATE_NETS = [
     ipaddress.ip_network("10.0.0.0/8"),
@@ -72,8 +75,15 @@ async def _fetch_meta(url: str) -> dict:
     if not _safe_url(url):
         return {"title": "", "description": "", "favicon_url": ""}
     try:
-        async with httpx.AsyncClient(follow_redirects=True, timeout=10) as client:
+        async with httpx.AsyncClient(follow_redirects=False, timeout=10) as client:
             resp = await client.get(url, headers={"User-Agent": "Mozilla/5.0 Excerpta/1.0"})
+            hops = 0
+            while resp.is_redirect and hops < 5:
+                redirect_url = resp.headers.get("location", "")
+                if not _safe_url(redirect_url):
+                    return {"title": "", "description": "", "favicon_url": ""}
+                resp = await client.get(redirect_url, headers={"User-Agent": "Mozilla/5.0 Excerpta/1.0"})
+                hops += 1
         soup = BeautifulSoup(resp.text, "html.parser")
         title = soup.find("title")
         desc = soup.find("meta", attrs={"property": "og:description"}) or soup.find(
@@ -242,9 +252,9 @@ async def add_form(
 async def add_link(
     request: Request,
     url: str = Form(...),
-    title: str = Form(""),
-    description: str = Form(""),
-    note: str = Form(""),
+    title: str = Form("", max_length=MAX_TITLE_LEN),
+    description: str = Form("", max_length=MAX_DESC_LEN),
+    note: str = Form("", max_length=MAX_NOTE_LEN),
     is_public: Optional[str] = Form(default=None),
     tags: str = Form(""),
     groups: List[str] = Form(default=[]),
@@ -325,9 +335,9 @@ async def edit_link(
     request: Request,
     link_id: int,
     url: str = Form(...),
-    title: str = Form(""),
-    description: str = Form(""),
-    note: str = Form(""),
+    title: str = Form("", max_length=MAX_TITLE_LEN),
+    description: str = Form("", max_length=MAX_DESC_LEN),
+    note: str = Form("", max_length=MAX_NOTE_LEN),
     is_public: Optional[str] = Form(default=None),
     tags: str = Form(""),
     groups: List[str] = Form(default=[]),

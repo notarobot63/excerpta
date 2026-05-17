@@ -19,7 +19,7 @@ async def csrf_protect(request: Request) -> None:
         return
     expected = request.session.get("csrf_token")
     if not expected:
-        return  # pas de session → l'auth dependency va gérer
+        raise HTTPException(status_code=403, detail="CSRF token manquant")
     form = await request.form()
     if form.get("csrf_token", "") != expected:
         raise HTTPException(status_code=403, detail="CSRF token invalide")
