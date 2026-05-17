@@ -101,7 +101,7 @@
       </a>
       {% endif %}
       <form action="/links/{{ link.id }}/delete" method="post" style="margin-left: auto;"
-            onsubmit="return confirm('Supprimer ce lien ?')">
+            data-confirm="Supprimer ce lien ?">
         {{ csrf_input(request) }}
         <button type="submit" class="btn btn-danger btn-sm">Supprimer</button>
       </form>
@@ -111,12 +111,12 @@
   </form>
 </div>
 
-<script>
+<script nonce="{{ request.state.nonce }}">
 function linkForm() {
   return {
-    url: '{{ (link.url if link else prefill_url)|e }}',
-    title: '{{ (link.title if link else meta.get("title", ""))|e }}',
-    description: '{{ (link.description if link else meta.get("description", ""))|e }}',
+    url: {{ (link.url if link else prefill_url)|tojson }},
+    title: {{ (link.title if link else meta.get("title", ""))|tojson }},
+    description: {{ (link.description if link else meta.get("description", ""))|tojson }},
     titleDirty: {{ 'true' if (link and link.title) or meta.get('title') else 'false' }},
     loading: false,
 

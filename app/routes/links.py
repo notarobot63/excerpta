@@ -73,7 +73,7 @@ async def _fetch_meta(url: str) -> dict:
         return {"title": "", "description": "", "favicon_url": ""}
     try:
         async with httpx.AsyncClient(follow_redirects=True, timeout=10) as client:
-            resp = await client.get(url, headers={"User-Agent": "Mozilla/5.0 Linky/1.0"})
+            resp = await client.get(url, headers={"User-Agent": "Mozilla/5.0 Excerpta/1.0"})
         soup = BeautifulSoup(resp.text, "html.parser")
         title = soup.find("title")
         desc = soup.find("meta", attrs={"property": "og:description"}) or soup.find(
@@ -219,12 +219,15 @@ async def list_links(
 async def add_form(
     request: Request,
     url: Optional[str] = None,
+    title: Optional[str] = None,
     user: User = Depends(get_current_user),
     session: Session = Depends(get_session),
 ):
     meta = {}
     if url:
         meta = await _fetch_meta(url)
+    if title and not meta.get("title"):
+        meta["title"] = title
     sidebar = sidebar_data(session, user.id)
     return templates.TemplateResponse(
         "links/form.html",
