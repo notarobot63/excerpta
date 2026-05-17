@@ -19,7 +19,6 @@
         <input id="url" name="url" type="url" required class="form-input"
                value="{{ link.url if link else prefill_url }}"
                placeholder="https://…"
-               x-model="url"
                @change="if (!titleDirty) fetchMeta()">
         <button type="button" class="btn btn-ghost btn-sm" @click="fetchMeta()" :disabled="loading">
           <span x-show="!loading">⬇ Métadonnées</span>
@@ -33,15 +32,13 @@
       <input id="title" name="title" type="text" class="form-input"
              value="{{ link.title if link else meta.get('title', '') }}"
              placeholder="Titre du lien"
-             x-model="title"
              @input="titleDirty = true">
     </div>
 
     <div class="form-group">
       <label class="form-label" for="description">Description</label>
       <textarea id="description" name="description" class="form-textarea"
-                placeholder="Description courte…"
-                x-model="description">{{ link.description if link else meta.get('description', '') }}</textarea>
+                placeholder="Description courte…">{{ link.description if link else meta.get('description', '') }}</textarea>
     </div>
 
     <div class="form-group">
@@ -114,22 +111,20 @@
 <script nonce="{{ request.state.nonce }}">
 function linkForm() {
   return {
-    url: {{ (link.url if link else prefill_url)|tojson }},
-    title: {{ (link.title if link else meta.get("title", ""))|tojson }},
-    description: {{ (link.description if link else meta.get("description", ""))|tojson }},
-    titleDirty: {{ 'true' if (link and link.title) or meta.get('title') else 'false' }},
+    titleDirty: !!document.getElementById('title').value,
     loading: false,
 
     async fetchMeta() {
-      if (!this.url) return;
+      var urlEl = document.getElementById('url');
+      var titleEl = document.getElementById('title');
+      var descEl = document.getElementById('description');
+      if (!urlEl.value) return;
       this.loading = true;
       try {
-        const r = await fetch('/api/fetch-meta?url=' + encodeURIComponent(this.url));
+        const r = await fetch('/api/fetch-meta?url=' + encodeURIComponent(urlEl.value));
         const d = await r.json();
-        if (d.title && !this.titleDirty) this.title = d.title;
-        if (d.description && !this.description) this.description = d.description;
-        document.getElementById('title').value = this.title;
-        document.getElementById('description').value = this.description;
+        if (d.title && !this.titleDirty) titleEl.value = d.title;
+        if (d.description && !descEl.value) descEl.value = d.description;
       } catch(e) {}
       this.loading = false;
     },
