@@ -34,7 +34,7 @@
       <td style="padding: 0.5rem; text-align: center; white-space: nowrap;">
         <a href="/groups/{{ group.id }}/edit" class="btn btn-ghost btn-sm">Modifier</a>
         <form action="/groups/{{ group.id }}/delete" method="post" style="display:inline;"
-              onsubmit="return confirm('{% if group_counts.get(group.id, 0) > 0 %}Ce groupe contient {{ group_counts[group.id] }} lien(s). Supprimer quand même ?{% else %}Supprimer ce groupe ?{% endif %}')">
+              data-confirm="{% if group_counts.get(group.id, 0) > 0 %}Ce groupe contient {{ group_counts[group.id] }} lien(s). Supprimer quand même ?{% else %}Supprimer ce groupe ?{% endif %}">
           <button type="submit" class="btn btn-danger btn-sm">Supprimer</button>
         </form>
       </td>

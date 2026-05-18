@@ -41,7 +41,7 @@
       <div class="link-body">
         <div class="link-source">
           <img class="link-favicon" src="{{ r.link.favicon_url }}"
-               onerror="this.style.visibility='hidden'" alt="">
+               data-hide-on-error="hidden" alt="">
           <span class="link-domain">{{ r.link.url | domain }}</span>
         </div>
         <a class="link-title" href="{{ r.link.url }}" target="_blank" rel="noopener">

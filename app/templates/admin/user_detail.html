@@ -27,7 +27,7 @@
   <hr style="border:none;border-top:1px solid var(--border);margin:1.5rem 0;">
 
   <h3 style="font-size:0.9rem;font-weight:600;color:var(--text-muted);margin:0 0 0.75rem;">Bookmarklet</h3>
-  <a href="{{ bookmarklet|e }}" class="btn btn-primary btn-sm" onclick="return false;" style="margin-bottom:0.5rem;">📌 Ajouter à Excerpta</a>
+  <a href="{{ bookmarklet|e }}" class="btn btn-primary btn-sm" style="margin-bottom:0.5rem;">📌 Ajouter à Excerpta</a>
   <p style="font-size:0.78rem;color:var(--text-muted);margin:0.25rem 0 0;">À glisser dans la barre de favoris du navigateur.</p>
 
   <hr style="border:none;border-top:1px solid var(--border);margin:1.5rem 0;">
@@ -35,11 +35,11 @@
   <h3 style="font-size:0.9rem;font-weight:600;color:var(--text-muted);margin:0 0 0.75rem;">Clé API</h3>
   <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;">
     <code id="apikey-display" style="font-size:0.78rem;background:var(--bg-alt);border:1px solid var(--border);padding:0.3rem 0.5rem;border-radius:4px;word-break:break-all;">{{ target.api_key[:8] }}…</code>
-    <button class="btn btn-ghost btn-sm" onclick="document.getElementById('apikey-display').textContent='{{ target.api_key }}';this.style.display='none';return false;">Révéler</button>
-    <button class="btn btn-ghost btn-sm" onclick="navigator.clipboard.writeText('{{ target.api_key }}').then(()=>this.textContent='Copié!');return false;">Copier</button>
+    <button class="btn btn-ghost btn-sm" id="reveal-apikey-btn" data-reveal="apikey-display" data-value="{{ target.api_key }}">Révéler</button>
+    <button class="btn btn-ghost btn-sm" id="copy-apikey-btn" data-value="{{ target.api_key }}">Copier</button>
   </div>
   <form action="/admin/users/{{ target.id }}/regen-key" method="post" style="margin-top:0.5rem;"
-        onsubmit="return confirm('Régénérer la clé API ? L\'ancienne sera invalidée.')">
+        data-confirm="Régénérer la clé API ? L'ancienne sera invalidée.">
     {{ csrf_input(request) }}
     <button type="submit" class="btn btn-ghost btn-sm">🔄 Régénérer</button>
   </form>
@@ -67,7 +67,7 @@
 
     {% if target.id != user.id %}
     <form action="/admin/users/{{ target.id }}/toggle-active" method="post"
-          onsubmit="return confirm('{% if target.is_active %}Désactiver{% else %}Réactiver{% endif %} cet utilisateur ?')">
+          data-confirm="{% if target.is_active %}Désactiver{% else %}Réactiver{% endif %} cet utilisateur ?">
       {{ csrf_input(request) }}
       <button type="submit" class="btn btn-ghost btn-sm">
         {% if target.is_active %}⏸ Désactiver{% else %}▶ Réactiver{% endif %}
@@ -75,7 +75,7 @@
     </form>
 
     <form action="/admin/users/{{ target.id }}/toggle-admin" method="post"
-          onsubmit="return confirm('{% if target.is_admin %}Retirer{% else %}Donner{% endif %} les droits admin ?')"
+          data-confirm="{% if target.is_admin %}Retirer{% else %}Donner{% endif %} les droits admin ?"
           {% if target.is_admin and admin_count <= 1 %}title="Dernier admin - impossible de retirer"{% endif %}>
       {{ csrf_input(request) }}
       <button type="submit" class="btn btn-ghost btn-sm"
@@ -85,7 +85,7 @@
     </form>
 
     <form action="/admin/users/{{ target.id }}/delete" method="post" style="margin-left:auto;"
-          onsubmit="return confirm('Supprimer définitivement {{ target.name }} et toutes ses données ?')">
+          data-confirm="Supprimer définitivement {{ target.name }} et toutes ses données ?">
       {{ csrf_input(request) }}
       <button type="submit" class="btn btn-danger btn-sm">Supprimer</button>
     </form>

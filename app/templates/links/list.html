@@ -25,7 +25,7 @@
   {% if link.thumbnail_url %}
   <a href="{{ link.url }}" target="_blank" rel="noopener" class="link-thumbnail">
     <img src="{{ link.thumbnail_url }}"
-         onerror="this.parentElement.style.display='none'"
+         data-hide-on-error="parent"
          alt="">
   </a>
   {% endif %}
@@ -33,7 +33,7 @@
     <div class="link-source">
       <img class="link-favicon"
            src="{{ link.favicon_url }}"
-           onerror="this.style.display='none'"
+           data-hide-on-error="self"
            alt="">
       <span class="link-domain">{{ link.url | domain }}</span>
     </div>
@@ -54,7 +54,7 @@
   <div class="link-actions">
     <a href="/links/{{ link.id }}/edit" class="btn btn-ghost btn-sm" title="Modifier">✏️</a>
     <form action="/links/{{ link.id }}/delete" method="post"
-          onsubmit="return confirm('Supprimer ce lien ?')">
+          data-confirm="Supprimer ce lien ?">
       {{ csrf_input(request) }}
       <button type="submit" class="btn btn-ghost btn-sm" title="Supprimer">🗑️</button>
     </form>

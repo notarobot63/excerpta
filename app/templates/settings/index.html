@@ -10,29 +10,23 @@
 
   <h3 style="font-size:0.9rem;font-weight:600;margin:0 0 0.75rem;color:var(--text-muted)">Apparence</h3>
   <div style="display:flex;flex-wrap:wrap;gap:0.5rem;" id="theme-picker">
-    <button class="btn btn-ghost btn-sm" onclick="applyTheme('light')">☀️ Light</button>
-    <button class="btn btn-ghost btn-sm" onclick="applyTheme('dark')">🌙 Dark</button>
-    <button class="btn btn-ghost btn-sm" onclick="applyTheme('dracula')">🧛 Dracula</button>
-    <button class="btn btn-ghost btn-sm" onclick="applyTheme('nord')">❄️ Nord</button>
-    <button class="btn btn-ghost btn-sm" onclick="applyTheme('nord-dark')">🌌 Nord Dark</button>
-    <button class="btn btn-ghost btn-sm" onclick="applyTheme('catppuccin')">🐱 Catppuccin</button>
-    <button class="btn btn-ghost btn-sm" onclick="applyTheme('gruvbox')">🪵 Gruvbox</button>
-    <button class="btn btn-ghost btn-sm" onclick="applyTheme('solarized')">🌞 Solarized</button>
-    <button class="btn btn-ghost btn-sm" onclick="applyTheme('rosepine')">🌹 Rosé Pine</button>
+    <button class="btn btn-ghost btn-sm" data-theme-apply="light">☀️ Light</button>
+    <button class="btn btn-ghost btn-sm" data-theme-apply="dark">🌙 Dark</button>
+    <button class="btn btn-ghost btn-sm" data-theme-apply="dracula">🧛 Dracula</button>
+    <button class="btn btn-ghost btn-sm" data-theme-apply="nord">❄️ Nord</button>
+    <button class="btn btn-ghost btn-sm" data-theme-apply="nord-dark">🌌 Nord Dark</button>
+    <button class="btn btn-ghost btn-sm" data-theme-apply="catppuccin">🐱 Catppuccin</button>
+    <button class="btn btn-ghost btn-sm" data-theme-apply="gruvbox">🪵 Gruvbox</button>
+    <button class="btn btn-ghost btn-sm" data-theme-apply="solarized">🌞 Solarized</button>
+    <button class="btn btn-ghost btn-sm" data-theme-apply="rosepine">🌹 Rosé Pine</button>
   </div>
   <p id="theme-label" style="font-size:0.78rem;color:var(--text-muted);margin:0.5rem 0 0;"></p>
-  <script>
-    (function(){
-      var cur = localStorage.getItem('theme') || 'light';
-      document.getElementById('theme-label').textContent = 'Thème actif : ' + cur;
-    })();
-  </script>
 
   <hr style="border:none;border-top:1px solid var(--border);margin:1.5rem 0">
 
   <h3 style="font-size:0.9rem;font-weight:600;margin:0 0 0.75rem;color:var(--text-muted)">Bookmarklet</h3>
   <p>Glisse ce lien dans ta barre de favoris :</p>
-  <a href="{{ bookmarklet|e }}" class="btn btn-primary" onclick="return false;">📌 Ajouter à Excerpta</a>
+  <a href="{{ bookmarklet|e }}" class="btn btn-primary">📌 Ajouter à Excerpta</a>
   <p style="margin-top:0.5rem;font-size:0.85rem;color:var(--text-muted)">Fais glisser le bouton ci-dessus dans la barre de favoris de ton navigateur.</p>
 
   <hr style="border:none;border-top:1px solid var(--border);margin:1.5rem 0">
@@ -40,7 +34,7 @@
   <h3 style="font-size:0.9rem;font-weight:600;margin:0 0 0.75rem;color:var(--text-muted)">Clé API</h3>
   <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;">
     <code style="font-family:monospace;background:var(--bg-secondary);padding:0.25rem 0.5rem;border-radius:4px;word-break:break-all;">{{ api_key_plain|e }}</code>
-    <button class="btn btn-sm btn-ghost" onclick="navigator.clipboard.writeText('{{ api_key_plain|e }}').then(() => this.textContent='Copié !').catch(() => {}); return false;">Copier</button>
+    <button class="btn btn-sm btn-ghost" id="copy-apikey-btn" data-value="{{ api_key_plain|e }}">Copier</button>
   </div>
 
   <hr style="border:none;border-top:1px solid var(--border);margin:1.5rem 0">
@@ -49,6 +43,11 @@
   <p style="font-size:0.85rem;color:var(--text-muted);margin:0 0 0.75rem;">Scanne ce QR code depuis l'app Excerpta pour la configurer automatiquement.</p>
   <img src="/settings/android-qr.png" alt="QR code Android"
        style="width:180px;height:180px;border:1px solid var(--border);border-radius:8px;display:block;">
+
+  <hr style="border:none;border-top:1px solid var(--border);margin:1.5rem 0">
+
+  <h3 style="font-size:0.9rem;font-weight:600;margin:0 0 0.75rem;color:var(--text-muted)">Intégrations</h3>
+  <a href="/settings/freshrss" class="btn btn-ghost">📡 FreshRSS</a>
 
   <hr style="border:none;border-top:1px solid var(--border);margin:1.5rem 0">
 
@@ -61,16 +60,11 @@
     <a href="/settings/import" class="btn btn-ghost">Importer</a>
     <a href="/settings/check-links" class="btn btn-ghost">🔍 Vérifier les liens</a>
     <form action="/settings/refresh-metadata" method="post"
-          onsubmit="return confirm('Rafraîchir les métadonnées de tous les liens ? Peut prendre du temps.')">
+          data-confirm="Rafraîchir les métadonnées de tous les liens ? Peut prendre du temps.">
       {{ csrf_input(request) }}
       <button type="submit" class="btn btn-ghost">🔄 Rafraîchir les métadonnées</button>
     </form>
   </div>
-
-  <hr style="border:none;border-top:1px solid var(--border);margin:1.5rem 0">
-
-  <h3 style="font-size:0.9rem;font-weight:600;margin:0 0 0.75rem;color:var(--text-muted)">Intégrations</h3>
-  <a href="/settings/freshrss" class="btn btn-ghost">📡 FreshRSS</a>
 
   <hr style="border:none;border-top:1px solid var(--border);margin:1.5rem 0">
 

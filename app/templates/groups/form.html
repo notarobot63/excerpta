@@ -48,7 +48,7 @@
       <a href="/groups" class="btn btn-ghost">Annuler</a>
       {% if group %}
       <form action="/groups/{{ group.id }}/delete" method="post" style="margin-left: auto;"
-            onsubmit="return confirm('Supprimer ce groupe ? Les sous-groupes deviendront des groupes racines.')">
+            data-confirm="Supprimer ce groupe ? Les sous-groupes deviendront des groupes racines.">
         {{ csrf_input(request) }}
         <button type="submit" class="btn btn-danger btn-sm">Supprimer</button>
       </form>

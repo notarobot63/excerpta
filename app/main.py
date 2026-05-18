@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import secrets
 from contextlib import asynccontextmanager
 
 from fastapi import Depends, FastAPI, Request
@@ -27,17 +28,6 @@ from .routes.freshrss import sync_all_enabled
 
 logger = logging.getLogger("excerpta")
 
-_CSP = (
-    "default-src 'self'; "
-    "script-src 'self' 'unsafe-inline' 'unsafe-eval'; "
-    "style-src 'self' 'unsafe-inline'; "
-    "img-src 'self' data: https: http:; "
-    "connect-src 'self'; "
-    "frame-ancestors 'none'; "
-    "base-uri 'self'; "
-    "form-action 'self'"
-)
-
 
 async def _freshrss_loop():
     await asyncio.sleep(60)  # délai initial au démarrage
@@ -60,7 +50,13 @@ async def lifespan(app: FastAPI):
             pass
 
 
-app = FastAPI(title=settings.app_name, lifespan=lifespan)
+app = FastAPI(
+    title=settings.app_name,
+    lifespan=lifespan,
+    docs_url=None,
+    redoc_url=None,
+    openapi_url=None,
+)
 app.add_middleware(
     SessionMiddleware,
     secret_key=settings.secret_key,
@@ -72,8 +68,20 @@ app.mount("/static", StaticFiles(directory="/app/static"), name="static")
 
 @app.middleware("http")
 async def security_headers(request: Request, call_next):
+    nonce = secrets.token_urlsafe(16)
+    request.state.nonce = nonce
     response: Response = await call_next(request)
-    response.headers["Content-Security-Policy"] = _CSP
+    csp = (
+        "default-src 'self'; "
+        f"script-src 'self' 'nonce-{nonce}'; "
+        "style-src 'self' 'unsafe-inline'; "
+        "img-src 'self' data: https: http:; "
+        "connect-src 'self'; "
+        "frame-ancestors 'none'; "
+        "base-uri 'self'; "
+        "form-action 'self'"
+    )
+    response.headers["Content-Security-Policy"] = csp
     response.headers["X-Frame-Options"] = "DENY"
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["X-XSS-Protection"] = "1; mode=block"

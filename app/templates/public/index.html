@@ -6,7 +6,7 @@
   <title>Liens publics - Excerpta</title>
   <link rel="icon" type="image/png" href="/static/favicon.png">
   <link rel="stylesheet" href="/static/style.css">
-  <script>
+  <script nonce="{{ request.state.nonce }}">
     (function() {
       var t = localStorage.getItem('theme') || 'light';
       document.documentElement.setAttribute('data-theme', t);
@@ -27,7 +27,7 @@
       {% if q %}<a href="/public" class="btn btn-ghost btn-sm">✕</a>{% endif %}
     </form>
 
-    <select class="theme-select" onchange="(function(t){document.documentElement.setAttribute('data-theme',t);localStorage.setItem('theme',t);})(this.value)" id="theme-select">
+    <select class="theme-select" id="theme-select">
       <option value="light">☀️ Light</option>
       <option value="dark">🌙 Dark</option>
       <option value="dracula">🧛 Dracula</option>
@@ -61,7 +61,7 @@
     <div class="link-body">
       <div class="link-source">
         <img class="link-favicon" src="{{ link.favicon_url }}"
-             onerror="this.style.visibility='hidden'" alt="">
+             data-hide-on-error="hidden" alt="">
         <span class="link-domain">{{ link.url | domain }}</span>
       </div>
       <a class="link-title" href="{{ link.url }}" target="_blank" rel="noopener">
@@ -96,12 +96,7 @@
 
 </div>
 
-<script>
-  (function() {
-    var t = localStorage.getItem('theme') || 'light';
-    var sel = document.getElementById('theme-select');
-    if (sel) sel.value = t;
-  })();
-</script>
+<script src="/static/theme.js"></script>
+<script src="/static/app.js"></script>
 </body>
 </html>

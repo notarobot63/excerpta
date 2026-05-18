@@ -4,19 +4,19 @@ import secrets
 from pydantic import model_validator
 from pydantic_settings import BaseSettings
 
-logger = logging.getLogger("linky")
+logger = logging.getLogger("excerpta")
 
 _WEAK_KEYS = {"changeme", "changeme_generate_a_real_one", "secret", ""}
 
 
 class Settings(BaseSettings):
-    database_url: str = "sqlite:////app/data/linky.db"
+    database_url: str = "sqlite:////app/data/excerpta.db"
     secret_key: str = ""
     base_url: str = "http://localhost:8000"
     oidc_client_id: str = ""
     oidc_client_secret: str = ""
     oidc_issuer: str = ""
-    app_name: str = "Linky"
+    app_name: str = "Excerpta"
     admin_email: str = ""
     freshrss_sync_interval: int = 30  # minutes entre chaque sync automatique
 
