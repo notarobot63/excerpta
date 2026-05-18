@@ -76,7 +76,7 @@ async def security_headers(request: Request, call_next):
     response: Response = await call_next(request)
     csp = (
         "default-src 'self'; "
-        f"script-src 'self' 'nonce-{nonce}'; "
+        f"script-src 'self' 'nonce-{nonce}' 'unsafe-eval'; "
         "style-src 'self' 'unsafe-inline'; "
         "img-src 'self' data: https: http:; "
         "connect-src 'self'; "

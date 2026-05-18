@@ -65,7 +65,7 @@
     <progress id="refresh-bar" value="0" max="100" style="width:100%;height:6px;"></progress>
     <p id="refresh-text" style="font-size:0.82rem;color:var(--text-muted);margin:0.35rem 0 0;"></p>
   </div>
-  <script>
+  <script nonce="{{ request.state.nonce }}">
   document.getElementById('refresh-form').addEventListener('submit', async function(e) {
     e.preventDefault();
     const btn = document.getElementById('refresh-btn');
