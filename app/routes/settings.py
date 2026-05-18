@@ -1,7 +1,7 @@
 import asyncio
 import io
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 from urllib.parse import urlparse
 from .links import _safe_url
@@ -52,9 +52,9 @@ def _parse_netscape(html: str) -> list[dict]:
         favicon = f"{parsed.scheme}://{parsed.netloc}/favicon.ico"
         items.append({
             "url": href,
-            "title": a.get_text(strip=True) or href,
+            "title": (a.get_text(strip=True) or href)[:500],
             "tags": tags,
-            "note": note,
+            "note": note[:50_000],
             "favicon_url": favicon,
         })
     return items
@@ -71,10 +71,13 @@ def _build_netscape(links: list[Link]) -> str:
     ]
     for lk in links:
         tags = escape(",".join(t.name for t in lk.tags), quote=True)
+        groups = escape(",".join(g.name for g in lk.groups), quote=True)
         ts = int(lk.created_at.timestamp())
         title = escape(lk.title)
         url = escape(lk.url, quote=True)
-        lines.append(f'    <DT><A HREF="{url}" ADD_DATE="{ts}" TAGS="{tags}">{title}</A>')
+        lines.append(
+            f'    <DT><A HREF="{url}" ADD_DATE="{ts}" TAGS="{tags}" GROUPS="{groups}">{title}</A>'
+        )
         body = lk.note or lk.description
         if body:
             lines.append(f"    <DD>{escape(body)}")
@@ -244,7 +247,7 @@ async def export_links(
 ):
     links = list(session.exec(select(Link).where(Link.user_id == user.id).order_by(Link.created_at.desc())).all())
     content = _build_netscape(links)
-    filename = f"excerpta-export-{datetime.utcnow().strftime('%Y%m%d')}.html"
+    filename = f"excerpta-export-{datetime.now(timezone.utc).strftime('%Y%m%d')}.html"
     return Response(
         content=content.encode("utf-8"),
         media_type="text/html",
@@ -265,11 +268,13 @@ async def _check_link(client: httpx.AsyncClient, link) -> dict:
 
 
 async def _check_all(links) -> list[dict]:
-    sem = asyncio.Semaphore(10)
+    sem = asyncio.Semaphore(5)
 
     async def _guarded(client, link):
         async with sem:
-            return await _check_link(client, link)
+            result = await _check_link(client, link)
+            await asyncio.sleep(0.2)
+            return result
 
     headers = {"User-Agent": "Mozilla/5.0 (compatible; Excerpta/1.0; link-checker)"}
     async with httpx.AsyncClient(timeout=10, follow_redirects=True, headers=headers) as client:
@@ -336,7 +341,7 @@ async def archive_link(
         else:
             archived = f"https://web.archive.org/web/*/{link.url}"
         link.archived_url = archived
-        link.archived_at = datetime.utcnow()
+        link.archived_at = datetime.now(timezone.utc).replace(tzinfo=None)
         session.add(link)
         session.commit()
     except Exception:

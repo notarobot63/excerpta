@@ -1,3 +1,5 @@
+import asyncio
+import logging
 from contextlib import asynccontextmanager
 
 from fastapi import Depends, FastAPI, Request
@@ -19,6 +21,11 @@ from .routes import settings as settings_router
 from .routes import public as public_router
 from .routes import admin as admin_router
 from .routes import api as api_router
+from .routes.freshrss import settings_router as freshrss_settings_router
+from .routes.freshrss import api_router as freshrss_api_router
+from .routes.freshrss import sync_all_enabled
+
+logger = logging.getLogger("excerpta")
 
 _CSP = (
     "default-src 'self'; "
@@ -32,10 +39,25 @@ _CSP = (
 )
 
 
+async def _freshrss_loop():
+    await asyncio.sleep(60)  # délai initial au démarrage
+    while True:
+        await sync_all_enabled()
+        await asyncio.sleep(settings.freshrss_sync_interval * 60)
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     init_db()
-    yield
+    task = asyncio.create_task(_freshrss_loop())
+    try:
+        yield
+    finally:
+        task.cancel()
+        try:
+            await task
+        except asyncio.CancelledError:
+            pass
 
 
 app = FastAPI(title=settings.app_name, lifespan=lifespan)
@@ -76,6 +98,8 @@ app.include_router(settings_router.router, dependencies=_csrf)
 app.include_router(public_router.router)  # pas de CSRF ni auth
 app.include_router(admin_router.router, dependencies=_csrf)
 app.include_router(api_router.router)  # JSON API - pas de CSRF, auth par X-API-Key
+app.include_router(freshrss_settings_router, dependencies=_csrf)
+app.include_router(freshrss_api_router)  # JSON API FreshRSS - pas de CSRF
 
 
 @app.get("/health")

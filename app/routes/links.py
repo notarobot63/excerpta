@@ -1,18 +1,18 @@
 import ipaddress
 import re
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Optional
 from urllib.parse import urlencode, urlparse
 
 import httpx
 from bs4 import BeautifulSoup
-from fastapi import APIRouter, Depends, Form, HTTPException, Request
+from fastapi import APIRouter, BackgroundTasks, Depends, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
-from sqlalchemy import text
+from sqlalchemy import func, text
 from sqlmodel import Session, select
 
 from ..auth import get_current_user
-from ..database import get_session
+from ..database import engine as db_engine, get_session
 from ..models import Group, Link, LinkGroupLink, LinkTagLink, Tag, User
 from ..ratelimit import rate_limit
 from ..templates_cfg import templates
@@ -132,6 +132,37 @@ async def _fetch_meta(url: str) -> dict:
         return {"title": "", "description": "", "favicon_url": ""}
 
 
+async def _fetch_and_update_meta(link_id: int, url: str) -> None:
+    """Récupère les métadonnées en arrière-plan et complète les champs vides du lien."""
+    meta = await _fetch_meta(url)
+    with Session(db_engine) as s:
+        link = s.get(Link, link_id)
+        if not link:
+            return
+        changed = False
+        if (not link.title or link.title == url) and meta.get("title"):
+            link.title = meta["title"][:MAX_TITLE_LEN]
+            changed = True
+        if not link.description and meta.get("description"):
+            link.description = meta["description"][:MAX_DESC_LEN]
+            changed = True
+        if not link.favicon_url and meta.get("favicon_url"):
+            link.favicon_url = meta["favicon_url"]
+            changed = True
+        if not link.thumbnail_url and meta.get("thumbnail_url"):
+            link.thumbnail_url = meta["thumbnail_url"]
+            changed = True
+        if changed:
+            s.add(link)
+            s.flush()
+            tags = list(s.exec(
+                select(Tag).join(LinkTagLink, LinkTagLink.tag_id == Tag.id)
+                .where(LinkTagLink.link_id == link.id)
+            ).all())
+            refresh_link_fts(s, link, tags)
+            s.commit()
+
+
 def _get_or_create_tags(session: Session, user_id: int, names: List[str]) -> List[Tag]:
     return [get_or_create_tag(session, user_id, n.strip().lower()) for n in names if n.strip()]
 
@@ -160,7 +191,7 @@ async def list_links(
     user: User = Depends(get_current_user),
     session: Session = Depends(get_session),
 ):
-    base_query = select(Link).where(Link.user_id == user.id)
+    stmt = select(Link).where(Link.user_id == user.id)
 
     if q:
         escaped = _fts_escape(q)
@@ -170,23 +201,42 @@ async def list_links(
                 {"q": escaped},
             ).fetchall()
             link_ids = [r[0] for r in rows]
+            stmt = stmt.where(Link.id.in_(link_ids)) if link_ids else stmt.where(Link.id < 0)
         except Exception:
-            link_ids = []
-        links = list(session.exec(base_query.where(Link.id.in_(link_ids))).all()) if link_ids else []
-    else:
-        links = list(session.exec(base_query.order_by(Link.created_at.desc())).all())
+            q_like = f"%{q}%"
+            stmt = stmt.where(
+                Link.title.ilike(q_like) | Link.url.ilike(q_like) | Link.description.ilike(q_like)
+            )
 
     if tag:
-        links = [lk for lk in links if any(t.name == tag for t in lk.tags)]
+        tag_obj = session.exec(
+            select(Tag).where(Tag.user_id == user.id, Tag.name == tag)
+        ).first()
+        if tag_obj:
+            stmt = stmt.join(LinkTagLink, LinkTagLink.link_id == Link.id).where(
+                LinkTagLink.tag_id == tag_obj.id
+            )
+        else:
+            stmt = select(Link).where(Link.id < 0)
+
     if group_id:
         all_grps = list(session.exec(select(Group).where(Group.user_id == user.id)).all())
-        gids = set(descendant_group_ids(all_grps, group_id))
-        links = [lk for lk in links if any(g.id in gids for g in lk.groups)]
+        gids = descendant_group_ids(all_grps, group_id)
+        stmt = (
+            stmt.join(LinkGroupLink, LinkGroupLink.link_id == Link.id)
+            .where(LinkGroupLink.group_id.in_(gids))
+            .distinct()
+        )
 
-    total = len(links)
+    total = session.execute(
+        select(func.count()).select_from(stmt.subquery())
+    ).scalar_one()
+
     page = max(1, min(page, max(1, (total + PER_PAGE - 1) // PER_PAGE)))
     total_pages = max(1, (total + PER_PAGE - 1) // PER_PAGE)
-    links = links[(page - 1) * PER_PAGE : page * PER_PAGE]
+    links = list(session.exec(
+        stmt.order_by(Link.created_at.desc()).offset((page - 1) * PER_PAGE).limit(PER_PAGE)
+    ).all())
 
     def _qs(p: int) -> str:
         params: dict = {}
@@ -251,6 +301,7 @@ async def add_form(
 @router.post("/links/add")
 async def add_link(
     request: Request,
+    background_tasks: BackgroundTasks,
     url: str = Form(...),
     title: str = Form("", max_length=MAX_TITLE_LEN),
     description: str = Form("", max_length=MAX_DESC_LEN),
@@ -264,21 +315,13 @@ async def add_link(
     if not _safe_url(url):
         raise HTTPException(status_code=400, detail="URL invalide")
 
-    meta = await _fetch_meta(url)
-    if not title:
-        title = meta.get("title", "")
-    if not description:
-        description = meta.get("description", "")
-    favicon_url = meta.get("favicon_url", "")
-    thumbnail_url = meta.get("thumbnail_url", "")
-
     link = Link(
         user_id=user.id,
         url=url,
         title=title or url,
         description=description,
-        favicon_url=favicon_url,
-        thumbnail_url=thumbnail_url,
+        favicon_url="",
+        thumbnail_url="",
         note=note,
         is_public=is_public is not None,
     )
@@ -296,6 +339,8 @@ async def add_link(
     session.flush()
     refresh_link_fts(session, link, link_tags)
     session.commit()
+
+    background_tasks.add_task(_fetch_and_update_meta, link.id, url)
 
     return RedirectResponse(url="/", status_code=303)
 
@@ -357,7 +402,7 @@ async def edit_link(
     link.description = description
     link.note = note
     link.is_public = is_public is not None
-    link.updated_at = datetime.utcnow()
+    link.updated_at = datetime.now(timezone.utc).replace(tzinfo=None)
     if not link.thumbnail_url:
         link.thumbnail_url = meta.get("thumbnail_url", "")
     session.add(link)

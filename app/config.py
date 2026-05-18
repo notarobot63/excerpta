@@ -18,6 +18,7 @@ class Settings(BaseSettings):
     oidc_issuer: str = ""
     app_name: str = "Linky"
     admin_email: str = ""
+    freshrss_sync_interval: int = 30  # minutes entre chaque sync automatique
 
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
 

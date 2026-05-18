@@ -1,8 +1,12 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional, List
 import secrets
 
 from sqlmodel import SQLModel, Field, Relationship
+
+
+def _utcnow() -> datetime:
+    return datetime.now(timezone.utc).replace(tzinfo=None)
 
 
 class LinkTagLink(SQLModel, table=True):
@@ -28,7 +32,7 @@ class User(SQLModel, table=True):
     is_admin: bool = Field(default=False)
     is_active: bool = Field(default=True)
     session_version: int = Field(default=0)
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=_utcnow)
 
     links: List["Link"] = Relationship(back_populates="user")
     tags: List["Tag"] = Relationship(back_populates="user")
@@ -70,9 +74,22 @@ class Link(SQLModel, table=True):
     is_public: bool = Field(default=False)
     archived_url: Optional[str] = Field(default=None)
     archived_at: Optional[datetime] = Field(default=None)
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=_utcnow)
+    updated_at: datetime = Field(default_factory=_utcnow)
 
     user: Optional[User] = Relationship(back_populates="links")
     tags: List[Tag] = Relationship(back_populates="links", link_model=LinkTagLink)
     groups: List[Group] = Relationship(back_populates="links", link_model=LinkGroupLink)
+
+
+class FreshRSSConfig(SQLModel, table=True):
+    __tablename__ = "freshrss_configs"
+    id: Optional[int] = Field(default=None, primary_key=True)
+    user_id: int = Field(foreign_key="users.id", unique=True, index=True)
+    freshrss_url: str = Field(default="")
+    freshrss_user: str = Field(default="")
+    freshrss_token: str = Field(default="")
+    group_name: str = Field(default="FreshRSS")
+    is_enabled: bool = Field(default=False)
+    last_sync: Optional[datetime] = Field(default=None)
+    synced_count: int = Field(default=0)

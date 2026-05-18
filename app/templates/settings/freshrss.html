@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+
+{% block title %}FreshRSS - Excerpta{% endblock %}
+
+{% block content %}
+<div class="form-card" style="max-width: 700px;">
+  <h2 style="font-size: 1.1rem; font-weight: 600; margin: 0 0 1.25rem;">Synchronisation FreshRSS</h2>
+
+  {% if request.query_params.get('saved') is not none %}
+  <p style="font-size:0.85rem;color:#2ecc71;margin:0 0 0.75rem;">✓ Configuration sauvegardée.</p>
+  {% endif %}
+  {% if request.query_params.get('synced') is not none %}
+  <p style="font-size:0.85rem;color:#2ecc71;margin:0 0 0.75rem;">✓ Synchronisation effectuée.</p>
+  {% endif %}
+
+  <hr style="border:none;border-top:1px solid var(--border);margin:1.5rem 0">
+
+  <form action="/settings/freshrss" method="post">
+    {{ csrf_input(request) }}
+
+    <div style="margin-bottom: 0.75rem;">
+      <label style="display:block;font-size:0.85rem;color:var(--text-muted);margin-bottom:0.25rem;">URL du serveur FreshRSS</label>
+      <input type="text" name="freshrss_url" value="{{ config.freshrss_url if config else '' }}" style="width:100%;padding:0.5rem;border:1px solid var(--border);border-radius:4px;background:var(--bg-secondary);color:inherit;">
+    </div>
+
+    <div style="margin-bottom: 0.75rem;">
+      <label style="display:block;font-size:0.85rem;color:var(--text-muted);margin-bottom:0.25rem;">Nom d'utilisateur</label>
+      <input type="text" name="freshrss_user" value="{{ config.freshrss_user if config else '' }}" style="width:100%;padding:0.5rem;border:1px solid var(--border);border-radius:4px;background:var(--bg-secondary);color:inherit;">
+    </div>
+
+    <div style="margin-bottom: 0.75rem;">
+      <label style="display:block;font-size:0.85rem;color:var(--text-muted);margin-bottom:0.25rem;">Token API</label>
+      <input type="password" name="freshrss_token" value="" style="width:100%;padding:0.5rem;border:1px solid var(--border);border-radius:4px;background:var(--bg-secondary);color:inherit;" placeholder="Ne pas remplir si inchangé">
+    </div>
+
+    <div style="margin-bottom: 0.75rem;">
+      <label style="display:block;font-size:0.85rem;color:var(--text-muted);margin-bottom:0.25rem;">Nom du groupe (catégorie)</label>
+      <input type="text" name="group_name" value="{{ config.group_name if config else 'FreshRSS' }}" style="width:100%;padding:0.5rem;border:1px solid var(--border);border-radius:4px;background:var(--bg-secondary);color:inherit;">
+    </div>
+
+    <div style="margin-bottom: 1rem;display:flex;align-items:center;gap:0.5rem;">
+      <input type="checkbox" name="is_enabled" id="is_enabled" {% if config and config.is_enabled %}checked{% endif %} style="accent-color:var(--primary);">
+      <label for="is_enabled" style="font-size:0.85rem;color:var(--text-muted);">Activer la synchronisation</label>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Enregistrer</button>
+  </form>
+
+  {% if config %}
+  <hr style="border:none;border-top:1px solid var(--border);margin:1.5rem 0">
+
+  <h3 style="font-size:0.9rem;font-weight:600;margin:0 0 0.75rem;color:var(--text-muted)">Statut</h3>
+  <p style="font-size:0.85rem;color:var(--text-muted);margin:0 0 0.25rem;">
+    Dernière synchronisation :
+    {% if config.last_sync %}
+      {{ config.last_sync.strftime('%d/%m/%Y %H:%M') }}
+    {% else %}
+      Jamais
+    {% endif %}
+  </p>
+  <p style="font-size:0.85rem;color:var(--text-muted);margin:0 0 0.25rem;">
+    Liens synchronisés : {{ config.synced_count }}
+  </p>
+  <p style="font-size:0.85rem;color:var(--text-muted);margin:0 0 0.25rem;">
+    Activation : {{ "Oui" if config.is_enabled else "Non" }}
+  </p>
+
+  {% if config.freshrss_url %}
+  <hr style="border:none;border-top:1px solid var(--border);margin:1.5rem 0">
+
+  <form action="/settings/freshrss/sync-now" method="post">
+    {{ csrf_input(request) }}
+    <button type="submit" class="btn btn-ghost btn-sm">🔄 Synchroniser maintenant</button>
+  </form>
+  {% endif %}
+  {% endif %}
+
+  <hr style="border:none;border-top:1px solid var(--border);margin:1.5rem 0">
+
+  <a href="/settings" class="btn btn-ghost btn-sm">← Retour aux paramètres</a>
+</div>
+{% endblock %}
