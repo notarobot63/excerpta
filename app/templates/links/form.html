@@ -88,19 +88,19 @@
       <form action="/links/{{ link.id }}/archive" method="post" style="display:inline;"
             title="{% if link.archived_url %}Ré-archiver{% else %}Archiver sur Wayback Machine{% endif %}">
         {{ csrf_input(request) }}
-        <button type="submit" class="btn btn-ghost btn-sm">
+        <button type="submit" class="btn btn-ghost">
           {% if link.archived_url %}🏛 Ré-archiver{% else %}🏛 Archiver{% endif %}
         </button>
       </form>
       {% if link.archived_url %}
-      <a href="{{ link.archived_url }}" target="_blank" class="btn btn-ghost btn-sm" style="color:var(--text-muted)">
+      <a href="{{ link.archived_url }}" target="_blank" class="btn btn-ghost" style="color:var(--text-muted)">
         📎 Archive
       </a>
       {% endif %}
       <form action="/links/{{ link.id }}/delete" method="post" style="margin-left: auto;"
             data-confirm="Supprimer ce lien ?">
         {{ csrf_input(request) }}
-        <button type="submit" class="btn btn-danger btn-sm">Supprimer</button>
+        <button type="submit" class="btn btn-danger">Supprimer</button>
       </form>
       {% endif %}
     </div>
