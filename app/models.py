@@ -79,8 +79,8 @@ class Link(SQLModel, table=True):
     updated_at: datetime = Field(default_factory=_utcnow)
 
     user: Optional[User] = Relationship(back_populates="links")
-    tags: List[Tag] = Relationship(back_populates="links", link_model=LinkTagLink)
-    groups: List[Group] = Relationship(back_populates="links", link_model=LinkGroupLink)
+    tags: List[Tag] = Relationship(back_populates="links", link_model=LinkTagLink, sa_relationship_kwargs={"lazy": "selectin"})
+    groups: List[Group] = Relationship(back_populates="links", link_model=LinkGroupLink, sa_relationship_kwargs={"lazy": "selectin"})
 
 
 class FreshRSSConfig(SQLModel, table=True):

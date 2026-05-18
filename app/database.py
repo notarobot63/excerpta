@@ -99,6 +99,13 @@ def init_db():
                     (encrypt(token), row_id),
                 )
 
+    # Index de performance
+    con.execute("CREATE INDEX IF NOT EXISTS idx_links_user_created ON links(user_id, created_at DESC)")
+    con.execute("CREATE INDEX IF NOT EXISTS idx_tags_user_id ON tags(user_id)")
+    con.execute("CREATE INDEX IF NOT EXISTS idx_groups_user_id ON groups(user_id)")
+    con.execute("CREATE INDEX IF NOT EXISTS idx_link_tags_tag_id ON link_tags(tag_id)")
+    con.execute("CREATE INDEX IF NOT EXISTS idx_link_groups_group_id ON link_groups(group_id)")
+
     con.commit()
     con.close()
 

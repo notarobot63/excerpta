@@ -74,6 +74,9 @@ async def security_headers(request: Request, call_next):
     nonce = secrets.token_urlsafe(16)
     request.state.nonce = nonce
     response: Response = await call_next(request)
+    if request.url.path.startswith("/static/"):
+        response.headers["Cache-Control"] = "public, max-age=3600"
+        return response
     csp = (
         "default-src 'self'; "
         f"script-src 'self' 'nonce-{nonce}' 'unsafe-eval'; "
