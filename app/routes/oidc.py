@@ -47,8 +47,6 @@ def _maybe_promote_admin(session: Session, user: User, is_new: bool) -> None:
 
 @router.get("/auth/oidc/start")
 async def oidc_start(request: Request):
-    if not settings.oidc_client_id:
-        return RedirectResponse(url="/auth/dev-login", status_code=303)
     redirect_uri = f"{settings.base_url}/auth/oidc/callback"
     return await _get_client().pocketid.authorize_redirect(request, redirect_uri)
 
