@@ -403,8 +403,7 @@ async def edit_link(
     link.note = note
     link.is_public = is_public is not None
     link.updated_at = datetime.now(timezone.utc).replace(tzinfo=None)
-    if not link.thumbnail_url:
-        link.thumbnail_url = meta.get("thumbnail_url", "")
+    link.thumbnail_url = meta.get("thumbnail_url", "") or link.thumbnail_url
     session.add(link)
     session.flush()
 
