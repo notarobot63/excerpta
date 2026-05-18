@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Body, Depends, Header, HTTPException, Path, Query, Request
 from pydantic import BaseModel, Field
-from sqlalchemy import text
+from sqlalchemy import func, text
 from sqlmodel import Session, select
 from typing import List, Optional
 
@@ -116,7 +116,7 @@ async def api_list_links(
 
     stmt = stmt.order_by(Link.created_at.desc())
 
-    total = len(session.exec(stmt).all())
+    total = session.execute(select(func.count()).select_from(stmt.subquery())).scalar_one()
     links = session.exec(stmt.offset((page - 1) * per_page).limit(per_page)).all()
 
     return {

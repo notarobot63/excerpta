@@ -11,7 +11,7 @@ import qrcode
 from bs4 import BeautifulSoup
 from fastapi import APIRouter, Depends, File, Request, UploadFile
 from fastapi.responses import HTMLResponse, RedirectResponse, Response
-from sqlalchemy import text
+from sqlalchemy import or_, text
 from sqlmodel import Session, select
 
 from ..auth import get_current_user
@@ -137,11 +137,19 @@ async def refresh_metadata(
     user: User = Depends(get_current_user),
     session: Session = Depends(get_session),
 ):
-    links = list(session.exec(select(Link).where(Link.user_id == user.id)).all())
+    links = list(session.exec(
+        select(Link).where(
+            Link.user_id == user.id,
+            or_(
+                Link.thumbnail_url == None,
+                Link.thumbnail_url == "",
+                Link.description == None,
+                Link.description == "",
+            ),
+        ).limit(500)
+    ).all())
     updated = 0
     for link in links:
-        if link.thumbnail_url and link.description:
-            continue
         try:
             meta = await _fetch_meta(link.url)
             changed = False

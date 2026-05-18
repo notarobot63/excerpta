@@ -91,11 +91,19 @@ async def sync_user(config: FreshRSSConfig, session: Session) -> int:
         session.add(group)
         session.flush()
 
+    candidate_urls = [u for u in (_extract_url(i) for i in items) if u]
+    if not candidate_urls:
+        return 0
+
+    params: dict = {"uid": config.user_id}
+    for i, u in enumerate(candidate_urls):
+        params[f"u{i}"] = u
+    placeholders = ", ".join(f":u{i}" for i in range(len(candidate_urls)))
     existing_urls = {
         row[0]
         for row in session.execute(
-            text("SELECT url FROM links WHERE user_id = :uid"),
-            {"uid": config.user_id},
+            text(f"SELECT url FROM links WHERE user_id = :uid AND url IN ({placeholders})"),
+            params,
         ).fetchall()
     }
 
