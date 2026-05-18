@@ -6,6 +6,7 @@ from sqlmodel import Session, select
 from threading import Lock
 
 from ..config import settings
+from ..crypto import encrypt, hmac_key
 from ..database import get_session
 from ..models import User
 
@@ -81,10 +82,14 @@ async def oidc_callback(request: Request, session: Session = Depends(get_session
                 user = existing2
                 is_new = False
             else:
+                import secrets as _sec
+                raw_key = _sec.token_urlsafe(32)
                 user = User(
                     oidc_sub=sub,
                     email=userinfo.get("email", ""),
                     name=userinfo.get("name", "") or userinfo.get("preferred_username", ""),
+                    api_key=encrypt(raw_key),
+                    api_key_hmac=hmac_key(raw_key),
                 )
                 session.add(user)
                 session.flush()

@@ -4,6 +4,7 @@ from sqlalchemy.engine import Engine
 from sqlmodel import create_engine, Session, SQLModel
 
 from .config import settings
+from .crypto import encrypt, hmac_key, is_encrypted
 
 engine = create_engine(
     settings.database_url,
@@ -66,6 +67,38 @@ def init_db():
     lcols = [r[1] for r in con.execute("PRAGMA table_info(links)").fetchall()]
     if "thumbnail_url" not in lcols:
         con.execute("ALTER TABLE links ADD COLUMN thumbnail_url TEXT NOT NULL DEFAULT ''")
+
+    # Chiffrement api_key + ajout api_key_hmac
+    ucols = [r[1] for r in con.execute("PRAGMA table_info(users)").fetchall()]
+    if "api_key_hmac" not in ucols:
+        con.execute("ALTER TABLE users ADD COLUMN api_key_hmac TEXT")
+    rows = con.execute("SELECT id, api_key FROM users WHERE api_key_hmac IS NULL").fetchall()
+    for row_id, api_key in rows:
+        if api_key is None:
+            continue
+        if not is_encrypted(api_key):
+            enc = encrypt(api_key)
+            hm = hmac_key(api_key)
+            con.execute("UPDATE users SET api_key = ?, api_key_hmac = ? WHERE id = ?",
+                        (enc, hm, row_id))
+        else:
+            from .crypto import decrypt
+            hm = hmac_key(decrypt(api_key))
+            con.execute("UPDATE users SET api_key_hmac = ? WHERE id = ?", (hm, row_id))
+
+    # Chiffrement freshrss_token
+    if con.execute(
+        "SELECT name FROM sqlite_master WHERE type='table' AND name='freshrss_configs'"
+    ).fetchone():
+        for row_id, token in con.execute(
+            "SELECT id, freshrss_token FROM freshrss_configs"
+        ).fetchall():
+            if token and not is_encrypted(token):
+                con.execute(
+                    "UPDATE freshrss_configs SET freshrss_token = ? WHERE id = ?",
+                    (encrypt(token), row_id),
+                )
+
     con.commit()
     con.close()
 

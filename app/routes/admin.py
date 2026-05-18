@@ -2,6 +2,8 @@ import logging
 import secrets
 
 from fastapi import APIRouter, Depends, HTTPException, Request
+
+from ..crypto import encrypt, hmac_key
 from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlalchemy import text
 from sqlmodel import Session
@@ -183,7 +185,9 @@ async def regen_key(
     target = session.get(User, uid)
     if not target:
         raise HTTPException(status_code=404)
-    target.api_key = secrets.token_urlsafe(32)
+    new_key = secrets.token_urlsafe(32)
+    target.api_key = encrypt(new_key)
+    target.api_key_hmac = hmac_key(new_key)
     session.add(target)
     session.commit()
     _log.info("admin#%s regenerated API key for user#%s", admin.id, uid)

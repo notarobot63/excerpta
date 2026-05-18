@@ -28,6 +28,7 @@ class User(SQLModel, table=True):
     email: str = Field(default="")
     name: str = Field(default="")
     api_key: str = Field(default_factory=lambda: secrets.token_urlsafe(32))
+    api_key_hmac: str = Field(default="")
     theme: str = Field(default="light")
     is_admin: bool = Field(default=False)
     is_active: bool = Field(default=True)

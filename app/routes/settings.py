@@ -16,6 +16,7 @@ from sqlmodel import Session, select
 
 from ..auth import get_current_user
 from ..config import settings as cfg
+from ..crypto import decrypt
 from ..database import get_session
 from ..models import Group, Link, LinkGroupLink, LinkTagLink, Tag, User
 from ..ratelimit import rate_limit
@@ -107,6 +108,7 @@ async def settings_page(
         {
             "request": request,
             "user": user,
+            "api_key_plain": decrypt(user.api_key),
             "bookmarklet": bookmarklet,
             "link_count": link_count,
             **sidebar_data(session, user.id),
@@ -120,7 +122,7 @@ async def settings_page(
 async def android_qr(
     user: User = Depends(get_current_user),
 ):
-    data = json.dumps({"server": cfg.base_url, "key": user.api_key})
+    data = json.dumps({"server": cfg.base_url, "key": decrypt(user.api_key)})
     img = qrcode.make(data)
     buf = io.BytesIO()
     img.save(buf, format="PNG")

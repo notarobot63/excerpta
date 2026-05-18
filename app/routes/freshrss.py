@@ -11,6 +11,7 @@ from sqlalchemy import text
 from sqlmodel import Session, select
 
 from ..auth import get_current_user
+from ..crypto import decrypt, hmac_key
 from ..database import engine, get_session
 from ..models import FreshRSSConfig, Group, Link, LinkGroupLink, User
 from ..ratelimit import rate_limit
@@ -76,7 +77,7 @@ def _extract_url(item: dict) -> str | None:
 
 async def sync_user(config: FreshRSSConfig, session: Session) -> int:
     """Sync les étoilés FreshRSS d'un utilisateur. Retourne le nombre de liens ajoutés."""
-    auth = await _greader_auth(config.freshrss_url, config.freshrss_user, config.freshrss_token)
+    auth = await _greader_auth(config.freshrss_url, config.freshrss_user, decrypt(config.freshrss_token))
     items = await _greader_starred(config.freshrss_url, auth)
 
     group = session.exec(
@@ -164,7 +165,8 @@ async def _get_api_user(
     x_api_key = request.headers.get("X-API-Key")
     if not x_api_key:
         raise HTTPException(status_code=401, detail="Authentification requise")
-    user = session.exec(select(User).where(User.api_key == x_api_key)).first()
+    computed_hmac = hmac_key(x_api_key)
+    user = session.exec(select(User).where(User.api_key_hmac == computed_hmac)).first()
     if not user or not user.is_active:
         raise HTTPException(status_code=401, detail="Clé API invalide")
     return user
