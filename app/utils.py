@@ -32,9 +32,13 @@ def descendant_group_ids(all_groups: list[Group], root_id: int) -> list[int]:
     for g in all_groups:
         by_parent.setdefault(g.parent_id, []).append(g.id)
     result: list[int] = []
+    seen: set[int] = set()
     queue = [root_id]
     while queue:
         gid = queue.pop(0)
+        if gid in seen:
+            continue
+        seen.add(gid)
         result.append(gid)
         queue.extend(by_parent.get(gid, []))
     return result

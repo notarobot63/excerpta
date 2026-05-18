@@ -11,7 +11,7 @@ from sqlalchemy import text
 from sqlmodel import Session, select
 
 from ..auth import get_current_user
-from ..crypto import decrypt, hmac_key
+from ..crypto import decrypt, encrypt, hmac_key
 from ..database import engine, get_session
 from ..models import FreshRSSConfig, Group, Link, LinkGroupLink, User
 from ..ratelimit import rate_limit
@@ -244,7 +244,7 @@ async def freshrss_settings_save(
     config.freshrss_url = url
     config.freshrss_user = freshrss_user.strip()[:200]
     if freshrss_token.strip():  # ne pas écraser avec vide si champ laissé vide
-        config.freshrss_token = freshrss_token.strip()[:500]
+        config.freshrss_token = encrypt(freshrss_token.strip()[:500])
     config.group_name = group_name.strip()[:200] or "FreshRSS"
     config.is_enabled = is_enabled is not None
     session.add(config)

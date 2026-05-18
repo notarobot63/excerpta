@@ -32,7 +32,10 @@ logger = logging.getLogger("excerpta")
 async def _freshrss_loop():
     await asyncio.sleep(60)  # délai initial au démarrage
     while True:
-        await sync_all_enabled()
+        try:
+            await sync_all_enabled()
+        except Exception:
+            logger.exception("Erreur dans la boucle de sync FreshRSS")
         await asyncio.sleep(settings.freshrss_sync_interval * 60)
 
 
