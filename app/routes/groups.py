@@ -112,6 +112,7 @@ async def edit_group(
 @router.post("/groups/{group_id}/delete")
 async def delete_group(
     group_id: int,
+    delete_links: str = Form("0"),
     user: User = Depends(get_current_user),
     session: Session = Depends(get_session),
 ):
@@ -122,6 +123,22 @@ async def delete_group(
         text("UPDATE groups SET parent_id = NULL WHERE parent_id = :id AND user_id = :uid"),
         {"id": group_id, "uid": user.id},
     )
+    if delete_links == "1":
+        session.execute(
+            text("DELETE FROM link_tags WHERE link_id IN "
+                 "(SELECT link_id FROM link_groups WHERE group_id = :gid)"),
+            {"gid": group_id},
+        )
+        session.execute(
+            text("DELETE FROM fts_links WHERE link_id IN "
+                 "(SELECT link_id FROM link_groups WHERE group_id = :gid)"),
+            {"gid": group_id},
+        )
+        session.execute(
+            text("DELETE FROM links WHERE user_id = :uid AND id IN "
+                 "(SELECT link_id FROM link_groups WHERE group_id = :gid)"),
+            {"uid": user.id, "gid": group_id},
+        )
     session.execute(text("DELETE FROM link_groups WHERE group_id = :id"), {"id": group_id})
     session.delete(group)
     session.commit()

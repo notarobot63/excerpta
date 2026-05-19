@@ -13,11 +13,11 @@ from sqlmodel import Session, select
 from ..auth import get_current_user
 from ..crypto import decrypt, encrypt, hmac_key
 from ..database import engine, get_session
-from ..models import FreshRSSConfig, Group, Link, LinkGroupLink, User
+from ..models import FreshRSSConfig, Group, Link, LinkGroupLink, LinkTagLink, Tag, User
 from ..ratelimit import rate_limit
 from .links import _safe_url
 from ..templates_cfg import templates
-from ..utils import refresh_link_fts, sidebar_data
+from ..utils import get_or_create_tag, refresh_link_fts, sidebar_data
 
 logger = logging.getLogger("excerpta.freshrss")
 
@@ -126,6 +126,7 @@ async def sync_user(config: FreshRSSConfig, session: Session) -> int:
         ).fetchall()
     }
 
+    freshrss_tag = get_or_create_tag(session, config.user_id, "freshrss")
     added = 0
     for item in items:
         url = _extract_url(item)
@@ -159,8 +160,9 @@ async def sync_user(config: FreshRSSConfig, session: Session) -> int:
         session.add(link)
         session.flush()
         session.add(LinkGroupLink(link_id=link.id, group_id=group.id))
+        session.add(LinkTagLink(link_id=link.id, tag_id=freshrss_tag.id))
         session.flush()
-        refresh_link_fts(session, link, [])
+        refresh_link_fts(session, link, [freshrss_tag])
         existing_urls.add(url)
         added += 1
 

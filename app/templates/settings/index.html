@@ -138,6 +138,28 @@
 
   <hr style="border:none;border-top:1px solid var(--border);margin:1.5rem 0">
 
+  <h3 style="font-size:0.9rem;font-weight:600;margin:0 0 0.75rem;color:var(--btn-danger)">Zone de danger</h3>
+  <div style="display:flex;flex-direction:column;gap:0.75rem;">
+    <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;">
+      <form action="/settings/purge-freshrss" method="post"
+            data-confirm="Supprimer tous les liens du groupe FreshRSS et réinitialiser le compteur de synchro ?">
+        {{ csrf_input(request) }}
+        <button type="submit" class="btn btn-danger btn-sm">Purger les liens FreshRSS</button>
+      </form>
+      <span style="font-size:0.78rem;color:var(--text-muted)">Supprime tous les liens du groupe FreshRSS configuré.</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;">
+      <form action="/settings/purge-all" method="post"
+            data-confirm="Supprimer TOUS vos liens, tags et groupes ? Cette action est irréversible.">
+        {{ csrf_input(request) }}
+        <button type="submit" class="btn btn-danger btn-sm">Purger toutes les données</button>
+      </form>
+      <span style="font-size:0.78rem;color:var(--text-muted)">Supprime définitivement tous vos liens, tags et groupes.</span>
+    </div>
+  </div>
+
+  <hr style="border:none;border-top:1px solid var(--border);margin:1.5rem 0">
+
   <h3 style="font-size:0.9rem;font-weight:600;margin:0 0 0.75rem;color:var(--text-muted)">Compte</h3>
   <p><strong>{{ user.name|e }}</strong> - {{ user.email|e }}</p>
   <p><a href="/auth/logout" class="btn btn-ghost btn-sm">Se déconnecter</a></p>

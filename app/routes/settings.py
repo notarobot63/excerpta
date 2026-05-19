@@ -291,6 +291,60 @@ async def import_links(
     return RedirectResponse(url=f"/settings/import?imported={imported}&skipped={skipped}", status_code=303)
 
 
+# ── Purge FreshRSS ────────────────────────────────────────────────────────────
+
+@router.post("/settings/purge-freshrss", dependencies=[Depends(rate_limit(3, 3600))])
+async def purge_freshrss(
+    user: User = Depends(get_current_user),
+    session: Session = Depends(get_session),
+):
+    config = session.exec(select(FreshRSSConfig).where(FreshRSSConfig.user_id == user.id)).first()
+    if config:
+        group = session.exec(
+            select(Group).where(Group.user_id == user.id, Group.name == config.group_name)
+        ).first()
+        if group:
+            session.execute(
+                text("DELETE FROM link_tags WHERE link_id IN "
+                     "(SELECT link_id FROM link_groups WHERE group_id = :gid)"),
+                {"gid": group.id},
+            )
+            session.execute(
+                text("DELETE FROM fts_links WHERE link_id IN "
+                     "(SELECT link_id FROM link_groups WHERE group_id = :gid)"),
+                {"gid": group.id},
+            )
+            session.execute(
+                text("DELETE FROM links WHERE user_id = :uid AND id IN "
+                     "(SELECT link_id FROM link_groups WHERE group_id = :gid)"),
+                {"uid": user.id, "gid": group.id},
+            )
+            session.execute(text("DELETE FROM link_groups WHERE group_id = :id"), {"id": group.id})
+            session.delete(group)
+        config.synced_count = 0
+        config.last_sync = None
+        session.add(config)
+    session.commit()
+    return RedirectResponse(url="/settings?purged=freshrss", status_code=303)
+
+
+# ── Purge tout ────────────────────────────────────────────────────────────────
+
+@router.post("/settings/purge-all", dependencies=[Depends(rate_limit(1, 3600))])
+async def purge_all(
+    user: User = Depends(get_current_user),
+    session: Session = Depends(get_session),
+):
+    session.execute(text("DELETE FROM link_tags WHERE link_id IN (SELECT id FROM links WHERE user_id = :uid)"), {"uid": user.id})
+    session.execute(text("DELETE FROM link_groups WHERE link_id IN (SELECT id FROM links WHERE user_id = :uid)"), {"uid": user.id})
+    session.execute(text("DELETE FROM fts_links WHERE link_id IN (SELECT id FROM links WHERE user_id = :uid)"), {"uid": user.id})
+    session.execute(text("DELETE FROM links WHERE user_id = :uid"), {"uid": user.id})
+    session.execute(text("DELETE FROM tags WHERE user_id = :uid"), {"uid": user.id})
+    session.execute(text("DELETE FROM groups WHERE user_id = :uid"), {"uid": user.id})
+    session.commit()
+    return RedirectResponse(url="/settings?purged=all", status_code=303)
+
+
 # ── Export ────────────────────────────────────────────────────────────────────
 
 @router.get("/settings/export")
