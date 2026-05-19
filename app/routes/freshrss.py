@@ -15,6 +15,7 @@ from ..crypto import decrypt, encrypt, hmac_key
 from ..database import engine, get_session
 from ..models import FreshRSSConfig, Group, Link, LinkGroupLink, User
 from ..ratelimit import rate_limit
+from .links import _safe_url
 from ..templates_cfg import templates
 from ..utils import refresh_link_fts, sidebar_data
 
@@ -73,6 +74,24 @@ def _extract_url(item: dict) -> str | None:
     return None
 
 
+def _extract_thumbnail(item: dict) -> str:
+    """Extrait un thumbnail depuis un item GReader (enclosure ou première <img> du summary)."""
+    for enc in item.get("enclosure") or []:
+        href = enc.get("href", "")
+        mime = enc.get("type", "")
+        if href.startswith("http") and mime.startswith("image/") and _safe_url(href):
+            return href
+    summary = item.get("summary") or {}
+    content = summary.get("content", "")
+    if content:
+        soup = BeautifulSoup(content, "html.parser")
+        for img in soup.find_all("img", src=True):
+            src = img["src"].strip()
+            if src.startswith("http") and _safe_url(src):
+                return src
+    return ""
+
+
 # ── Sync core ─────────────────────────────────────────────────────────────────
 
 async def sync_user(config: FreshRSSConfig, session: Session) -> int:
@@ -128,7 +147,7 @@ async def sync_user(config: FreshRSSConfig, session: Session) -> int:
             description=description,
             note="",
             favicon_url="",
-            thumbnail_url="",
+            thumbnail_url=_extract_thumbnail(item),
         )
         session.add(link)
         session.flush()
