@@ -25,16 +25,22 @@
   {% if link.thumbnail_url %}
   <a href="{{ link.url }}" target="_blank" rel="noopener" class="link-thumbnail">
     <img src="{{ link.thumbnail_url }}"
+         loading="lazy"
+         decoding="async"
          data-hide-on-error="parent"
          alt="">
   </a>
   {% endif %}
   <div class="link-body">
     <div class="link-source">
+      {% if link.favicon_url %}
       <img class="link-favicon"
            src="{{ link.favicon_url }}"
+           loading="lazy"
+           decoding="async"
            data-hide-on-error="self"
            alt="">
+      {% endif %}
       <span class="link-domain">{{ link.url | domain }}</span>
     </div>
     <a class="link-title" href="{{ link.url }}" target="_blank" rel="noopener">{{ link.title or link.url }}</a>
