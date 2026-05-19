@@ -24,7 +24,7 @@
 <article class="link-card">
   {% if link.thumbnail_url %}
   <a href="{{ link.url }}" target="_blank" rel="noopener" class="link-thumbnail">
-    <img src="{{ link.thumbnail_url }}"
+    <img src="{{ link.thumbnail_url | proxy_img }}"
          loading="lazy"
          decoding="async"
          data-hide-on-error="parent"
@@ -39,7 +39,7 @@
     <div class="link-source">
       {% if link.favicon_url %}
       <img class="link-favicon"
-           src="{{ link.favicon_url }}"
+           src="{{ link.favicon_url | proxy_img }}"
            loading="lazy"
            decoding="async"
            data-hide-on-error="self"

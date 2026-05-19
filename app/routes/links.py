@@ -7,7 +7,7 @@ from urllib.parse import urlencode, urlparse
 import httpx
 from bs4 import BeautifulSoup
 from fastapi import APIRouter, BackgroundTasks, Depends, Form, HTTPException, Request
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from sqlalchemy import func, text
 from sqlmodel import Session, select
 
@@ -476,3 +476,32 @@ async def delete_link(
 @router.get("/api/fetch-meta", dependencies=[Depends(rate_limit(30, 60))])
 async def api_fetch_meta(url: str, user: User = Depends(get_current_user)):
     return await _fetch_meta(url)
+
+
+@router.get("/proxy/img", dependencies=[Depends(rate_limit(120, 60))])
+async def proxy_image(url: str, user: User = Depends(get_current_user)):
+    if not _safe_url(url):
+        raise HTTPException(status_code=400)
+    try:
+        async with httpx.AsyncClient(follow_redirects=True, timeout=10, max_redirects=5) as client:
+            resp = await client.get(url, headers={
+                "User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:128.0) Gecko/20100101 Firefox/128.0",
+                "Accept": "image/avif,image/webp,image/png,image/svg+xml,image/*;q=0.8,*/*;q=0.5",
+            })
+        if resp.status_code != 200:
+            raise HTTPException(status_code=404)
+        final_url = str(resp.url)
+        if not _safe_url(final_url):
+            raise HTTPException(status_code=400)
+        content_type = resp.headers.get("content-type", "image/jpeg").split(";")[0].strip()
+        if not content_type.startswith("image/"):
+            raise HTTPException(status_code=415)
+        return Response(
+            content=resp.content,
+            media_type=content_type,
+            headers={"Cache-Control": "public, max-age=86400", "Cross-Origin-Resource-Policy": "cross-origin"},
+        )
+    except HTTPException:
+        raise
+    except Exception:
+        raise HTTPException(status_code=502)

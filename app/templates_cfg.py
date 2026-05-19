@@ -1,5 +1,5 @@
 from pathlib import Path
-from urllib.parse import urlparse
+from urllib.parse import urlparse, urlencode
 from fastapi.templating import Jinja2Templates
 from markupsafe import Markup
 import mistune
@@ -28,6 +28,12 @@ def _domain_initial(url: str) -> str:
     host = host.lstrip("www.")
     return host[0].upper() if host else "?"
 
+def _proxy_img(url: str) -> str:
+    if not url:
+        return ""
+    return "/proxy/img?" + urlencode({"url": url})
+
 templates.env.filters["domain_color"] = _domain_color
 templates.env.filters["domain_initial"] = _domain_initial
+templates.env.filters["proxy_img"] = _proxy_img
 templates.env.globals["csrf_input"] = csrf_input
