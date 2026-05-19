@@ -21,7 +21,8 @@
 {% if links %}
 <div class="links-list">
 {% for link in links %}
-<article class="link-card">
+<article class="link-card" draggable="true" data-link-id="{{ link.id }}"
+         style="cursor:grab;" title="Glisser vers un dossier de la sidebar">
   {% if link.thumbnail_url %}
   <a href="{{ link.url }}" target="_blank" rel="noopener" class="link-thumbnail">
     <img src="{{ link.thumbnail_url | proxy_img }}"
@@ -102,5 +103,22 @@
   {% endif %}
 </div>
 {% endif %}
+
+<script nonce="{{ request.state.nonce }}">
+(function() {
+  document.querySelectorAll('.link-card[data-link-id]').forEach(function(card) {
+    card.addEventListener('dragstart', function(e) {
+      window._draggedLinkId = card.dataset.linkId;
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', card.dataset.linkId);
+      setTimeout(function() { card.style.opacity = '0.45'; }, 0);
+    });
+    card.addEventListener('dragend', function() {
+      card.style.opacity = '';
+      window._draggedLinkId = null;
+    });
+  });
+})();
+</script>
 
 {% endblock %}

@@ -51,10 +51,11 @@
       <div class="sidebar-section">Dossiers</div>
       {% for folder, depth in folder_tree %}
       <a href="/?group_id={{ folder.id }}"
-         class="sidebar-item {% if current_group == folder.id %}active{% endif %}"
-         style="padding-left: {{ 0.75 + depth * 0.875 }}rem;">
+         class="sidebar-item {% if current_group == folder.id %}active{% endif %} sidebar-folder-drop"
+         data-folder-id="{{ folder.id }}"
+         style="padding-left: {{ 0.875 + depth * 0.875 }}rem;">
         <span>{% if depth > 0 %}<span style="color:var(--text-muted);margin-right:0.2rem">↳</span>{% else %}📁 {% endif %}{{ folder.name }}</span>
-        <span class="sidebar-count">{{ folder_counts.get(folder.id, 0) }}</span>
+        <span class="sidebar-count" data-count-folder="{{ folder.id }}">{{ folder_counts.get(folder.id, 0) }}</span>
       </a>
       {% endfor %}
       {% endif %}
@@ -123,6 +124,57 @@
 
 <script src="/static/theme.js"></script>
 <script src="/static/app.js"></script>
+<script nonce="{{ request.state.nonce }}">
+(function() {
+  function getCsrf() {
+    var el = document.querySelector('input[name="csrf_token"]');
+    return el ? el.value : '';
+  }
+
+  var dropTargets = document.querySelectorAll('.sidebar-folder-drop');
+
+  dropTargets.forEach(function(el) {
+    el.addEventListener('dragover', function(e) {
+      if (!window._draggedLinkId) return;
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      el.classList.add('drop-target');
+    });
+
+    el.addEventListener('dragleave', function() {
+      el.classList.remove('drop-target');
+    });
+
+    el.addEventListener('drop', function(e) {
+      e.preventDefault();
+      el.classList.remove('drop-target');
+      var linkId = window._draggedLinkId || e.dataTransfer.getData('text/plain');
+      var folderId = el.dataset.folderId;
+      if (!linkId || !folderId) return;
+
+      fetch('/links/' + linkId + '/move', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': getCsrf() },
+        body: JSON.stringify({ folder_id: parseInt(folderId) }),
+      }).then(function(r) {
+        if (r.ok) {
+          // Mettre à jour le compteur visuellement
+          var countEl = el.querySelector('[data-count-folder="' + folderId + '"]');
+          if (countEl) countEl.textContent = parseInt(countEl.textContent || 0) + 1;
+          // Retirer la carte de la liste si on est dans la vue d'un autre dossier
+          var card = document.querySelector('.link-card[data-link-id="' + linkId + '"]');
+          if (card && window.location.search.includes('group_id') &&
+              !window.location.search.includes('group_id=' + folderId)) {
+            card.style.transition = 'opacity 0.25s';
+            card.style.opacity = '0';
+            setTimeout(function() { card.remove(); }, 260);
+          }
+        }
+      });
+    });
+  });
+})();
+</script>
 
 </body>
 </html>

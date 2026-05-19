@@ -459,6 +459,26 @@ async def delete_link(
     return RedirectResponse(url="/", status_code=303)
 
 
+# ─── Move (drag & drop sidebar) ──────────────────────────────────────────────
+
+@router.post("/links/{link_id}/move")
+async def move_link(
+    link_id: int,
+    request: Request,
+    user: User = Depends(get_current_user),
+    session: Session = Depends(get_session),
+):
+    link = session.get(Link, link_id)
+    if not link or link.user_id != user.id:
+        raise HTTPException(status_code=404)
+    body = await request.json()
+    raw_fid = body.get("folder_id")
+    link.folder_id = _validate_folder_id(session, user.id, str(raw_fid)) if raw_fid else None
+    session.add(link)
+    session.commit()
+    return {"ok": True, "folder_id": link.folder_id}
+
+
 # ─── API metadata fetch ───────────────────────────────────────────────────────
 
 @router.get("/api/fetch-meta", dependencies=[Depends(rate_limit(30, 60))])
