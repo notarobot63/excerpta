@@ -56,6 +56,9 @@
     <div class="link-note">{{ link.note | markdown }}</div>
     {% endif %}
     <div class="link-footer">
+      {% if link.folder %}
+      <a href="/?group_id={{ link.folder.id }}" class="link-folder-tag">📁 {{ link.folder.name }}</a>
+      {% endif %}
       {% for tag in link.tags %}
       <a href="/?tag={{ tag.name|urlencode }}" class="tag">{{ tag.name }}</a>
       {% endfor %}

@@ -530,6 +530,18 @@ a:hover { text-decoration: underline; }
   font-weight: 500;
 }
 
+.link-folder-tag {
+  display: inline-block;
+  font-size: 0.7rem;
+  padding: 0.1rem 0.5rem;
+  border-radius: 4px;
+  background: var(--sidebar-active);
+  color: var(--sidebar-active-text);
+  white-space: nowrap;
+  text-decoration: none;
+  font-weight: 500;
+}
+
 .tag:hover { opacity: 0.8; text-decoration: none; }
 
 /* ── Form ── */
