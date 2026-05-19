@@ -75,15 +75,14 @@ async def _fetch_meta(url: str) -> dict:
     if not _safe_url(url):
         return {"title": "", "description": "", "favicon_url": ""}
     try:
-        async with httpx.AsyncClient(follow_redirects=False, timeout=10) as client:
-            resp = await client.get(url, headers={"User-Agent": "Mozilla/5.0 Excerpta/1.0"})
-            hops = 0
-            while resp.is_redirect and hops < 5:
-                redirect_url = resp.headers.get("location", "")
-                if not _safe_url(redirect_url):
-                    return {"title": "", "description": "", "favicon_url": ""}
-                resp = await client.get(redirect_url, headers={"User-Agent": "Mozilla/5.0 Excerpta/1.0"})
-                hops += 1
+        async with httpx.AsyncClient(follow_redirects=True, timeout=10, max_redirects=5) as client:
+            resp = await client.get(url, headers={"User-Agent": "Mozilla/5.0 (compatible; Excerpta/1.0)"})
+        if resp.status_code >= 400:
+            return {"title": "", "description": "", "favicon_url": ""}
+        final_url = str(resp.url)
+        if not _safe_url(final_url):
+            return {"title": "", "description": "", "favicon_url": ""}
+        parsed = urlparse(final_url)
         soup = BeautifulSoup(resp.text, "html.parser")
         title = soup.find("title")
         desc = soup.find("meta", attrs={"property": "og:description"}) or soup.find(
@@ -97,7 +96,6 @@ async def _fetch_meta(url: str) -> dict:
                     description_text = text[:400]
                     break
         icon = soup.find("link", rel=lambda r: r and "icon" in r)
-        parsed = urlparse(url)
         favicon = ""
         if icon and icon.get("href"):
             href = icon["href"]
@@ -124,8 +122,13 @@ async def _fetch_meta(url: str) -> dict:
                 thumbnail = raw
         if not thumbnail:
             content_zone = soup.find(["article", "main"]) or soup
-            for img in content_zone.find_all("img", src=True):
-                raw = img["src"].strip()
+            for img in content_zone.find_all("img"):
+                raw = (
+                    img.get("src", "")
+                    or img.get("data-src", "")
+                    or img.get("data-lazy-src", "")
+                    or img.get("data-original", "")
+                ).strip()
                 if not raw or raw.startswith("data:"):
                     continue
                 if raw.lower().endswith(".svg"):
