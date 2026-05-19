@@ -30,6 +30,10 @@
          data-hide-on-error="parent"
          alt="">
   </a>
+  {% else %}
+  <a href="{{ link.url }}" target="_blank" rel="noopener"
+     class="link-thumbnail link-thumbnail-placeholder"
+     style="background:{{ link.url | domain_color }}">{{ link.url | domain_initial }}</a>
   {% endif %}
   <div class="link-body">
     <div class="link-source">

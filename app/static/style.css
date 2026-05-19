@@ -394,6 +394,18 @@ a:hover { text-decoration: underline; }
   display: block;
 }
 
+.link-thumbnail-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: rgba(255,255,255,0.85);
+  text-decoration: none;
+  user-select: none;
+  letter-spacing: -0.02em;
+}
+
 .link-source {
   display: flex;
   align-items: center;
