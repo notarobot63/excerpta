@@ -123,8 +123,20 @@ async def _fetch_meta(url: str) -> dict:
             if _safe_url(raw):
                 thumbnail = raw
         if not thumbnail:
-            for img in soup.find_all("img", src=True):
+            content_zone = soup.find(["article", "main"]) or soup
+            for img in content_zone.find_all("img", src=True):
                 raw = img["src"].strip()
+                if not raw or raw.startswith("data:"):
+                    continue
+                if raw.lower().endswith(".svg"):
+                    continue
+                try:
+                    w = int(img.get("width") or 0)
+                    h = int(img.get("height") or 0)
+                    if (w and w < 100) or (h and h < 100):
+                        continue
+                except ValueError:
+                    pass
                 if raw.startswith("//"):
                     raw = f"{parsed.scheme}:{raw}"
                 elif raw.startswith("/"):
