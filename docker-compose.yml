@@ -1,13 +1,13 @@
 services:
-  linky:
+  excerpta:
     build: .
-    container_name: linky
+    container_name: excerpta
     restart: unless-stopped
     ports:
       - "8070:8000"
     env_file: .env
     volumes:
-      - linky_data:/app/data
+      - excerpta_data:/app/data
 
 volumes:
-  linky_data:
+  excerpta_data:

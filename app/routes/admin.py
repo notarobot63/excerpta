@@ -16,7 +16,7 @@ from ..ratelimit import rate_limit
 from ..templates_cfg import templates
 from ..utils import sidebar_data
 
-_log = logging.getLogger("linky.admin")
+_log = logging.getLogger("excerpta.admin")
 
 router = APIRouter(prefix="/admin")
 
