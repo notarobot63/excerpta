@@ -9,7 +9,7 @@ from .links import _safe_url
 import httpx
 import qrcode
 from bs4 import BeautifulSoup
-from fastapi import APIRouter, Depends, File, Request, UploadFile
+from fastapi import APIRouter, BackgroundTasks, Depends, File, Request, UploadFile
 from fastapi.responses import HTMLResponse, RedirectResponse, Response, StreamingResponse
 from sqlalchemy import or_, text
 from sqlmodel import Session, select
@@ -183,6 +183,31 @@ async def refresh_metadata(
 
 # ── Import ────────────────────────────────────────────────────────────────────
 
+async def _refresh_new_links(link_ids: list[int]) -> None:
+    with Session(db_engine) as session:
+        for link_id in link_ids:
+            link = session.get(Link, link_id)
+            if not link:
+                continue
+            try:
+                meta = await _fetch_meta(link.url)
+                changed = False
+                if not link.thumbnail_url and meta.get("thumbnail_url"):
+                    link.thumbnail_url = meta["thumbnail_url"]
+                    changed = True
+                if not link.description and meta.get("description"):
+                    link.description = meta["description"]
+                    changed = True
+                if not link.favicon_url and meta.get("favicon_url"):
+                    link.favicon_url = meta["favicon_url"]
+                    changed = True
+                if changed:
+                    session.add(link)
+            except Exception:
+                pass
+        session.commit()
+
+
 @router.get("/settings/import", response_class=HTMLResponse)
 async def import_form(
     request: Request,
@@ -206,6 +231,7 @@ async def import_form(
 @router.post("/settings/import", dependencies=[Depends(rate_limit(5, 3600))])
 async def import_links(
     request: Request,
+    background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
     user: User = Depends(get_current_user),
     session: Session = Depends(get_session),
@@ -228,6 +254,8 @@ async def import_links(
             text("SELECT url FROM links WHERE user_id = :uid"), {"uid": user.id}
         ).fetchall()
     }
+
+    new_link_ids = []
 
     for item in items:
         if item["url"] in existing_urls or not _safe_url(item["url"]):
@@ -253,8 +281,13 @@ async def import_links(
         refresh_link_fts(session, link, tags)
         existing_urls.add(item["url"])
         imported += 1
+        new_link_ids.append(link.id)
 
     session.commit()
+
+    if new_link_ids:
+        background_tasks.add_task(_refresh_new_links, new_link_ids)
+
     return RedirectResponse(url=f"/settings/import?imported={imported}&skipped={skipped}", status_code=303)
 
 
