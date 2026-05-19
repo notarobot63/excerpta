@@ -15,7 +15,7 @@ from ..crypto import decrypt, encrypt, hmac_key
 from ..database import engine, get_session
 from ..models import FreshRSSConfig, Group, Link, LinkGroupLink, LinkTagLink, Tag, User
 from ..ratelimit import rate_limit
-from .links import _safe_url
+from .links import _fetch_meta, _safe_url
 from ..templates_cfg import templates
 from ..utils import get_or_create_tag, refresh_link_fts, sidebar_data
 
@@ -94,6 +94,38 @@ def _extract_thumbnail(item: dict) -> str:
 
 # ── Sync core ─────────────────────────────────────────────────────────────────
 
+async def _refresh_new_links_bg(link_ids: list[int]) -> None:
+    """Complète favicon/thumbnail/description sur les liens nouvellement importés."""
+    from ..database import engine as db_engine
+    for link_id in link_ids:
+        try:
+            with Session(db_engine) as session:
+                link = session.get(Link, link_id)
+                if not link:
+                    continue
+                url = link.url
+            meta = await _fetch_meta(url)
+            with Session(db_engine) as session:
+                link = session.get(Link, link_id)
+                if not link:
+                    continue
+                changed = False
+                if not link.thumbnail_url and meta.get("thumbnail_url"):
+                    link.thumbnail_url = meta["thumbnail_url"]
+                    changed = True
+                if not link.description and meta.get("description"):
+                    link.description = meta["description"]
+                    changed = True
+                if not link.favicon_url and meta.get("favicon_url"):
+                    link.favicon_url = meta["favicon_url"]
+                    changed = True
+                if changed:
+                    session.add(link)
+                    session.commit()
+        except Exception:
+            pass
+
+
 async def sync_user(config: FreshRSSConfig, session: Session) -> int:
     """Sync les étoilés FreshRSS d'un utilisateur. Retourne le nombre de liens ajoutés."""
     auth = await _greader_auth(config.freshrss_url, config.freshrss_user, decrypt(config.freshrss_token))
@@ -128,6 +160,7 @@ async def sync_user(config: FreshRSSConfig, session: Session) -> int:
 
     freshrss_tag = get_or_create_tag(session, config.user_id, "freshrss")
     added = 0
+    new_link_ids: list[int] = []
     for item in items:
         url = _extract_url(item)
         if not url or url in existing_urls:
@@ -164,12 +197,18 @@ async def sync_user(config: FreshRSSConfig, session: Session) -> int:
         session.flush()
         refresh_link_fts(session, link, [freshrss_tag])
         existing_urls.add(url)
+        new_link_ids.append(link.id)
         added += 1
 
     config.last_sync = datetime.now(timezone.utc).replace(tzinfo=None)
     config.synced_count += added
     session.add(config)
     session.commit()
+
+    if new_link_ids:
+        import asyncio
+        asyncio.create_task(_refresh_new_links_bg(new_link_ids))
+
     return added
 
 
