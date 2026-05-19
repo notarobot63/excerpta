@@ -47,8 +47,13 @@
       </a>
       {% endif %}
 
+      <div class="sidebar-section" style="display:flex;align-items:center;justify-content:space-between;">
+        <span>Dossiers</span>
+        <a href="/folders/add" title="Nouveau dossier"
+           style="color:var(--text-muted);font-size:1rem;line-height:1;padding:0 0.25rem;text-decoration:none;"
+           onmouseover="this.style.color='var(--text)'" onmouseout="this.style.color='var(--text-muted)'">+</a>
+      </div>
       {% if folder_tree %}
-      <div class="sidebar-section">Dossiers</div>
       {% for folder, depth in folder_tree %}
       <a href="/?group_id={{ folder.id }}"
          class="sidebar-item {% if current_group == folder.id %}active{% endif %} sidebar-folder-drop"
@@ -58,6 +63,10 @@
         <span class="sidebar-count" data-count-folder="{{ folder.id }}">{{ folder_counts.get(folder.id, 0) }}</span>
       </a>
       {% endfor %}
+      {% else %}
+      <a href="/folders/add" class="sidebar-item" style="color:var(--text-muted);font-style:italic;font-size:0.82rem;">
+        + Créer un dossier
+      </a>
       {% endif %}
 
       {% if all_tags %}
