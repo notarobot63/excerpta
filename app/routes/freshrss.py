@@ -140,6 +140,12 @@ async def sync_user(config: FreshRSSConfig, session: Session) -> int:
                 summary["content"], "html.parser"
             ).get_text(" ", strip=True)[:2000]
 
+        pub_ts = item.get("published")
+        try:
+            created = datetime.fromtimestamp(int(pub_ts), tz=timezone.utc).replace(tzinfo=None) if pub_ts else None
+        except (ValueError, OSError):
+            created = None
+
         link = Link(
             user_id=config.user_id,
             url=url,
@@ -148,6 +154,7 @@ async def sync_user(config: FreshRSSConfig, session: Session) -> int:
             note="",
             favicon_url="",
             thumbnail_url=_extract_thumbnail(item),
+            **({"created_at": created, "updated_at": created} if created else {}),
         )
         session.add(link)
         session.flush()
