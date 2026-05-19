@@ -67,7 +67,7 @@ async def _greader_starred(base_url: str, auth: str) -> list[dict]:
 
 
 def _extract_url(item: dict) -> str | None:
-    for src in (item.get("canonical") or [], item.get("alternate") or []):
+    for src in (item.get("canonical") or []) + (item.get("alternate") or []):
         href = src.get("href", "")
         if href.startswith("http"):
             return href
