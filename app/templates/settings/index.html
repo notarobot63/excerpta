@@ -9,16 +9,42 @@
   <hr style="border:none;border-top:1px solid var(--border);margin:1.5rem 0">
 
   <h3 style="font-size:0.9rem;font-weight:600;margin:0 0 0.75rem;color:var(--text-muted)">Apparence</h3>
-  <div style="display:flex;flex-wrap:wrap;gap:0.5rem;" id="theme-picker">
-    <button class="btn btn-ghost btn-sm" data-theme-apply="light">☀️ Light</button>
-    <button class="btn btn-ghost btn-sm" data-theme-apply="dark">🌙 Dark</button>
-    <button class="btn btn-ghost btn-sm" data-theme-apply="dracula">🧛 Dracula</button>
-    <button class="btn btn-ghost btn-sm" data-theme-apply="nord">❄️ Nord</button>
-    <button class="btn btn-ghost btn-sm" data-theme-apply="nord-dark">🌌 Nord Dark</button>
-    <button class="btn btn-ghost btn-sm" data-theme-apply="catppuccin">🐱 Catppuccin</button>
-    <button class="btn btn-ghost btn-sm" data-theme-apply="gruvbox">🪵 Gruvbox</button>
-    <button class="btn btn-ghost btn-sm" data-theme-apply="solarized">🌞 Solarized</button>
-    <button class="btn btn-ghost btn-sm" data-theme-apply="rosepine">🌹 Rosé Pine</button>
+  <div style="display:flex;flex-direction:column;gap:0.5rem;" id="theme-picker">
+    <div style="display:flex;gap:0.4rem;align-items:center;">
+      <span style="font-size:0.72rem;color:var(--text-muted);width:90px;flex-shrink:0;">Default</span>
+      <button class="btn btn-ghost btn-sm" data-theme-apply="light">☀️ Light</button>
+      <button class="btn btn-ghost btn-sm" data-theme-apply="dark">🌙 Dark</button>
+    </div>
+    <div style="display:flex;gap:0.4rem;align-items:center;">
+      <span style="font-size:0.72rem;color:var(--text-muted);width:90px;flex-shrink:0;">Nord</span>
+      <button class="btn btn-ghost btn-sm" data-theme-apply="nord">❄️ Nord</button>
+      <button class="btn btn-ghost btn-sm" data-theme-apply="nord-dark">🌌 Nord Dark</button>
+    </div>
+    <div style="display:flex;gap:0.4rem;align-items:center;">
+      <span style="font-size:0.72rem;color:var(--text-muted);width:90px;flex-shrink:0;">Dracula</span>
+      <button class="btn btn-ghost btn-sm" data-theme-apply="dracula-light">☀️ Light</button>
+      <button class="btn btn-ghost btn-sm" data-theme-apply="dracula">🧛 Dark</button>
+    </div>
+    <div style="display:flex;gap:0.4rem;align-items:center;">
+      <span style="font-size:0.72rem;color:var(--text-muted);width:90px;flex-shrink:0;">Catppuccin</span>
+      <button class="btn btn-ghost btn-sm" data-theme-apply="catppuccin-latte">🐱 Latte</button>
+      <button class="btn btn-ghost btn-sm" data-theme-apply="catppuccin">🐱 Mocha</button>
+    </div>
+    <div style="display:flex;gap:0.4rem;align-items:center;">
+      <span style="font-size:0.72rem;color:var(--text-muted);width:90px;flex-shrink:0;">Gruvbox</span>
+      <button class="btn btn-ghost btn-sm" data-theme-apply="gruvbox-light">🪵 Light</button>
+      <button class="btn btn-ghost btn-sm" data-theme-apply="gruvbox">🪵 Dark</button>
+    </div>
+    <div style="display:flex;gap:0.4rem;align-items:center;">
+      <span style="font-size:0.72rem;color:var(--text-muted);width:90px;flex-shrink:0;">Solarized</span>
+      <button class="btn btn-ghost btn-sm" data-theme-apply="solarized">🌞 Light</button>
+      <button class="btn btn-ghost btn-sm" data-theme-apply="solarized-dark">🌑 Dark</button>
+    </div>
+    <div style="display:flex;gap:0.4rem;align-items:center;">
+      <span style="font-size:0.72rem;color:var(--text-muted);width:90px;flex-shrink:0;">Rosé Pine</span>
+      <button class="btn btn-ghost btn-sm" data-theme-apply="rosepine-dawn">🌹 Dawn</button>
+      <button class="btn btn-ghost btn-sm" data-theme-apply="rosepine">🌹 Moon</button>
+    </div>
   </div>
   <p id="theme-label" style="font-size:0.78rem;color:var(--text-muted);margin:0.5rem 0 0;"></p>
 

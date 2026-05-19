@@ -179,6 +179,51 @@
   --card-hover: #1f1d2e;
 }
 
+/* Catppuccin Latte (light) */
+[data-theme="catppuccin-latte"] {
+  --bg: #eff1f5; --bg-alt: #e6e9ef; --border: #ccd0da; --text: #4c4f69;
+  --text-muted: #8c8fa1; --text-link: #1e66f5; --tag-bg: #ccd0da; --tag-text: #8839ef;
+  --sidebar-bg: #e6e9ef; --sidebar-active: #ccd0da; --sidebar-active-text: #8839ef;
+  --btn-primary: #8839ef; --btn-primary-hover: #7527d7; --btn-danger: #d20f39;
+  --input-bg: #eff1f5; --input-border: #ccd0da; --card-hover: #e6e9ef;
+}
+
+/* Gruvbox Light */
+[data-theme="gruvbox-light"] {
+  --bg: #fbf1c7; --bg-alt: #f2e5bc; --border: #d5c4a1; --text: #3c3836;
+  --text-muted: #7c6f64; --text-link: #076678; --tag-bg: #d5c4a1; --tag-text: #b57614;
+  --sidebar-bg: #f2e5bc; --sidebar-active: #ebdbb2; --sidebar-active-text: #b57614;
+  --btn-primary: #458588; --btn-primary-hover: #357577; --btn-danger: #cc241d;
+  --input-bg: #fbf1c7; --input-border: #d5c4a1; --card-hover: #f2e5bc;
+}
+
+/* Solarized Dark */
+[data-theme="solarized-dark"] {
+  --bg: #002b36; --bg-alt: #073642; --border: #586e75; --text: #839496;
+  --text-muted: #657b83; --text-link: #268bd2; --tag-bg: #073642; --tag-text: #2aa198;
+  --sidebar-bg: #073642; --sidebar-active: #586e75; --sidebar-active-text: #93a1a1;
+  --btn-primary: #268bd2; --btn-primary-hover: #1a6fa8; --btn-danger: #dc322f;
+  --input-bg: #073642; --input-border: #586e75; --card-hover: #073642;
+}
+
+/* Dracula Light */
+[data-theme="dracula-light"] {
+  --bg: #f8f8f2; --bg-alt: #f0f0ea; --border: #e0dfd5; --text: #282a36;
+  --text-muted: #6272a4; --text-link: #6272a4; --tag-bg: #e4deff; --tag-text: #6272a4;
+  --sidebar-bg: #f0f0ea; --sidebar-active: #e4deff; --sidebar-active-text: #6272a4;
+  --btn-primary: #bd93f9; --btn-primary-hover: #a673e8; --btn-danger: #ff5555;
+  --input-bg: #f8f8f2; --input-border: #e0dfd5; --card-hover: #f0f0ea;
+}
+
+/* Rosé Pine Dawn (light) */
+[data-theme="rosepine-dawn"] {
+  --bg: #faf4ed; --bg-alt: #fffaf3; --border: #dfdad9; --text: #575279;
+  --text-muted: #9893a5; --text-link: #286983; --tag-bg: #dfdad9; --tag-text: #907aa9;
+  --sidebar-bg: #fffaf3; --sidebar-active: #f2e9e1; --sidebar-active-text: #907aa9;
+  --btn-primary: #286983; --btn-primary-hover: #1f5470; --btn-danger: #b4637a;
+  --input-bg: #faf4ed; --input-border: #dfdad9; --card-hover: #f2e9e1;
+}
+
 /* ── Reset / base ── */
 *, *::before, *::after { box-sizing: border-box; }
 
