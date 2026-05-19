@@ -184,13 +184,15 @@ async def refresh_metadata(
 # ── Import ────────────────────────────────────────────────────────────────────
 
 async def _refresh_new_links(link_ids: list[int]) -> None:
-    with Session(db_engine) as session:
-        for link_id in link_ids:
-            link = session.get(Link, link_id)
-            if not link:
+    for link_id in link_ids:
+        try:
+            meta = await _fetch_meta_by_id(link_id)
+            if meta is None:
                 continue
-            try:
-                meta = await _fetch_meta(link.url)
+            with Session(db_engine) as session:
+                link = session.get(Link, link_id)
+                if not link:
+                    continue
                 changed = False
                 if not link.thumbnail_url and meta.get("thumbnail_url"):
                     link.thumbnail_url = meta["thumbnail_url"]
@@ -203,9 +205,18 @@ async def _refresh_new_links(link_ids: list[int]) -> None:
                     changed = True
                 if changed:
                     session.add(link)
-            except Exception:
-                pass
-        session.commit()
+                    session.commit()
+        except Exception:
+            pass
+
+
+async def _fetch_meta_by_id(link_id: int):
+    with Session(db_engine) as session:
+        link = session.get(Link, link_id)
+        if not link:
+            return None
+        url = link.url
+    return await _fetch_meta(url)
 
 
 @router.get("/settings/import", response_class=HTMLResponse)
