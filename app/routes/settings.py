@@ -138,8 +138,8 @@ async def refresh_metadata(
 ):
     async def generate():
         with Session(db_engine) as session:
-            links = list(session.exec(
-                select(Link).where(
+            rows = session.exec(
+                select(Link.id, Link.url).where(
                     Link.user_id == user.id,
                     or_(
                         Link.thumbnail_url == None,
@@ -148,30 +148,34 @@ async def refresh_metadata(
                         Link.description == "",
                     ),
                 ).limit(500)
-            ).all())
-            total = len(links)
-            yield f"data: {json.dumps({'total': total, 'current': 0, 'updated': 0})}\n\n"
-            updated = 0
-            for i, link in enumerate(links):
-                try:
-                    meta = await _fetch_meta(link.url)
-                    changed = False
-                    if not link.thumbnail_url and meta.get("thumbnail_url"):
-                        link.thumbnail_url = meta["thumbnail_url"]
-                        changed = True
-                    if not link.description and meta.get("description"):
-                        link.description = meta["description"]
-                        changed = True
-                    if not link.favicon_url and meta.get("favicon_url"):
-                        link.favicon_url = meta["favicon_url"]
-                        changed = True
-                    if changed:
-                        session.add(link)
-                        updated += 1
-                except Exception:
-                    pass
-                yield f"data: {json.dumps({'total': total, 'current': i + 1, 'updated': updated})}\n\n"
-            session.commit()
+            ).all()
+        candidates = [(r[0], r[1]) for r in rows]
+        total = len(candidates)
+        yield f"data: {json.dumps({'total': total, 'current': 0, 'updated': 0})}\n\n"
+        updated = 0
+        for i, (link_id, url) in enumerate(candidates):
+            try:
+                meta = await _fetch_meta(url)
+                with Session(db_engine) as session:
+                    link = session.get(Link, link_id)
+                    if link:
+                        changed = False
+                        if not link.thumbnail_url and meta.get("thumbnail_url"):
+                            link.thumbnail_url = meta["thumbnail_url"]
+                            changed = True
+                        if not link.description and meta.get("description"):
+                            link.description = meta["description"]
+                            changed = True
+                        if not link.favicon_url and meta.get("favicon_url"):
+                            link.favicon_url = meta["favicon_url"]
+                            changed = True
+                        if changed:
+                            session.add(link)
+                            session.commit()
+                            updated += 1
+            except Exception:
+                pass
+            yield f"data: {json.dumps({'total': total, 'current': i + 1, 'updated': updated})}\n\n"
         yield f"data: {json.dumps({'done': True, 'updated': updated})}\n\n"
 
     return StreamingResponse(
