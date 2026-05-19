@@ -412,19 +412,19 @@ a:hover { text-decoration: underline; }
 .link-source {
   display: flex;
   align-items: center;
-  gap: 0.35rem;
-  margin-bottom: 0.25rem;
+  gap: 0.4rem;
+  margin-bottom: 0.3rem;
 }
 
 .link-favicon {
-  width: 14px;
-  height: 14px;
+  width: 16px;
+  height: 16px;
   flex-shrink: 0;
   border-radius: 2px;
 }
 
 .link-domain {
-  font-size: 0.68rem;
+  font-size: 0.75rem;
   font-weight: 500;
   color: var(--text-muted);
   white-space: nowrap;
@@ -437,19 +437,20 @@ a:hover { text-decoration: underline; }
 .link-title {
   font-weight: 700;
   color: var(--text);
-  font-size: 1rem;
+  font-size: 1.05rem;
   display: block;
   line-height: 1.45;
-  margin-bottom: 0.25rem;
+  margin-bottom: 0.3rem;
 }
 
 .link-title:hover { color: var(--text-link); text-decoration: none; }
 
 .link-description {
-  font-size: 0.8rem;
-  color: var(--text-muted);
-  line-height: 1.6;
-  margin-bottom: 0.4rem;
+  font-size: 0.9rem;
+  color: var(--text);
+  opacity: 0.72;
+  line-height: 1.65;
+  margin-bottom: 0.45rem;
   overflow: hidden;
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -457,29 +458,31 @@ a:hover { text-decoration: underline; }
 }
 
 .link-note {
-  margin: 0.4rem 0;
-  font-size: 0.875rem;
+  margin: 0.5rem 0;
+  font-size: 0.9rem;
   color: var(--text);
-  line-height: 1.7;
-  border-left: 3px solid var(--border);
-  padding-left: 0.875rem;
+  line-height: 1.75;
+  border-left: 3px solid var(--sidebar-active-text, #1A7A35);
+  padding: 0.35rem 0.875rem;
+  background: var(--bg-alt);
+  border-radius: 0 4px 4px 0;
 }
 
 .link-note p { margin: 0 0 0.5rem; }
 .link-note p:last-child { margin-bottom: 0; }
 .link-note a { color: var(--text-link); }
-.link-note code { font-size: 0.8em; background: var(--bg-alt); padding: 0.1em 0.3em; border-radius: 3px; }
+.link-note code { font-size: 0.8em; background: var(--border); padding: 0.1em 0.3em; border-radius: 3px; }
 
 .link-footer {
   display: flex;
   align-items: center;
-  gap: 0.4rem;
-  margin-top: 0.4rem;
+  gap: 0.45rem;
+  margin-top: 0.5rem;
   flex-wrap: wrap;
 }
 
 .link-date {
-  font-size: 0.7rem;
+  font-size: 0.775rem;
   color: var(--text-muted);
   margin-left: auto;
   white-space: nowrap;
