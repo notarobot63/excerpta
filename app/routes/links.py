@@ -122,6 +122,16 @@ async def _fetch_meta(url: str) -> dict:
                 raw = f"{parsed.scheme}://{parsed.netloc}{raw}"
             if _safe_url(raw):
                 thumbnail = raw
+        if not thumbnail:
+            for img in soup.find_all("img", src=True):
+                raw = img["src"].strip()
+                if raw.startswith("//"):
+                    raw = f"{parsed.scheme}:{raw}"
+                elif raw.startswith("/"):
+                    raw = f"{parsed.scheme}://{parsed.netloc}{raw}"
+                if raw.startswith("http") and _safe_url(raw):
+                    thumbnail = raw
+                    break
         return {
             "title": title.text.strip() if title else "",
             "description": description_text,
