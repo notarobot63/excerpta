@@ -55,21 +55,35 @@ def init_db():
         con.execute(stmt)
     # Migrations idempotentes
     # Migration groups → folders (ancienne DB)
+    # Note : create_all() crée `folders` avant ce code, donc on détecte via la présence de `groups`
     tables = {r[0] for r in con.execute("SELECT name FROM sqlite_master WHERE type='table'").fetchall()}
-    if "groups" in tables and "folders" not in tables:
-        gcols = [r[1] for r in con.execute("PRAGMA table_info(groups)").fetchall()]
-        if "parent_id" not in gcols:
-            con.execute("ALTER TABLE groups ADD COLUMN parent_id INTEGER DEFAULT NULL")
-        if "sort_order" not in gcols:
-            con.execute("ALTER TABLE groups ADD COLUMN sort_order INTEGER NOT NULL DEFAULT 0")
-        lcols_g = [r[1] for r in con.execute("PRAGMA table_info(links)").fetchall()]
-        if "folder_id" not in lcols_g:
-            con.execute("ALTER TABLE links ADD COLUMN folder_id INTEGER REFERENCES groups(id)")
-            con.execute("UPDATE links SET folder_id = (SELECT group_id FROM link_groups WHERE link_id = links.id LIMIT 1)")
+    if "groups" in tables:
+        # Migrer chaque groupe vers un dossier correspondant (même nom+user) ou en créer un
+        for gid, gname, guid, gparent in con.execute(
+            "SELECT id, name, user_id, parent_id FROM groups"
+        ).fetchall():
+            existing = con.execute(
+                "SELECT id FROM folders WHERE name=? AND user_id=?", (gname, guid)
+            ).fetchone()
+            if existing:
+                fid = existing[0]
+            else:
+                con.execute(
+                    "INSERT INTO folders(name, user_id, parent_id, is_public, sort_order) VALUES(?,?,?,0,0)",
+                    (gname, guid, gparent),
+                )
+                fid = con.execute("SELECT last_insert_rowid()").fetchone()[0]
+            if "link_groups" in tables:
+                con.execute(
+                    "UPDATE links SET folder_id=? WHERE id IN "
+                    "(SELECT link_id FROM link_groups WHERE group_id=?)",
+                    (fid, gid),
+                )
         if "link_groups" in tables:
             con.execute("DROP TABLE link_groups")
-        con.execute("ALTER TABLE groups RENAME TO folders")
-    elif "folders" in tables:
+        con.execute("DROP TABLE groups")
+    # Migrations additionnelles sur folders
+    if "folders" in tables or "groups" in tables:
         fcols = [r[1] for r in con.execute("PRAGMA table_info(folders)").fetchall()]
         if "sort_order" not in fcols:
             con.execute("ALTER TABLE folders ADD COLUMN sort_order INTEGER NOT NULL DEFAULT 0")
