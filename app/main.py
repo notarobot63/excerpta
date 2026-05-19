@@ -16,7 +16,7 @@ from . import models  # noqa: F401
 from .routes import auth as auth_router
 from .routes import links as links_router
 from .routes import tags as tags_router
-from .routes import groups as groups_router
+from .routes import folders as folders_router
 from .routes import oidc as oidc_router
 from .routes import settings as settings_router
 from .routes import public as public_router
@@ -107,7 +107,7 @@ app.include_router(auth_router.router)
 app.include_router(oidc_router.router)
 app.include_router(links_router.router, dependencies=_csrf)
 app.include_router(tags_router.router, dependencies=_csrf)
-app.include_router(groups_router.router, dependencies=_csrf)
+app.include_router(folders_router.router, dependencies=_csrf)
 app.include_router(settings_router.router, dependencies=_csrf)
 app.include_router(public_router.router)  # pas de CSRF ni auth
 app.include_router(admin_router.router, dependencies=_csrf)

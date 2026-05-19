@@ -1,0 +1,162 @@
+{% extends 'base.html' %}
+
+{% block title %}Dossiers - Excerpta{% endblock %}
+
+{% block content %}
+<div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1rem;">
+  <h2 style="margin:0;">Dossiers ({{ all_folders|length }})</h2>
+  <a href="/folders/add" class="btn btn-primary">+ Nouveau dossier</a>
+</div>
+
+{% if folder_tree %}
+<div id="folder-tree">
+  {% set ns = namespace(current_depth=0, stack=[]) %}
+  {% for folder, depth in folder_tree %}
+    {% if depth > ns.current_depth %}
+      <div class="folder-children" data-parent="{{ folder.parent_id }}" style="margin-left:1.5rem;">
+    {% elif depth < ns.current_depth %}
+      {% for _ in range(ns.current_depth - depth) %}</div>{% endfor %}
+    {% endif %}
+    {% set ns.current_depth = depth %}
+
+    <div class="folder-row" data-id="{{ folder.id }}" data-parent="{{ folder.parent_id or '' }}"
+         style="display:flex; align-items:center; gap:0.5rem; padding:0.4rem 0.5rem;
+                border-bottom:1px solid var(--border); cursor:grab;"
+         draggable="true">
+      <span class="drag-handle" style="color:var(--text-muted); cursor:grab; user-select:none;">⠿</span>
+      <span style="flex:1; font-weight:{% if depth == 0 %}600{% else %}400{% endif %};">
+        {% if depth > 0 %}<span style="color:var(--text-muted); margin-right:0.25rem;">↳</span>{% else %}📁 {% endif %}
+        {{ folder.name }}
+      </span>
+      <span class="tag" style="{% if not folder.is_public %}background:var(--border);{% endif %}">
+        {% if folder.is_public %}public{% else %}privé{% endif %}
+      </span>
+      <span class="sidebar-count">{{ folder_counts.get(folder.id, 0) }}</span>
+      <a href="/folders/{{ folder.id }}/edit" class="btn btn-ghost btn-sm">Modifier</a>
+      <form action="/folders/{{ folder.id }}/delete" method="post" style="display:inline;"
+            data-confirm="Supprimer ce dossier et garder les liens à la racine ?">
+        {{ csrf_input(request) }}
+        <input type="hidden" name="delete_links" value="0">
+        <button type="submit" class="btn btn-ghost btn-sm">Supprimer</button>
+      </form>
+      {% if folder_counts.get(folder.id, 0) > 0 %}
+      <form action="/folders/{{ folder.id }}/delete" method="post" style="display:inline;"
+            data-confirm="Supprimer ce dossier ET ses {{ folder_counts[folder.id] }} lien(s) ? Irréversible.">
+        {{ csrf_input(request) }}
+        <input type="hidden" name="delete_links" value="1">
+        <button type="submit" class="btn btn-danger btn-sm" title="Supprimer avec les liens">+ liens</button>
+      </form>
+      {% endif %}
+    </div>
+
+  {% endfor %}
+  {% for _ in range(ns.current_depth) %}</div>{% endfor %}
+</div>
+
+<div id="drop-target-root" class="drop-zone"
+     style="border:2px dashed var(--border); border-radius:6px; padding:0.75rem; margin-top:0.75rem;
+            text-align:center; color:var(--text-muted); font-size:0.85rem; display:none;">
+  ↳ Déposer ici pour mettre à la racine
+</div>
+
+{% else %}
+<div class="empty-state">
+  <p>Aucun dossier pour l'instant.</p>
+  <a href="/folders/add" class="btn btn-primary">Créer un dossier</a>
+</div>
+{% endif %}
+
+<script nonce="{{ request.state.nonce }}" src="/static/sortable.min.js"></script>
+<script nonce="{{ request.state.nonce }}">
+(function() {
+  var draggedId = null;
+  var draggedEl = null;
+
+  function allRows() {
+    return Array.from(document.querySelectorAll('.folder-row'));
+  }
+
+  function serialize() {
+    return allRows().map(function(el, i) {
+      var parentId = el.dataset.parent ? parseInt(el.dataset.parent) : null;
+      return { id: parseInt(el.dataset.id), parent_id: parentId, sort_order: i };
+    });
+  }
+
+  function save() {
+    fetch('/folders/reorder', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrf() },
+      body: JSON.stringify(serialize()),
+    });
+  }
+
+  function getCsrf() {
+    var el = document.querySelector('input[name="csrf_token"]');
+    return el ? el.value : '';
+  }
+
+  // Drag & drop natif pour réordonner et reparenter
+  allRows().forEach(function(row) {
+    row.addEventListener('dragstart', function(e) {
+      draggedId = row.dataset.id;
+      draggedEl = row;
+      e.dataTransfer.effectAllowed = 'move';
+      setTimeout(function() { row.style.opacity = '0.4'; }, 0);
+    });
+
+    row.addEventListener('dragend', function() {
+      row.style.opacity = '';
+      draggedEl = null;
+      document.getElementById('drop-target-root').style.display = 'none';
+      document.querySelectorAll('.folder-row').forEach(function(r) {
+        r.classList.remove('drag-over');
+      });
+    });
+
+    row.addEventListener('dragover', function(e) {
+      if (!draggedEl || draggedEl === row) return;
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      document.querySelectorAll('.folder-row').forEach(function(r) { r.classList.remove('drag-over'); });
+      row.classList.add('drag-over');
+    });
+
+    row.addEventListener('drop', function(e) {
+      e.preventDefault();
+      if (!draggedEl || draggedEl === row) return;
+      var tree = document.getElementById('folder-tree');
+      // Insérer avant la cible
+      tree.insertBefore(draggedEl, row);
+      draggedEl.dataset.parent = row.dataset.parent || '';
+      row.classList.remove('drag-over');
+      save();
+    });
+  });
+
+  // Zone "déposer à la racine"
+  var rootZone = document.getElementById('drop-target-root');
+  if (rootZone) {
+    document.getElementById('folder-tree').addEventListener('dragover', function() {
+      if (draggedEl) rootZone.style.display = 'block';
+    });
+    rootZone.addEventListener('dragover', function(e) { e.preventDefault(); rootZone.style.opacity = '0.8'; });
+    rootZone.addEventListener('dragleave', function() { rootZone.style.opacity = ''; });
+    rootZone.addEventListener('drop', function(e) {
+      e.preventDefault();
+      rootZone.style.opacity = '';
+      rootZone.style.display = 'none';
+      if (!draggedEl) return;
+      draggedEl.dataset.parent = '';
+      document.getElementById('folder-tree').appendChild(draggedEl);
+      save();
+    });
+  }
+})();
+</script>
+
+<style>
+.folder-row.drag-over { background: var(--bg-alt, #f0f0f0); outline: 2px solid var(--primary, #4a90d9); }
+.drag-handle:hover { color: var(--primary); }
+</style>
+{% endblock %}

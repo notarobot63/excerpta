@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+
+{% block title %}{% if folder %}Modifier{% else %}Nouveau{% endif %} dossier - Excerpta{% endblock %}
+
+{% block content %}
+<div class="form-card">
+  <h2 style="font-size:1.1rem; font-weight:600; margin:0 0 1.25rem;">
+    {% if folder %}Modifier le dossier{% else %}Nouveau dossier{% endif %}
+  </h2>
+
+  <form method="post"
+        action="{% if folder %}/folders/{{ folder.id }}/edit{% else %}/folders/add{% endif %}">
+    {{ csrf_input(request) }}
+
+    <div class="form-group">
+      <label class="form-label" for="name">Nom du dossier *</label>
+      <input id="name" name="name" type="text" required class="form-input"
+             value="{{ folder.name if folder else '' }}"
+             placeholder="Ex: Veille tech">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Dossier parent</label>
+      <div class="folder-picker" x-data="folderPicker({{ folder.parent_id if folder and folder.parent_id else 'null' }})">
+        <div class="folder-picker-selected" @click="open = !open"
+             style="cursor:pointer; padding:0.5rem 0.75rem; border:1px solid var(--border);
+                    border-radius:4px; background:var(--bg); display:flex; align-items:center; justify-content:space-between;">
+          <span x-text="selectedLabel()"></span>
+          <span x-text="open ? '▲' : '▼'" style="color:var(--text-muted); font-size:0.75rem;"></span>
+        </div>
+        <input type="hidden" name="parent_id" :value="selected || ''">
+        <div x-show="open" @click.outside="open = false"
+             style="border:1px solid var(--border); border-radius:4px; background:var(--bg);
+                    margin-top:2px; max-height:200px; overflow-y:auto;">
+          <div @click="select(null)"
+               style="padding:0.4rem 0.75rem; cursor:pointer;"
+               :style="selected === null ? 'background:var(--primary-light, #e8f0fe);font-weight:600;' : ''"
+               class="folder-option">
+            — Aucun (dossier racine) —
+          </div>
+          {% for f, depth in folder_tree %}
+            {% if not folder or f.id != folder.id %}
+            <div @click="select({{ f.id }})"
+                 style="padding:0.4rem 0.75rem; padding-left:{{ 0.75 + depth * 1.25 }}rem; cursor:pointer;"
+                 :style="{{ f.id }} === selected ? 'background:var(--primary-light, #e8f0fe);font-weight:600;' : ''"
+                 class="folder-option"
+                 data-id="{{ f.id }}" data-label="{{ '↳ ' * depth }}{{ f.name }}">
+              {% if depth > 0 %}<span style="color:var(--text-muted);">{{ '↳ ' * depth }}</span>{% else %}📁 {% endif %}{{ f.name }}
+            </div>
+            {% endif %}
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-check">
+        <input type="checkbox" name="is_public" value="1"
+               {% if folder and folder.is_public %}checked{% endif %}>
+        Dossier public
+      </label>
+    </div>
+
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary">
+        {% if folder %}Enregistrer{% else %}Créer{% endif %}
+      </button>
+      <a href="/folders" class="btn btn-ghost">Annuler</a>
+      {% if folder %}
+      <form action="/folders/{{ folder.id }}/delete" method="post" style="margin-left:auto;"
+            data-confirm="Supprimer ce dossier ? Les sous-dossiers deviendront des dossiers racines.">
+        {{ csrf_input(request) }}
+        <button type="submit" class="btn btn-danger btn-sm">Supprimer</button>
+      </form>
+      {% endif %}
+    </div>
+  </form>
+</div>
+
+<script nonce="{{ request.state.nonce }}">
+function folderPicker(initialId) {
+  var labels = { null: '— Aucun (dossier racine) —' };
+  document.querySelectorAll('.folder-option[data-id]').forEach(function(el) {
+    labels[parseInt(el.dataset.id)] = el.dataset.label;
+  });
+  return {
+    selected: initialId,
+    open: false,
+    select: function(id) { this.selected = id; this.open = false; },
+    selectedLabel: function() { return labels[this.selected] || '— Aucun (dossier racine) —'; },
+  };
+}
+</script>
+
+<style>
+.folder-option:hover { background: var(--bg-alt, #f5f5f5); }
+</style>
+{% endblock %}

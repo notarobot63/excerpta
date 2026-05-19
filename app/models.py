@@ -3,6 +3,7 @@ from typing import Optional, List
 import secrets
 
 from sqlmodel import SQLModel, Field, Relationship
+# LinkGroupLink supprimé — remplacé par folder_id FK directe sur Link
 
 
 def _utcnow() -> datetime:
@@ -13,12 +14,6 @@ class LinkTagLink(SQLModel, table=True):
     __tablename__ = "link_tags"
     link_id: Optional[int] = Field(default=None, foreign_key="links.id", primary_key=True)
     tag_id: Optional[int] = Field(default=None, foreign_key="tags.id", primary_key=True)
-
-
-class LinkGroupLink(SQLModel, table=True):
-    __tablename__ = "link_groups"
-    link_id: Optional[int] = Field(default=None, foreign_key="links.id", primary_key=True)
-    group_id: Optional[int] = Field(default=None, foreign_key="groups.id", primary_key=True)
 
 
 class User(SQLModel, table=True):
@@ -37,7 +32,7 @@ class User(SQLModel, table=True):
 
     links: List["Link"] = Relationship(back_populates="user")
     tags: List["Tag"] = Relationship(back_populates="user")
-    groups: List["Group"] = Relationship(back_populates="user")
+    folders: List["Folder"] = Relationship(back_populates="user")
 
 
 class Tag(SQLModel, table=True):
@@ -50,16 +45,17 @@ class Tag(SQLModel, table=True):
     links: List["Link"] = Relationship(back_populates="tags", link_model=LinkTagLink)
 
 
-class Group(SQLModel, table=True):
-    __tablename__ = "groups"
+class Folder(SQLModel, table=True):
+    __tablename__ = "folders"
     id: Optional[int] = Field(default=None, primary_key=True)
     user_id: int = Field(foreign_key="users.id")
     name: str
     is_public: bool = Field(default=False)
     parent_id: Optional[int] = Field(default=None)
+    sort_order: int = Field(default=0)
 
-    user: Optional[User] = Relationship(back_populates="groups")
-    links: List["Link"] = Relationship(back_populates="groups", link_model=LinkGroupLink)
+    user: Optional[User] = Relationship(back_populates="folders")
+    links: List["Link"] = Relationship(back_populates="folder")
 
 
 class Link(SQLModel, table=True):
@@ -75,12 +71,13 @@ class Link(SQLModel, table=True):
     is_public: bool = Field(default=False)
     archived_url: Optional[str] = Field(default=None)
     archived_at: Optional[datetime] = Field(default=None)
+    folder_id: Optional[int] = Field(default=None, foreign_key="folders.id")
     created_at: datetime = Field(default_factory=_utcnow)
     updated_at: datetime = Field(default_factory=_utcnow)
 
     user: Optional[User] = Relationship(back_populates="links")
     tags: List[Tag] = Relationship(back_populates="links", link_model=LinkTagLink, sa_relationship_kwargs={"lazy": "selectin"})
-    groups: List[Group] = Relationship(back_populates="links", link_model=LinkGroupLink, sa_relationship_kwargs={"lazy": "selectin"})
+    folder: Optional[Folder] = Relationship(back_populates="links")
 
 
 class FreshRSSConfig(SQLModel, table=True):

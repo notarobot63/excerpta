@@ -52,7 +52,7 @@ async def dashboard(
         "users": session.execute(text("SELECT COUNT(*) FROM users")).scalar(),
         "links": session.execute(text("SELECT COUNT(*) FROM links")).scalar(),
         "tags":  session.execute(text("SELECT COUNT(*) FROM tags")).scalar(),
-        "groups": session.execute(text("SELECT COUNT(*) FROM groups")).scalar(),
+        "folders": session.execute(text("SELECT COUNT(*) FROM folders")).scalar(),
         "db_size": _db_size_mb(session),
         "last_link": session.execute(
             text("SELECT MAX(created_at) FROM links")
@@ -112,7 +112,7 @@ async def user_detail(
     stats = {
         "links":  session.execute(text("SELECT COUNT(*) FROM links  WHERE user_id=:id"), {"id": uid}).scalar(),
         "tags":   session.execute(text("SELECT COUNT(*) FROM tags   WHERE user_id=:id"), {"id": uid}).scalar(),
-        "groups": session.execute(text("SELECT COUNT(*) FROM groups WHERE user_id=:id"), {"id": uid}).scalar(),
+        "folders": session.execute(text("SELECT COUNT(*) FROM folders WHERE user_id=:id"), {"id": uid}).scalar(),
     }
     recent_links = session.execute(
         text("SELECT title, url, created_at FROM links WHERE user_id=:id ORDER BY created_at DESC LIMIT 5"),
@@ -209,10 +209,10 @@ async def delete_user(
     # Cascade manuelle dans l'ordre des dépendances FK
     session.execute(text("DELETE FROM fts_links   WHERE link_id IN (SELECT id FROM links WHERE user_id=:id)"), {"id": uid})
     session.execute(text("DELETE FROM link_tags   WHERE link_id IN (SELECT id FROM links WHERE user_id=:id)"), {"id": uid})
-    session.execute(text("DELETE FROM link_groups WHERE link_id IN (SELECT id FROM links WHERE user_id=:id)"), {"id": uid})
+    session.execute(text("UPDATE links SET folder_id = NULL WHERE user_id=:id"), {"id": uid})
     session.execute(text("DELETE FROM links       WHERE user_id=:id"), {"id": uid})
     session.execute(text("DELETE FROM tags        WHERE user_id=:id"), {"id": uid})
-    session.execute(text("DELETE FROM groups      WHERE user_id=:id"), {"id": uid})
+    session.execute(text("DELETE FROM folders      WHERE user_id=:id"), {"id": uid})
     session.execute(text("DELETE FROM users       WHERE id=:id"), {"id": uid})
     session.commit()
     _log.warning("admin#%s deleted user#%s (%s) and all their data", admin.id, uid, target_name)

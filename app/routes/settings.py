@@ -18,7 +18,7 @@ from ..auth import get_current_user
 from ..config import settings as cfg
 from ..crypto import decrypt
 from ..database import engine as db_engine, get_session
-from ..models import Group, Link, LinkGroupLink, LinkTagLink, Tag, User
+from ..models import Folder, Link, LinkTagLink, Tag, User
 from ..ratelimit import rate_limit
 from ..templates_cfg import templates
 from ..utils import get_or_create_tag, refresh_link_fts, sidebar_data
@@ -72,12 +72,12 @@ def _build_netscape(links: list[Link]) -> str:
     ]
     for lk in links:
         tags = escape(",".join(t.name for t in lk.tags), quote=True)
-        groups = escape(",".join(g.name for g in lk.groups), quote=True)
+        folder_name = escape(lk.folder.name if lk.folder else "", quote=True)
         ts = int(lk.created_at.timestamp())
         title = escape(lk.title)
         url = escape(lk.url, quote=True)
         lines.append(
-            f'    <DT><A HREF="{url}" ADD_DATE="{ts}" TAGS="{tags}" GROUPS="{groups}">{title}</A>'
+            f'    <DT><A HREF="{url}" ADD_DATE="{ts}" TAGS="{tags}" FOLDER="{folder_name}">{title}</A>'
         )
         body = lk.note or lk.description
         if body:
@@ -315,27 +315,25 @@ async def purge_freshrss(
 ):
     config = session.exec(select(FreshRSSConfig).where(FreshRSSConfig.user_id == user.id)).first()
     if config:
-        group = session.exec(
-            select(Group).where(Group.user_id == user.id, Group.name == config.group_name)
+        folder = session.exec(
+            select(Folder).where(Folder.user_id == user.id, Folder.name == config.group_name)
         ).first()
-        if group:
+        if folder:
             session.execute(
                 text("DELETE FROM link_tags WHERE link_id IN "
-                     "(SELECT link_id FROM link_groups WHERE group_id = :gid)"),
-                {"gid": group.id},
+                     "(SELECT id FROM links WHERE folder_id = :fid)"),
+                {"fid": folder.id},
             )
             session.execute(
                 text("DELETE FROM fts_links WHERE link_id IN "
-                     "(SELECT link_id FROM link_groups WHERE group_id = :gid)"),
-                {"gid": group.id},
+                     "(SELECT id FROM links WHERE folder_id = :fid)"),
+                {"fid": folder.id},
             )
             session.execute(
-                text("DELETE FROM links WHERE user_id = :uid AND id IN "
-                     "(SELECT link_id FROM link_groups WHERE group_id = :gid)"),
-                {"uid": user.id, "gid": group.id},
+                text("DELETE FROM links WHERE user_id = :uid AND folder_id = :fid"),
+                {"uid": user.id, "fid": folder.id},
             )
-            session.execute(text("DELETE FROM link_groups WHERE group_id = :id"), {"id": group.id})
-            session.delete(group)
+            session.delete(folder)
         config.synced_count = 0
         config.last_sync = None
         session.add(config)
@@ -351,11 +349,10 @@ async def purge_all(
     session: Session = Depends(get_session),
 ):
     session.execute(text("DELETE FROM link_tags WHERE link_id IN (SELECT id FROM links WHERE user_id = :uid)"), {"uid": user.id})
-    session.execute(text("DELETE FROM link_groups WHERE link_id IN (SELECT id FROM links WHERE user_id = :uid)"), {"uid": user.id})
     session.execute(text("DELETE FROM fts_links WHERE link_id IN (SELECT id FROM links WHERE user_id = :uid)"), {"uid": user.id})
     session.execute(text("DELETE FROM links WHERE user_id = :uid"), {"uid": user.id})
     session.execute(text("DELETE FROM tags WHERE user_id = :uid"), {"uid": user.id})
-    session.execute(text("DELETE FROM groups WHERE user_id = :uid"), {"uid": user.id})
+    session.execute(text("DELETE FROM folders WHERE user_id = :uid"), {"uid": user.id})
     session.commit()
     return RedirectResponse(url="/settings?purged=all", status_code=303)
 

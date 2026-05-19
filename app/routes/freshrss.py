@@ -13,7 +13,7 @@ from sqlmodel import Session, select
 from ..auth import get_current_user
 from ..crypto import decrypt, encrypt, hmac_key
 from ..database import engine, get_session
-from ..models import FreshRSSConfig, Group, Link, LinkGroupLink, LinkTagLink, Tag, User
+from ..models import Folder, FreshRSSConfig, Link, LinkTagLink, Tag, User
 from ..ratelimit import rate_limit
 from .links import _fetch_meta, _safe_url
 from ..templates_cfg import templates
@@ -131,15 +131,15 @@ async def sync_user(config: FreshRSSConfig, session: Session) -> int:
     auth = await _greader_auth(config.freshrss_url, config.freshrss_user, decrypt(config.freshrss_token))
     items = await _greader_starred(config.freshrss_url, auth)
 
-    group = session.exec(
-        select(Group).where(
-            Group.user_id == config.user_id,
-            Group.name == config.group_name,
+    folder = session.exec(
+        select(Folder).where(
+            Folder.user_id == config.user_id,
+            Folder.name == config.group_name,
         )
     ).first()
-    if not group:
-        group = Group(user_id=config.user_id, name=config.group_name)
-        session.add(group)
+    if not folder:
+        folder = Folder(user_id=config.user_id, name=config.group_name)
+        session.add(folder)
         session.flush()
 
     candidate_urls = [u for u in (_extract_url(i) for i in items) if u]
@@ -188,11 +188,11 @@ async def sync_user(config: FreshRSSConfig, session: Session) -> int:
             note="",
             favicon_url="",
             thumbnail_url=_extract_thumbnail(item),
+            folder_id=folder.id,
             **({"created_at": created, "updated_at": created} if created else {}),
         )
         session.add(link)
         session.flush()
-        session.add(LinkGroupLink(link_id=link.id, group_id=group.id))
         session.add(LinkTagLink(link_id=link.id, tag_id=freshrss_tag.id))
         session.flush()
         refresh_link_fts(session, link, [freshrss_tag])

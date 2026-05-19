@@ -54,9 +54,29 @@ def init_db():
     for stmt in _FTS_SETUP:
         con.execute(stmt)
     # Migrations idempotentes
-    gcols = [r[1] for r in con.execute("PRAGMA table_info(groups)").fetchall()]
-    if "parent_id" not in gcols:
-        con.execute("ALTER TABLE groups ADD COLUMN parent_id INTEGER DEFAULT NULL")
+    # Migration groups → folders (ancienne DB)
+    tables = {r[0] for r in con.execute("SELECT name FROM sqlite_master WHERE type='table'").fetchall()}
+    if "groups" in tables and "folders" not in tables:
+        gcols = [r[1] for r in con.execute("PRAGMA table_info(groups)").fetchall()]
+        if "parent_id" not in gcols:
+            con.execute("ALTER TABLE groups ADD COLUMN parent_id INTEGER DEFAULT NULL")
+        if "sort_order" not in gcols:
+            con.execute("ALTER TABLE groups ADD COLUMN sort_order INTEGER NOT NULL DEFAULT 0")
+        lcols_g = [r[1] for r in con.execute("PRAGMA table_info(links)").fetchall()]
+        if "folder_id" not in lcols_g:
+            con.execute("ALTER TABLE links ADD COLUMN folder_id INTEGER REFERENCES groups(id)")
+            con.execute("UPDATE links SET folder_id = (SELECT group_id FROM link_groups WHERE link_id = links.id LIMIT 1)")
+        if "link_groups" in tables:
+            con.execute("DROP TABLE link_groups")
+        con.execute("ALTER TABLE groups RENAME TO folders")
+    elif "folders" in tables:
+        fcols = [r[1] for r in con.execute("PRAGMA table_info(folders)").fetchall()]
+        if "sort_order" not in fcols:
+            con.execute("ALTER TABLE folders ADD COLUMN sort_order INTEGER NOT NULL DEFAULT 0")
+        lcols_f = [r[1] for r in con.execute("PRAGMA table_info(links)").fetchall()]
+        if "folder_id" not in lcols_f:
+            con.execute("ALTER TABLE links ADD COLUMN folder_id INTEGER REFERENCES folders(id)")
+
     ucols = [r[1] for r in con.execute("PRAGMA table_info(users)").fetchall()]
     if "is_admin" not in ucols:
         con.execute("ALTER TABLE users ADD COLUMN is_admin INTEGER NOT NULL DEFAULT 0")
@@ -102,9 +122,9 @@ def init_db():
     # Index de performance
     con.execute("CREATE INDEX IF NOT EXISTS idx_links_user_created ON links(user_id, created_at DESC)")
     con.execute("CREATE INDEX IF NOT EXISTS idx_tags_user_id ON tags(user_id)")
-    con.execute("CREATE INDEX IF NOT EXISTS idx_groups_user_id ON groups(user_id)")
+    con.execute("CREATE INDEX IF NOT EXISTS idx_folders_user_id ON folders(user_id)")
     con.execute("CREATE INDEX IF NOT EXISTS idx_link_tags_tag_id ON link_tags(tag_id)")
-    con.execute("CREATE INDEX IF NOT EXISTS idx_link_groups_group_id ON link_groups(group_id)")
+    con.execute("CREATE INDEX IF NOT EXISTS idx_links_folder_id ON links(folder_id)")
 
     con.commit()
     con.close()

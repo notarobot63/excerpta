@@ -32,8 +32,8 @@
       <a href="/tags" class="sidebar-item {% if request.url.path == '/tags' %}active{% endif %}">
         <span>🏷 Gérer les tags</span>
       </a>
-      <a href="/groups" class="sidebar-item {% if request.url.path.startswith('/groups') %}active{% endif %}">
-        <span>📂 Gérer les groupes</span>
+      <a href="/folders" class="sidebar-item {% if request.url.path.startswith('/folders') %}active{% endif %}">
+        <span>📂 Gérer les dossiers</span>
       </a>
       <a href="/settings" class="sidebar-item {% if request.url.path.startswith('/settings') %}active{% endif %}">
         <span>⚙️ Paramètres</span>
@@ -47,14 +47,14 @@
       </a>
       {% endif %}
 
-      {% if group_tree %}
-      <div class="sidebar-section">Groupes</div>
-      {% for group, depth in group_tree %}
-      <a href="/?group_id={{ group.id }}"
-         class="sidebar-item {% if current_group == group.id %}active{% endif %}"
+      {% if folder_tree %}
+      <div class="sidebar-section">Dossiers</div>
+      {% for folder, depth in folder_tree %}
+      <a href="/?group_id={{ folder.id }}"
+         class="sidebar-item {% if current_group == folder.id %}active{% endif %}"
          style="padding-left: {{ 0.75 + depth * 0.875 }}rem;">
-        <span>{% if depth > 0 %}<span style="color:var(--text-muted);margin-right:0.2rem">↳</span>{% else %}📁 {% endif %}{{ group.name }}</span>
-        <span class="sidebar-count">{{ group_counts.get(group.id, 0) }}</span>
+        <span>{% if depth > 0 %}<span style="color:var(--text-muted);margin-right:0.2rem">↳</span>{% else %}📁 {% endif %}{{ folder.name }}</span>
+        <span class="sidebar-count">{{ folder_counts.get(folder.id, 0) }}</span>
       </a>
       {% endfor %}
       {% endif %}

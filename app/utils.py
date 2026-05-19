@@ -1,7 +1,7 @@
 from sqlalchemy import text
 from sqlmodel import Session, select
 
-from .models import Group, Link, Tag
+from .models import Folder, Link, Tag
 
 
 def get_or_create_tag(session: Session, user_id: int, name: str) -> Tag:
@@ -26,47 +26,71 @@ def refresh_link_fts(session: Session, link: Link, tags: list[Tag]):
     )
 
 
-def descendant_group_ids(all_groups: list[Group], root_id: int) -> list[int]:
+def descendant_folder_ids(all_folders: list[Folder], root_id: int) -> list[int]:
     """Retourne root_id + tous les IDs enfants récursivement."""
     by_parent: dict = {}
-    for g in all_groups:
-        by_parent.setdefault(g.parent_id, []).append(g.id)
+    for f in all_folders:
+        by_parent.setdefault(f.parent_id, []).append(f.id)
     result: list[int] = []
     seen: set[int] = set()
     queue = [root_id]
     while queue:
-        gid = queue.pop(0)
-        if gid in seen:
+        fid = queue.pop(0)
+        if fid in seen:
             continue
-        seen.add(gid)
-        result.append(gid)
-        queue.extend(by_parent.get(gid, []))
+        seen.add(fid)
+        result.append(fid)
+        queue.extend(by_parent.get(fid, []))
     return result
 
 
-def build_group_tree(groups: list[Group]) -> list[tuple]:
-    """Retourne [(group, depth), ...] en ordre arborescent."""
+def build_folder_tree(folders: list[Folder]) -> list[tuple]:
+    """Retourne [(folder, depth), ...] en ordre arborescent, trié par sort_order puis nom."""
     result = []
 
     def walk(parent_id, depth):
         children = sorted(
-            [g for g in groups if g.parent_id == parent_id],
-            key=lambda g: g.name,
+            [f for f in folders if f.parent_id == parent_id],
+            key=lambda f: (f.sort_order, f.name),
         )
-        for g in children:
-            result.append((g, depth))
-            walk(g.id, depth + 1)
+        for f in children:
+            result.append((f, depth))
+            walk(f.id, depth + 1)
 
     walk(None, 0)
     return result
+
+
+def folder_cumulative_counts(all_folders: list[Folder], direct_counts: dict) -> dict:
+    """Calcule les compteurs cumulatifs (dossier + tous ses descendants)."""
+    cumulative = {}
+    tree = build_folder_tree(all_folders)
+    folder_map = {f.id: f for f, _ in tree}
+
+    def count(folder_id: int) -> int:
+        if folder_id in cumulative:
+            return cumulative[folder_id]
+        total = direct_counts.get(folder_id, 0)
+        for f in all_folders:
+            if f.parent_id == folder_id:
+                total += count(f.id)
+        cumulative[folder_id] = total
+        return total
+
+    for f in all_folders:
+        count(f.id)
+    return cumulative
 
 
 def sidebar_data(session: Session, user_id: int) -> dict:
     all_tags = list(
         session.exec(select(Tag).where(Tag.user_id == user_id).order_by(Tag.name)).all()
     )
-    all_groups = list(
-        session.exec(select(Group).where(Group.user_id == user_id).order_by(Group.name)).all()
+    all_folders = list(
+        session.exec(
+            select(Folder).where(Folder.user_id == user_id)
+            .order_by(Folder.sort_order, Folder.name)
+        ).all()
     )
     tag_counts = {
         row[0]: row[1]
@@ -79,21 +103,22 @@ def sidebar_data(session: Session, user_id: int) -> dict:
             {"uid": user_id},
         ).fetchall()
     }
-    group_counts = {
+    direct_counts = {
         row[0]: row[1]
         for row in session.execute(
             text(
-                "SELECT g.id, COUNT(lg.link_id) FROM groups g"
-                " LEFT JOIN link_groups lg ON lg.group_id = g.id"
-                " WHERE g.user_id = :uid GROUP BY g.id"
+                "SELECT f.id, COUNT(l.id) FROM folders f"
+                " LEFT JOIN links l ON l.folder_id = f.id"
+                " WHERE f.user_id = :uid GROUP BY f.id"
             ),
             {"uid": user_id},
         ).fetchall()
     }
+    folder_counts = folder_cumulative_counts(all_folders, direct_counts)
     return {
         "all_tags": all_tags,
-        "all_groups": all_groups,
-        "group_tree": build_group_tree(all_groups),
+        "all_folders": all_folders,
+        "folder_tree": build_folder_tree(all_folders),
         "tag_counts": tag_counts,
-        "group_counts": group_counts,
+        "folder_counts": folder_counts,
     }

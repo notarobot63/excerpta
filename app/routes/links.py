@@ -13,10 +13,10 @@ from sqlmodel import Session, select
 
 from ..auth import get_current_user
 from ..database import engine as db_engine, get_session
-from ..models import Group, Link, LinkGroupLink, LinkTagLink, Tag, User
+from ..models import Folder, Link, LinkTagLink, Tag, User
 from ..ratelimit import rate_limit
 from ..templates_cfg import templates
-from ..utils import descendant_group_ids, get_or_create_tag, refresh_link_fts, sidebar_data
+from ..utils import descendant_folder_ids, get_or_create_tag, refresh_link_fts, sidebar_data
 
 router = APIRouter()
 
@@ -196,16 +196,14 @@ def _get_or_create_tags(session: Session, user_id: int, names: List[str]) -> Lis
     return [get_or_create_tag(session, user_id, n.strip().lower()) for n in names if n.strip()]
 
 
-def _validate_group_ids(session: Session, user_id: int, raw: List[str]) -> List[int]:
-    ids = [int(g) for g in raw if g.isdigit()]
-    if not ids:
-        return []
-    owned = {
-        g.id for g in session.exec(
-            select(Group).where(Group.user_id == user_id, Group.id.in_(ids))
-        ).all()
-    }
-    return [gid for gid in ids if gid in owned]
+def _validate_folder_id(session: Session, user_id: int, raw: Optional[str]) -> Optional[int]:
+    if not raw or not raw.strip().isdigit():
+        return None
+    fid = int(raw)
+    folder = session.exec(
+        select(Folder).where(Folder.user_id == user_id, Folder.id == fid)
+    ).first()
+    return fid if folder else None
 
 
 # ─── List ────────────────────────────────────────────────────────────────────
@@ -249,13 +247,9 @@ async def list_links(
             stmt = select(Link).where(Link.id < 0)
 
     if group_id:
-        all_grps = list(session.exec(select(Group).where(Group.user_id == user.id)).all())
-        gids = descendant_group_ids(all_grps, group_id)
-        stmt = (
-            stmt.join(LinkGroupLink, LinkGroupLink.link_id == Link.id)
-            .where(LinkGroupLink.group_id.in_(gids))
-            .distinct()
-        )
+        all_fldrs = list(session.exec(select(Folder).where(Folder.user_id == user.id)).all())
+        fids = descendant_folder_ids(all_fldrs, group_id)
+        stmt = stmt.where(Link.folder_id.in_(fids))
 
     total = session.execute(
         select(func.count()).select_from(stmt.subquery())
@@ -309,6 +303,7 @@ async def add_form(
     request: Request,
     url: Optional[str] = None,
     title: Optional[str] = None,
+    folder_id: Optional[int] = None,
     user: User = Depends(get_current_user),
     session: Session = Depends(get_session),
 ):
@@ -321,6 +316,7 @@ async def add_form(
             "link": None,
             "prefill_url": url or "",
             "meta": meta,
+            "prefill_folder_id": folder_id,
             **sidebar,
             "user": user,
         },
@@ -337,7 +333,7 @@ async def add_link(
     note: str = Form("", max_length=MAX_NOTE_LEN),
     is_public: Optional[str] = Form(default=None),
     tags: str = Form(""),
-    groups: List[str] = Form(default=[]),
+    folder_id: Optional[str] = Form(default=None),
     user: User = Depends(get_current_user),
     session: Session = Depends(get_session),
 ):
@@ -353,6 +349,7 @@ async def add_link(
         thumbnail_url="",
         note=note,
         is_public=is_public is not None,
+        folder_id=_validate_folder_id(session, user.id, folder_id),
     )
     session.add(link)
     session.flush()
@@ -361,9 +358,6 @@ async def add_link(
     link_tags = _get_or_create_tags(session, user.id, tag_names)
     for t in link_tags:
         session.add(LinkTagLink(link_id=link.id, tag_id=t.id))
-
-    for gid in _validate_group_ids(session, user.id, groups):
-        session.add(LinkGroupLink(link_id=link.id, group_id=gid))
 
     session.flush()
     refresh_link_fts(session, link, link_tags)
@@ -388,7 +382,6 @@ async def edit_form(
         raise HTTPException(status_code=404)
     sidebar = sidebar_data(session, user.id)
     current_tags = ", ".join(t.name for t in link.tags)
-    current_groups = [g.id for g in link.groups]
     return templates.TemplateResponse(
         "links/form.html",
         {
@@ -398,7 +391,6 @@ async def edit_form(
             "meta": {},
             **sidebar,
             "current_tags": current_tags,
-            "current_groups": current_groups,
             "user": user,
         },
     )
@@ -414,7 +406,7 @@ async def edit_link(
     note: str = Form("", max_length=MAX_NOTE_LEN),
     is_public: Optional[str] = Form(default=None),
     tags: str = Form(""),
-    groups: List[str] = Form(default=[]),
+    folder_id: Optional[str] = Form(default=None),
     user: User = Depends(get_current_user),
     session: Session = Depends(get_session),
 ):
@@ -431,6 +423,7 @@ async def edit_link(
     link.description = description
     link.note = note
     link.is_public = is_public is not None
+    link.folder_id = _validate_folder_id(session, user.id, folder_id)
     link.updated_at = datetime.now(timezone.utc).replace(tzinfo=None)
     link.thumbnail_url = meta.get("thumbnail_url", "") or link.thumbnail_url
     session.add(link)
@@ -442,11 +435,6 @@ async def edit_link(
     link_tags = _get_or_create_tags(session, user.id, tag_names)
     for t in link_tags:
         session.add(LinkTagLink(link_id=link.id, tag_id=t.id))
-
-    session.execute(text("DELETE FROM link_groups WHERE link_id = :id"), {"id": link_id})
-    session.flush()
-    for gid in _validate_group_ids(session, user.id, groups):
-        session.add(LinkGroupLink(link_id=link.id, group_id=gid))
 
     session.flush()
     refresh_link_fts(session, link, link_tags)

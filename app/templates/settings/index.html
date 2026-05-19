@@ -142,19 +142,19 @@
   <div style="display:flex;flex-direction:column;gap:0.75rem;">
     <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;">
       <form action="/settings/purge-freshrss" method="post"
-            data-confirm="Supprimer tous les liens du groupe FreshRSS et réinitialiser le compteur de synchro ?">
+            data-confirm="Supprimer tous les liens du dossier FreshRSS et réinitialiser le compteur de synchro ?">
         {{ csrf_input(request) }}
         <button type="submit" class="btn btn-danger btn-sm">Purger les liens FreshRSS</button>
       </form>
-      <span style="font-size:0.78rem;color:var(--text-muted)">Supprime tous les liens du groupe FreshRSS configuré.</span>
+      <span style="font-size:0.78rem;color:var(--text-muted)">Supprime tous les liens du dossier FreshRSS configuré.</span>
     </div>
     <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;">
       <form action="/settings/purge-all" method="post"
-            data-confirm="Supprimer TOUS vos liens, tags et groupes ? Cette action est irréversible.">
+            data-confirm="Supprimer TOUS vos liens, tags et dossiers ? Cette action est irréversible.">
         {{ csrf_input(request) }}
         <button type="submit" class="btn btn-danger btn-sm">Purger toutes les données</button>
       </form>
-      <span style="font-size:0.78rem;color:var(--text-muted)">Supprime définitivement tous vos liens, tags et groupes.</span>
+      <span style="font-size:0.78rem;color:var(--text-muted)">Supprime définitivement tous vos liens, tags et dossiers.</span>
     </div>
   </div>
 

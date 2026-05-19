@@ -6,9 +6,9 @@ from typing import List, Optional
 
 from ..crypto import hmac_key
 from ..database import get_session
-from ..models import Link, LinkGroupLink, LinkTagLink, Tag, Group, User
+from ..models import Folder, Link, LinkTagLink, Tag, User
 from ..ratelimit import rate_limit
-from ..utils import descendant_group_ids, get_or_create_tag, refresh_link_fts
+from ..utils import descendant_folder_ids, get_or_create_tag, refresh_link_fts
 from .links import MAX_TAGS_PER_LINK, _safe_url
 
 router = APIRouter(prefix="/api/v1")
@@ -99,14 +99,9 @@ async def api_list_links(
             .where(Link.user_id == user.id, LinkTagLink.tag_id == tag_obj.id)
         )
     elif group_id:
-        all_grps = list(session.exec(select(Group).where(Group.user_id == user.id)).all())
-        gids = descendant_group_ids(all_grps, group_id)
-        stmt = (
-            select(Link)
-            .join(LinkGroupLink, LinkGroupLink.link_id == Link.id)
-            .where(Link.user_id == user.id, LinkGroupLink.group_id.in_(gids))
-            .distinct()
-        )
+        all_fldrs = list(session.exec(select(Folder).where(Folder.user_id == user.id)).all())
+        fids = descendant_folder_ids(all_fldrs, group_id)
+        stmt = select(Link).where(Link.user_id == user.id, Link.folder_id.in_(fids))
 
     if q:
         q_like = f"%{q}%"
@@ -161,36 +156,52 @@ async def api_list_tags(
     return {"tags": [{"name": r[0], "count": r[1]} for r in rows]}
 
 
-@router.get("/groups")
-async def api_list_groups(
+@router.get("/folders")
+async def api_list_folders(
     user: User = Depends(_get_api_user),
     session: Session = Depends(get_session),
 ):
     rows = session.execute(
         text("""
-            SELECT g.id, g.name, g.parent_id, COUNT(lg.link_id) AS cnt
-            FROM groups g
-            LEFT JOIN link_groups lg ON lg.group_id = g.id
-            WHERE g.user_id = :uid
-            GROUP BY g.id, g.name, g.parent_id
-            ORDER BY g.name
+            SELECT f.id, f.name, f.parent_id, f.sort_order, COUNT(l.id) AS cnt
+            FROM folders f
+            LEFT JOIN links l ON l.folder_id = f.id
+            WHERE f.user_id = :uid
+            GROUP BY f.id, f.name, f.parent_id, f.sort_order
+            ORDER BY f.sort_order, f.name
         """),
         {"uid": user.id},
     ).fetchall()
 
-    groups = [{"id": r[0], "name": r[1], "parent_id": r[2], "count": r[3]} for r in rows]
+    folders = [{"id": r[0], "name": r[1], "parent_id": r[2], "sort_order": r[3], "count": r[4]} for r in rows]
 
     result: list = []
 
-    def add_group(g, d):
-        result.append({**g, "depth": d})
-        for child in sorted([x for x in groups if x["parent_id"] == g["id"]], key=lambda x: x["name"]):
-            add_group(child, d + 1)
+    def add_folder(f, d):
+        result.append({**f, "depth": d})
+        children = sorted(
+            [x for x in folders if x["parent_id"] == f["id"]],
+            key=lambda x: (x["sort_order"], x["name"]),
+        )
+        for child in children:
+            add_folder(child, d + 1)
 
-    for root in sorted([g for g in groups if g["parent_id"] is None], key=lambda x: x["name"]):
-        add_group(root, 0)
+    for root in sorted(
+        [f for f in folders if f["parent_id"] is None],
+        key=lambda x: (x["sort_order"], x["name"]),
+    ):
+        add_folder(root, 0)
 
-    return {"groups": result}
+    return {"folders": result}
+
+
+@router.get("/groups")
+async def api_list_groups_compat(
+    user: User = Depends(_get_api_user),
+    session: Session = Depends(get_session),
+):
+    """Alias de compatibilité → /api/v1/folders"""
+    return await api_list_folders(user=user, session=session)
 
 
 class LinkPatch(BaseModel):

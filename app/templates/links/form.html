@@ -56,17 +56,36 @@
       <div class="form-hint">Séparés par des virgules. Les nouveaux tags sont créés automatiquement.</div>
     </div>
 
-    {% if all_groups %}
+    {% if folder_tree %}
     <div class="form-group">
-      <label class="form-label">Groupes</label>
-      <div style="display: flex; flex-direction: column; gap: 0.35rem;">
-        {% for group in all_groups %}
-        <label class="form-check">
-          <input type="checkbox" name="groups" value="{{ group.id }}"
-                 {% if current_groups is defined and group.id in current_groups %}checked{% endif %}>
-          {{ group.name }}
-        </label>
-        {% endfor %}
+      <label class="form-label">Dossier</label>
+      {% set current_folder_id = link.folder_id if link else prefill_folder_id %}
+      <div x-data="folderPicker({{ current_folder_id or 'null' }})">
+        <div @click="open = !open"
+             style="cursor:pointer; padding:0.5rem 0.75rem; border:1px solid var(--border);
+                    border-radius:4px; background:var(--bg); display:flex; align-items:center; justify-content:space-between;">
+          <span x-text="selectedLabel()" style="color: var(--text);"></span>
+          <span x-text="open ? '▲' : '▼'" style="color:var(--text-muted); font-size:0.75rem;"></span>
+        </div>
+        <input type="hidden" name="folder_id" :value="selected || ''">
+        <div x-show="open" @click.outside="open = false"
+             style="border:1px solid var(--border); border-radius:4px; background:var(--bg);
+                    margin-top:2px; max-height:220px; overflow-y:auto; position:relative; z-index:10;">
+          <div @click="select(null)"
+               :style="selected === null ? 'background:var(--primary-light,#e8f0fe);font-weight:600;' : ''"
+               style="padding:0.4rem 0.75rem; cursor:pointer;" class="folder-opt">
+            — Aucun dossier —
+          </div>
+          {% for f, depth in folder_tree %}
+          <div @click="select({{ f.id }})"
+               :style="{{ f.id }} === selected ? 'background:var(--primary-light,#e8f0fe);font-weight:600;' : ''"
+               style="padding:0.4rem 0.75rem; padding-left:{{ 0.75 + depth * 1.25 }}rem; cursor:pointer;"
+               class="folder-opt" data-id="{{ f.id }}" data-label="{{ '↳ ' * depth }}{{ f.name }}">
+            {% if depth > 0 %}<span style="color:var(--text-muted);">{{ '↳ ' * depth }}</span>{% else %}📁 {% endif %}{{ f.name }}
+            <span class="sidebar-count" style="margin-left:0.5rem;">{{ folder_counts.get(f.id, 0) }}</span>
+          </div>
+          {% endfor %}
+        </div>
       </div>
     </div>
     {% endif %}
@@ -109,6 +128,22 @@
 </div>
 
 <script nonce="{{ request.state.nonce }}">
+function folderPicker(initialId) {
+  var labels = { null: '— Aucun dossier —' };
+  document.querySelectorAll('.folder-opt[data-id]').forEach(function(el) {
+    labels[parseInt(el.dataset.id)] = el.dataset.label;
+  });
+  return {
+    selected: initialId,
+    open: false,
+    select: function(id) { this.selected = id; this.open = false; },
+    selectedLabel: function() {
+      if (this.selected === null) return '— Aucun dossier —';
+      return labels[this.selected] || '— Aucun dossier —';
+    },
+  };
+}
+
 function linkForm() {
   return {
     titleDirty: !!document.getElementById('title').value,
@@ -140,4 +175,5 @@ function linkForm() {
   }
 }
 </script>
+<style>.folder-opt:hover { background: var(--bg-alt, #f5f5f5); }</style>
 {% endblock %}
