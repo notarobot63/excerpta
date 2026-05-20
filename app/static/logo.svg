@@ -1,3 +1,9 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
-  <path d="M17,3H7C5.9,3 5,3.9 5,5v16l7,-3 7,3V5C19,3.9 18.1,3 17,3z"/>
+<svg width="480" height="160" viewBox="0 0 480 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <style>@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@700;900&amp;display=swap');</style>
+  <path d="M32 24 L88 24 C93 24 97 28 97 33 L97 136 L60 118 L23 136 L23 33 C23 28 27 24 32 24 Z" fill="#2BB24C"/>
+  <rect x="36" y="50" width="36" height="7" rx="3.5" fill="white" opacity="0.9"/>
+  <rect x="36" y="65" width="44" height="7" rx="3.5" fill="white" opacity="0.65"/>
+  <rect x="36" y="80" width="28" height="7" rx="3.5" fill="white" opacity="0.4"/>
+  <text x="116" y="82" font-family="'Nunito', 'Poppins', system-ui, sans-serif" font-size="64" font-weight="900" fill="#111827">E<tspan fill="#2BB24C">x</tspan>cerpta</text>
+  <text x="120" y="112" font-family="'Nunito', system-ui, sans-serif" font-size="16" font-weight="700" fill="#6B7280" letter-spacing="2">collect · annotate · remember</text>
 </svg>
