@@ -118,4 +118,5 @@ app.include_router(freshrss_api_router)  # JSON API FreshRSS - pas de CSRF
 
 @app.get("/health")
 def health():
-    return {"status": "ok"}
+    import os
+    return {"status": "ok", "version": os.getenv("APP_VERSION", "unknown")}
