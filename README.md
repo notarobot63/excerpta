@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="app/static/logo.svg" alt="Excerpta" width="380"/>
+</p>
+
 # Excerpta
 
 **Gestionnaire de liens self-hosted** — collecte, annote, retrouve tes liens depuis n'importe quel appareil.
