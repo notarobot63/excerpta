@@ -19,6 +19,7 @@ class Settings(BaseSettings):
     app_name: str = "Excerpta"
     admin_email: str = ""
     freshrss_sync_interval: int = 30  # minutes entre chaque sync automatique
+    encryption_key: str = ""  # Clé Fernet dédiée (indépendante de secret_key)
 
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
 
