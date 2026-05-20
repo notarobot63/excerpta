@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="app/static/logo.svg" alt="Excerpta" width="380"/>
+  <img src="app/static/logo_full.svg" alt="Excerpta" width="380"/>
 </p>
 
 # Excerpta
