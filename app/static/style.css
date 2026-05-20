@@ -652,3 +652,6 @@ a:hover { text-decoration: underline; }
 .sortable-ghost > a { opacity: 0.35; background: var(--sidebar-active); border-radius: 0.375rem; }
 .sortable-chosen > .sidebar-folder-item,
 .sortable-chosen > a { background: var(--card-hover); }
+
+/* Logo sidebar — suit la couleur d'accentuation du thème */
+.sidebar-logo { color: var(--sidebar-active-text); }
