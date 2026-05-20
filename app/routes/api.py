@@ -9,7 +9,7 @@ from ..database import get_session
 from ..models import Folder, Link, LinkTagLink, Tag, User
 from ..ratelimit import rate_limit
 from ..utils import descendant_folder_ids, get_or_create_tag, refresh_link_fts
-from .links import MAX_TAGS_PER_LINK, _safe_url
+from .links import MAX_TAGS_PER_LINK, _fts_escape, _safe_url
 
 router = APIRouter(prefix="/api/v1")
 
@@ -104,10 +104,19 @@ async def api_list_links(
         stmt = select(Link).where(Link.user_id == user.id, Link.folder_id.in_(fids))
 
     if q:
-        q_like = f"%{q}%"
-        stmt = stmt.where(
-            Link.title.ilike(q_like) | Link.description.ilike(q_like) | Link.url.ilike(q_like)
-        )
+        escaped = _fts_escape(q)
+        try:
+            fts_rows = session.execute(
+                text("SELECT link_id FROM fts_links WHERE fts_links MATCH :q ORDER BY rank"),
+                {"q": escaped},
+            ).fetchall()
+            fts_ids = [r[0] for r in fts_rows]
+            stmt = stmt.where(Link.id.in_(fts_ids)) if fts_ids else stmt.where(Link.id < 0)
+        except Exception:
+            q_like = f"%{q}%"
+            stmt = stmt.where(
+                Link.title.ilike(q_like) | Link.description.ilike(q_like) | Link.url.ilike(q_like)
+            )
 
     stmt = stmt.order_by(Link.created_at.desc())
 
