@@ -19,6 +19,7 @@
 - **Application Android** : QR code de configuration intégré (`GET /settings/android-qr.png`)
 - **9 thèmes CSS** : light, dark, dracula, nord, nord-dark, catppuccin, gruvbox, solarized, rosepine
 - **Bookmarklet** navigateur pour ajout rapide
+- **Synchronisation FreshRSS** : import automatique des articles étoilés (toutes les 30 min)
 
 ## Stack
 
@@ -47,7 +48,7 @@ L'API est accessible via une clé API (visible dans Paramètres → Compte) :
 
 ```http
 GET /api/v1/links
-Authorization: Bearer <api_key>
+X-API-Key: <api_key>
 ```
 
 Endpoints disponibles : `GET /me`, `GET/POST /links`, `PATCH/DELETE /links/{id}`, `GET /tags`, `GET /groups`.
@@ -58,4 +59,4 @@ Voir le dépôt [excerpta-android](https://GIT_HOST/Thomas/excerpta-android) —
 
 ## Licence
 
-Usage privé / self-hosted.
+[GNU Affero General Public License v3.0](LICENSE) — fork libre, copyleft fort, attribution obligatoire.
