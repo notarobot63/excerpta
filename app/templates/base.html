@@ -54,15 +54,19 @@
            onmouseover="this.style.color='var(--text)'" onmouseout="this.style.color='var(--text-muted)'">+</a>
       </div>
       {% if folder_tree %}
+      <div id="sidebar-folder-root">
       {% for folder, depth in folder_tree %}
       <a href="/?group_id={{ folder.id }}"
-         class="sidebar-item {% if current_group == folder.id %}active{% endif %} sidebar-folder-drop"
+         class="sidebar-item {% if current_group == folder.id %}active{% endif %} sidebar-folder-drop sidebar-folder-item"
          data-folder-id="{{ folder.id }}"
+         data-parent-id="{{ folder.parent_id or '' }}"
          style="padding-left: {{ 0.875 + depth * 0.875 }}rem;">
-        <span>{% if depth > 0 %}<span style="color:var(--text-muted);margin-right:0.2rem">↳</span>{% else %}📁 {% endif %}{{ folder.name }}</span>
+        <span class="drag-handle" title="Réorganiser">⠿</span>
+        <span style="flex:1;min-width:0;">{% if depth > 0 %}<span style="color:var(--text-muted);margin-right:0.2rem">↳</span>{% else %}📁 {% endif %}{{ folder.name }}</span>
         <span class="sidebar-count" data-count-folder="{{ folder.id }}">{{ folder_counts.get(folder.id, 0) }}</span>
       </a>
       {% endfor %}
+      </div>
       {% else %}
       <a href="/folders/add" class="sidebar-item" style="color:var(--text-muted);font-style:italic;font-size:0.82rem;">
         + Créer un dossier
@@ -131,6 +135,8 @@
 
 </div>
 
+{{ csrf_input(request) }}
+<script src="/static/sortable.min.js"></script>
 <script src="/static/theme.js"></script>
 <script src="/static/app.js"></script>
 <script nonce="{{ request.state.nonce }}">
