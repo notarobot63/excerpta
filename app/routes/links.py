@@ -1,5 +1,7 @@
+import asyncio
 import ipaddress
 import re
+import socket
 from datetime import datetime, timezone
 from typing import List, Optional
 from urllib.parse import urlencode, urlparse
@@ -52,6 +54,17 @@ def _is_private_host(host: str) -> bool:
         return False  # hostname DNS valide - autorisé
 
 
+
+async def _hostname_resolves_public(hostname: str) -> bool:
+    """Anti-DNS-rebinding : vérifie que le hostname ne résout pas vers une IP privée."""
+    try:
+        loop = asyncio.get_running_loop()
+        results = await loop.run_in_executor(None, socket.getaddrinfo, hostname, None)
+        return all(not _is_private_host(r[4][0]) for r in results)
+    except OSError:
+        return False
+
+
 def _fts_escape(q: str) -> str:
     words = re.findall(r"\w+", q)
     if not words:
@@ -74,6 +87,12 @@ def _safe_url(url: str) -> bool:
 async def _fetch_meta(url: str) -> dict:
     if not _safe_url(url):
         return {"title": "", "description": "", "favicon_url": ""}
+    _pre = urlparse(url)
+    try:
+        ipaddress.ip_address(_pre.hostname or "")
+    except ValueError:
+        if not await _hostname_resolves_public(_pre.hostname or ""):
+            return {"title": "", "description": "", "favicon_url": ""}
     try:
         async with httpx.AsyncClient(follow_redirects=True, timeout=10, max_redirects=5) as client:
             resp = await client.get(url, headers={
@@ -400,6 +419,7 @@ async def edit_form(
 async def edit_link(
     request: Request,
     link_id: int,
+    background_tasks: BackgroundTasks,
     url: str = Form(...),
     title: str = Form("", max_length=MAX_TITLE_LEN),
     description: str = Form("", max_length=MAX_DESC_LEN),
@@ -417,7 +437,7 @@ async def edit_link(
     if not _safe_url(url):
         raise HTTPException(status_code=400, detail="URL invalide")
 
-    meta = await _fetch_meta(url)
+    url_changed = url != link.url
     link.url = url
     link.title = title or url
     link.description = description
@@ -425,7 +445,9 @@ async def edit_link(
     link.is_public = is_public is not None
     link.folder_id = _validate_folder_id(session, user.id, folder_id)
     link.updated_at = datetime.now(timezone.utc).replace(tzinfo=None)
-    link.thumbnail_url = meta.get("thumbnail_url", "") or link.thumbnail_url
+    if url_changed:
+        link.favicon_url = ""
+        link.thumbnail_url = ""
     session.add(link)
     session.flush()
 
@@ -439,6 +461,9 @@ async def edit_link(
     session.flush()
     refresh_link_fts(session, link, link_tags)
     session.commit()
+
+    if url_changed:
+        background_tasks.add_task(_fetch_and_update_meta, link.id, url)
 
     return RedirectResponse(url="/", status_code=303)
 
@@ -490,6 +515,12 @@ async def api_fetch_meta(url: str, user: User = Depends(get_current_user)):
 async def proxy_image(url: str, user: User = Depends(get_current_user)):
     if not _safe_url(url):
         raise HTTPException(status_code=400)
+    _proxy_parsed = urlparse(url)
+    try:
+        ipaddress.ip_address(_proxy_parsed.hostname or "")
+    except ValueError:
+        if not await _hostname_resolves_public(_proxy_parsed.hostname or ""):
+            raise HTTPException(status_code=400)
     try:
         async with httpx.AsyncClient(follow_redirects=True, timeout=10, max_redirects=5) as client:
             resp = await client.get(url, headers={
