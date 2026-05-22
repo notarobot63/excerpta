@@ -71,20 +71,6 @@ Endpoints disponibles : `GET /me`, `GET/POST /links`, `PATCH/DELETE /links/{id}`
 
 L'application compagnon **excerpta-android** se configure en scannant le QR code disponible dans Paramètres → Compte.
 
-## CI/CD
-
-Un workflow Gitea Actions est fourni dans `.gitea/workflows/deploy.yml`. Il s'appuie sur les variables d'environnement suivantes, à injecter dans le runner (`runner.envs` dans `config.yaml`) ou via les variables du dépôt :
-
-| Variable | Description |
-|---|---|
-| `REGISTRY_URL` | Hôte du registry Docker |
-| `REGISTRY_USER` | Utilisateur du registry |
-| `DEPLOY_PATH` | Chemin de déploiement sur le serveur |
-| `DEPLOY_PORT` | Port d'écoute du conteneur |
-| `NTFY_URL` | URL complète du topic ntfy |
-
-Secrets requis : `REGISTRY_TOKEN`, `NTFY_TOKEN`.
-
 ## Licence
 
 [GNU Affero General Public License v3.0](LICENSE) — fork libre, copyleft fort, attribution obligatoire.
