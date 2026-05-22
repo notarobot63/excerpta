@@ -36,10 +36,7 @@ jobs:
              cd /srv/excerpta && docker compose -f docker-compose.prod.yml pull && docker compose -f docker-compose.prod.yml up -d"
 
       - name: Health check
-        run: |
-          sleep 5
-          ssh -o StrictHostKeyChecking=no root@LAN_HOST_2 \
-            "curl -sf http://localhost:8070/ || exit 1"
+        run: sleep 5 && curl -sf http://localhost:8070/
 
       - name: Notify success
         if: success()
