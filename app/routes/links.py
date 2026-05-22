@@ -525,7 +525,7 @@ async def proxy_image(url: str, user: User = Depends(get_current_user)):
     async with _img_cache_lock:
         if url in _img_cache:
             expiry, content_type, content = _img_cache[url]
-            if _time.time() < expiry:
+            if time.time() < expiry:
                 _img_cache.move_to_end(url)
                 if content is None:
                     raise HTTPException(status_code=404)
@@ -550,7 +550,7 @@ async def proxy_image(url: str, user: User = Depends(get_current_user)):
             })
         if resp.status_code != 200:
             async with _img_cache_lock:
-                _img_cache[url] = (_time.time() + 3600, None, None)
+                _img_cache[url] = (time.time() + 3600, None, None)
                 if len(_img_cache) > _IMG_CACHE_MAX:
                     _img_cache.popitem(last=False)
             raise HTTPException(status_code=404)
@@ -562,7 +562,7 @@ async def proxy_image(url: str, user: User = Depends(get_current_user)):
             raise HTTPException(status_code=415)
         content = resp.content
         async with _img_cache_lock:
-            _img_cache[url] = (_time.time() + _IMG_CACHE_TTL, content_type, content)
+            _img_cache[url] = (time.time() + _IMG_CACHE_TTL, content_type, content)
             if len(_img_cache) > _IMG_CACHE_MAX:
                 _img_cache.popitem(last=False)
         return Response(
