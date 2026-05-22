@@ -2,6 +2,8 @@ import asyncio
 import ipaddress
 import re
 import socket
+import time
+from collections import OrderedDict
 from datetime import datetime, timezone
 from typing import List, Optional
 from urllib.parse import urlencode, urlparse
@@ -21,6 +23,11 @@ from ..templates_cfg import templates
 from ..utils import descendant_folder_ids, get_or_create_tag, refresh_link_fts, sidebar_data
 
 router = APIRouter()
+
+_IMG_CACHE_TTL = 86400
+_IMG_CACHE_MAX = 500
+_img_cache: OrderedDict = OrderedDict()
+_img_cache_lock = asyncio.Lock()
 
 PER_PAGE = 30
 MAX_TAGS_PER_LINK = 50
@@ -94,7 +101,7 @@ async def _fetch_meta(url: str) -> dict:
         if not await _hostname_resolves_public(_pre.hostname or ""):
             return {"title": "", "description": "", "favicon_url": ""}
     try:
-        async with httpx.AsyncClient(follow_redirects=True, timeout=10, max_redirects=5) as client:
+        async with httpx.AsyncClient(follow_redirects=True, timeout=5, max_redirects=5) as client:
             resp = await client.get(url, headers={
                 "User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:128.0) Gecko/20100101 Firefox/128.0",
                 "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
@@ -515,6 +522,20 @@ async def api_fetch_meta(url: str, user: User = Depends(get_current_user)):
 async def proxy_image(url: str, user: User = Depends(get_current_user)):
     if not _safe_url(url):
         raise HTTPException(status_code=400)
+    async with _img_cache_lock:
+        if url in _img_cache:
+            expiry, content_type, content = _img_cache[url]
+            if _time.time() < expiry:
+                _img_cache.move_to_end(url)
+                if content is None:
+                    raise HTTPException(status_code=404)
+                return Response(
+                    content=content,
+                    media_type=content_type,
+                    headers={"Cache-Control": "public, max-age=86400", "Cross-Origin-Resource-Policy": "cross-origin"},
+                )
+            del _img_cache[url]
+
     _proxy_parsed = urlparse(url)
     try:
         ipaddress.ip_address(_proxy_parsed.hostname or "")
@@ -522,12 +543,16 @@ async def proxy_image(url: str, user: User = Depends(get_current_user)):
         if not await _hostname_resolves_public(_proxy_parsed.hostname or ""):
             raise HTTPException(status_code=400)
     try:
-        async with httpx.AsyncClient(follow_redirects=True, timeout=10, max_redirects=5) as client:
+        async with httpx.AsyncClient(follow_redirects=True, timeout=5, max_redirects=5) as client:
             resp = await client.get(url, headers={
                 "User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:128.0) Gecko/20100101 Firefox/128.0",
                 "Accept": "image/avif,image/webp,image/png,image/svg+xml,image/*;q=0.8,*/*;q=0.5",
             })
         if resp.status_code != 200:
+            async with _img_cache_lock:
+                _img_cache[url] = (_time.time() + 3600, None, None)
+                if len(_img_cache) > _IMG_CACHE_MAX:
+                    _img_cache.popitem(last=False)
             raise HTTPException(status_code=404)
         final_url = str(resp.url)
         if not _safe_url(final_url):
@@ -535,8 +560,13 @@ async def proxy_image(url: str, user: User = Depends(get_current_user)):
         content_type = resp.headers.get("content-type", "image/jpeg").split(";")[0].strip()
         if not content_type.startswith("image/"):
             raise HTTPException(status_code=415)
+        content = resp.content
+        async with _img_cache_lock:
+            _img_cache[url] = (_time.time() + _IMG_CACHE_TTL, content_type, content)
+            if len(_img_cache) > _IMG_CACHE_MAX:
+                _img_cache.popitem(last=False)
         return Response(
-            content=resp.content,
+            content=content,
             media_type=content_type,
             headers={"Cache-Control": "public, max-age=86400", "Cross-Origin-Resource-Policy": "cross-origin"},
         )
