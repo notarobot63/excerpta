@@ -6,7 +6,7 @@
   <title>Connexion - Excerpta</title>
   <link rel="icon" type="image/png" href="/static/favicon.png">
   <link rel="stylesheet" href="/static/style.css">
-  <script>
+  <script nonce="{{ request.state.nonce }}">
     (function() {
       var t = localStorage.getItem('theme') || 'light';
       document.documentElement.setAttribute('data-theme', t);

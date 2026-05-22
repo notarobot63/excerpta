@@ -655,3 +655,7 @@ a:hover { text-decoration: underline; }
 
 /* Logo sidebar — suit la couleur d'accentuation du thème */
 .sidebar-logo { color: var(--sidebar-active-text); }
+
+/* Fix CSP: hover sidebar add button */
+.sidebar-add-btn { color: var(--text-muted); transition: color 0.15s; }
+.sidebar-add-btn:hover { color: var(--text); }
