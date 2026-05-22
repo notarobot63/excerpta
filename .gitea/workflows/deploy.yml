@@ -9,7 +9,8 @@ jobs:
     runs-on: host
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        run: git clone --depth=1 https://thomas:${{ secrets.REGISTRY_TOKEN }}@GIT_HOST/Thomas/excerpta.git .
 
       - name: Login registry
         run: echo "${{ secrets.REGISTRY_TOKEN }}" | docker login GIT_HOST -u thomas --password-stdin
