@@ -8,13 +8,6 @@ jobs:
   build-deploy:
     runs-on: host
 
-    env:
-      REGISTRY_URL: ${{ vars.REGISTRY_URL }}
-      REGISTRY_USER: ${{ vars.REGISTRY_USER }}
-      DEPLOY_PATH: ${{ vars.DEPLOY_PATH }}
-      DEPLOY_PORT: ${{ vars.DEPLOY_PORT }}
-      NTFY_URL: ${{ vars.NTFY_URL }}
-
     steps:
       - name: Checkout
         run: git clone --depth=1 https://$REGISTRY_USER:${{ secrets.REGISTRY_TOKEN }}@$REGISTRY_URL/$REGISTRY_USER/excerpta.git .
