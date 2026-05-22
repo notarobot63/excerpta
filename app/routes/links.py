@@ -22,10 +22,50 @@ from ..ratelimit import rate_limit
 from ..templates_cfg import templates
 from ..utils import descendant_folder_ids, get_or_create_tag, refresh_link_fts, sidebar_data
 
+
+async def warm_img_cache() -> None:
+    await asyncio.sleep(10)
+    with Session(db_engine) as db:
+        rows = db.exec(select(Link.favicon_url, Link.thumbnail_url)).all()
+    urls: set = set()
+    for row in rows:
+        if row.favicon_url:
+            urls.add(row.favicon_url)
+        if row.thumbnail_url:
+            urls.add(row.thumbnail_url)
+    sem = asyncio.Semaphore(8)
+
+    async def _fetch(url: str) -> None:
+        async with sem:
+            async with _img_cache_lock:
+                cached = _img_cache.get(url)
+                if cached and time.time() < cached[0]:
+                    return
+            try:
+                async with httpx.AsyncClient(follow_redirects=True, timeout=5, max_redirects=3) as client:
+                    resp = await client.get(url, headers={
+                        "User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:128.0) Gecko/20100101 Firefox/128.0",
+                        "Accept": "image/avif,image/webp,image/png,image/svg+xml,image/*;q=0.8,*/*;q=0.5",
+                    })
+                if resp.status_code != 200:
+                    return
+                ct = resp.headers.get("content-type", "image/jpeg").split(";")[0].strip()
+                if not ct.startswith("image/"):
+                    return
+                async with _img_cache_lock:
+                    _img_cache[url] = (time.time() + _IMG_CACHE_TTL, ct, resp.content)
+                    if len(_img_cache) > _IMG_CACHE_MAX:
+                        _img_cache.popitem(last=False)
+            except Exception:
+                pass
+
+    await asyncio.gather(*[_fetch(u) for u in urls])
+
+
 router = APIRouter()
 
 _IMG_CACHE_TTL = 86400
-_IMG_CACHE_MAX = 500
+_IMG_CACHE_MAX = 1000
 _img_cache: OrderedDict = OrderedDict()
 _img_cache_lock = asyncio.Lock()
 
