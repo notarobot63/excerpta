@@ -7,7 +7,7 @@
   <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
   <link rel="icon" href="/static/favicon.png" type="image/png">
   <link rel="stylesheet" href="/static/style.css">
-  <script>
+  <script nonce="{{ request.state.nonce }}">
     (function() {
       var t = localStorage.getItem('theme') || 'light';
       document.documentElement.setAttribute('data-theme', t);

@@ -25,7 +25,7 @@
       </td>
       <td style="padding: 0.5rem; text-align: center;">
         <form action="/tags/{{ tag.id }}/delete" method="post" style="display:inline;"
-              onsubmit="return confirm('{% if tag_counts.get(tag.name, 0) > 0 %}Ce tag est utilisé par {{ tag_counts[tag.name] }} lien(s). Supprimer quand même ?{% else %}Supprimer ce tag ?{% endif %}')">
+              data-confirm="{% if tag_counts.get(tag.name, 0) > 0 %}Ce tag est utilisé par {{ tag_counts[tag.name] }} lien(s). Supprimer quand même ?{% else %}Supprimer ce tag ?{% endif %}">
           {{ csrf_input(request) }}
           <button type="submit" class="btn btn-danger btn-sm">Supprimer</button>
         </form>

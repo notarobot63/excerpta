@@ -25,6 +25,7 @@ from .routes import api as api_router
 from .routes.freshrss import settings_router as freshrss_settings_router
 from .routes.freshrss import api_router as freshrss_api_router
 from .routes.freshrss import sync_all_enabled
+from .routes.links import warm_img_cache
 
 logger = logging.getLogger("excerpta")
 
@@ -43,14 +44,17 @@ async def _freshrss_loop():
 async def lifespan(app: FastAPI):
     init_db()
     task = asyncio.create_task(_freshrss_loop())
+    task_warmup = asyncio.create_task(warm_img_cache())
     try:
         yield
     finally:
         task.cancel()
-        try:
-            await task
-        except asyncio.CancelledError:
-            pass
+        task_warmup.cancel()
+        for t in [task, task_warmup]:
+            try:
+                await t
+            except asyncio.CancelledError:
+                pass
 
 
 app = FastAPI(
