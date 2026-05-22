@@ -8,37 +8,46 @@ jobs:
   build-deploy:
     runs-on: host
 
+    env:
+      REGISTRY_URL: ${{ vars.REGISTRY_URL }}
+      REGISTRY_USER: ${{ vars.REGISTRY_USER }}
+      DEPLOY_PATH: ${{ vars.DEPLOY_PATH }}
+      DEPLOY_PORT: ${{ vars.DEPLOY_PORT }}
+      NTFY_URL: ${{ vars.NTFY_URL }}
+
     steps:
       - name: Checkout
-        run: git clone --depth=1 https://thomas:${{ secrets.REGISTRY_TOKEN }}@GIT_HOST/Thomas/excerpta.git .
+        run: git clone --depth=1 https://$REGISTRY_USER:${{ secrets.REGISTRY_TOKEN }}@$REGISTRY_URL/$REGISTRY_USER/excerpta.git .
 
       - name: Login registry
-        run: echo "${{ secrets.REGISTRY_TOKEN }}" | docker login GIT_HOST -u thomas --password-stdin
+        run: echo "${{ secrets.REGISTRY_TOKEN }}" | docker login $REGISTRY_URL -u $REGISTRY_USER --password-stdin
 
       - name: Build & push
         run: |
           SHA=${GITHUB_SHA::7}
+          IMAGE=$REGISTRY_URL/$REGISTRY_USER/excerpta
           docker build \
             --build-arg GIT_COMMIT=$SHA \
-            -t GIT_HOST/thomas/excerpta:$SHA \
-            -t GIT_HOST/thomas/excerpta:latest \
+            -t $IMAGE:$SHA \
+            -t $IMAGE:latest \
             .
-          docker push GIT_HOST/thomas/excerpta:$SHA
-          docker push GIT_HOST/thomas/excerpta:latest
+          docker push $IMAGE:$SHA
+          docker push $IMAGE:latest
 
       - name: Deploy
         run: |
-          cp docker-compose.prod.yml /srv/excerpta/docker-compose.prod.yml
-          docker compose -f /srv/excerpta/docker-compose.prod.yml pull
-          docker compose -f /srv/excerpta/docker-compose.prod.yml up -d
+          REGISTRY_IMAGE=$REGISTRY_URL/$REGISTRY_USER/excerpta:latest
+          cp docker-compose.prod.yml $DEPLOY_PATH/docker-compose.prod.yml
+          REGISTRY_IMAGE=$REGISTRY_IMAGE docker compose -f $DEPLOY_PATH/docker-compose.prod.yml pull
+          REGISTRY_IMAGE=$REGISTRY_IMAGE docker compose -f $DEPLOY_PATH/docker-compose.prod.yml up -d
 
       - name: Health check
-        run: sleep 5 && curl -sf http://localhost:8070/
+        run: sleep 5 && curl -sf http://localhost:$DEPLOY_PORT/
 
       - name: Notify success
         if: success()
         run: |
-          curl -s -X POST https://NTFY_HOST/Deployments \
+          curl -s -X POST $NTFY_URL \
             -H "Authorization: Bearer ${{ secrets.NTFY_TOKEN }}" \
             -H "Title: ✅ Excerpta déployé" \
             -d "commit ${GITHUB_SHA::7} en prod"
@@ -46,7 +55,7 @@ jobs:
       - name: Notify failure
         if: failure()
         run: |
-          curl -s -X POST https://NTFY_HOST/Deployments \
+          curl -s -X POST $NTFY_URL \
             -H "Authorization: Bearer ${{ secrets.NTFY_TOKEN }}" \
             -H "Title: ❌ Excerpta deploy failed" \
-            -d "commit ${GITHUB_SHA::7} — https://GIT_HOST/Thomas/excerpta/actions"
+            -d "commit ${GITHUB_SHA::7}"

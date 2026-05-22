@@ -1,6 +1,6 @@
 services:
   excerpta:
-    image: GIT_HOST/thomas/excerpta:latest
+    image: ${REGISTRY_IMAGE}
     container_name: excerpta
     restart: unless-stopped
     ports:

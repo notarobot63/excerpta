@@ -59,7 +59,30 @@ Endpoints disponibles : `GET /me`, `GET/POST /links`, `PATCH/DELETE /links/{id}`
 
 ## Application Android
 
-Voir le dépôt [excerpta-android](https://GIT_HOST/Thomas/excerpta-android) — l'application se configure en scannant le QR code disponible dans Paramètres.
+L'application compagnon **excerpta-android** se configure en scannant le QR code disponible dans Paramètres → Compte.
+
+## CI/CD (Gitea Actions)
+
+Le workflow `.gitea/workflows/deploy.yml` utilise des variables de dépôt (`vars.*`) et des secrets (`secrets.*`) à configurer dans Gitea.
+
+**Variables (`vars.*`)** :
+
+| Variable | Description | Exemple |
+|---|---|---|
+| `REGISTRY_URL` | Hôte du registry Docker | `git.example.com` |
+| `REGISTRY_USER` | Utilisateur du registry | `monuser` |
+| `DEPLOY_PATH` | Chemin de déploiement sur le serveur | `/srv/excerpta` |
+| `DEPLOY_PORT` | Port d'écoute du conteneur | `8070` |
+| `NTFY_URL` | URL complète du topic ntfy | `https://ntfy.example.com/topic` |
+
+**Secrets (`secrets.*`)** :
+
+| Secret | Description |
+|---|---|
+| `REGISTRY_TOKEN` | Token d'accès au registry (lecture + écriture) |
+| `NTFY_TOKEN` | Token d'authentification ntfy |
+
+> Le runner doit être configuré avec `runs-on: host` et avoir accès à Docker et SSH.
 
 ## Licence
 
