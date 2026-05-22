@@ -13,7 +13,7 @@
 - **CRUD complet** : titre, description, note Markdown, tags, groupes hiérarchiques, visibilité publique/privée
 - **Recherche full-text** (SQLite FTS5) sur titres, descriptions, notes et URLs
 - **Groupes hiérarchiques** avec filtrage récursif (sous-groupes inclus)
-- **Authentification OIDC/PKCE** via PocketID
+- **Authentification OIDC/PKCE** (PocketID, Keycloak, Authentik, etc.)
 - **Import/Export** de favoris au format Netscape HTML
 - **Vérificateur de liens cassés** (async, 10 vérifications en parallèle)
 - **Archivage Internet Archive** : sauvegarde et stockage de l'URL archivée
@@ -32,19 +32,29 @@
 | Backend | FastAPI + SQLModel |
 | Base de données | SQLite (mode WAL) |
 | Templates | Jinja2 + Alpine.js (local, sans CDN) |
-| Auth | OIDC/PKCE (PocketID) |
+| Auth | OIDC/PKCE |
 | Sécurité | CSRF, rate limiting, SSRF blacklist, CSP headers |
 
 ## Déploiement
 
 ```bash
 cp .env.example .env
-# éditer .env (OIDC_*, SECRET_KEY, BASE_URL...)
-
+# éditer .env
 docker compose up --build -d
 ```
 
 > Après chaque modification de templates ou fichiers statiques, relancer avec `--build`.
+
+### Variables d'environnement
+
+| Variable | Description |
+|---|---|
+| `SECRET_KEY` | Clé secrète Flask — générer avec `python3 -c "import secrets; print(secrets.token_hex(32))"` |
+| `BASE_URL` | URL publique de l'instance (ex. `https://liens.example.com`) |
+| `OIDC_CLIENT_ID` | Client ID de l'application OIDC |
+| `OIDC_CLIENT_SECRET` | Client secret de l'application OIDC |
+| `OIDC_ISSUER` | URL de l'issuer OIDC (ex. `https://auth.example.com`) |
+| `FRESHRSS_SYNC_INTERVAL` | Intervalle de sync FreshRSS en minutes (défaut : 30) |
 
 ## API REST
 
@@ -61,28 +71,19 @@ Endpoints disponibles : `GET /me`, `GET/POST /links`, `PATCH/DELETE /links/{id}`
 
 L'application compagnon **excerpta-android** se configure en scannant le QR code disponible dans Paramètres → Compte.
 
-## CI/CD (Gitea Actions)
+## CI/CD
 
-Le workflow `.gitea/workflows/deploy.yml` utilise des variables de dépôt (`vars.*`) et des secrets (`secrets.*`) à configurer dans Gitea.
+Un workflow Gitea Actions est fourni dans `.gitea/workflows/deploy.yml`. Il s'appuie sur les variables d'environnement suivantes, à injecter dans le runner (`runner.envs` dans `config.yaml`) ou via les variables du dépôt :
 
-**Variables (`vars.*`)** :
-
-| Variable | Description | Exemple |
-|---|---|---|
-| `REGISTRY_URL` | Hôte du registry Docker | `git.example.com` |
-| `REGISTRY_USER` | Utilisateur du registry | `monuser` |
-| `DEPLOY_PATH` | Chemin de déploiement sur le serveur | `/srv/excerpta` |
-| `DEPLOY_PORT` | Port d'écoute du conteneur | `8070` |
-| `NTFY_URL` | URL complète du topic ntfy | `https://ntfy.example.com/topic` |
-
-**Secrets (`secrets.*`)** :
-
-| Secret | Description |
+| Variable | Description |
 |---|---|
-| `REGISTRY_TOKEN` | Token d'accès au registry (lecture + écriture) |
-| `NTFY_TOKEN` | Token d'authentification ntfy |
+| `REGISTRY_URL` | Hôte du registry Docker |
+| `REGISTRY_USER` | Utilisateur du registry |
+| `DEPLOY_PATH` | Chemin de déploiement sur le serveur |
+| `DEPLOY_PORT` | Port d'écoute du conteneur |
+| `NTFY_URL` | URL complète du topic ntfy |
 
-> Le runner doit être configuré avec `runs-on: host` et avoir accès à Docker et SSH.
+Secrets requis : `REGISTRY_TOKEN`, `NTFY_TOKEN`.
 
 ## Licence
 
