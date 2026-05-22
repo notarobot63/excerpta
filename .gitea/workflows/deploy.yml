@@ -28,12 +28,9 @@ jobs:
 
       - name: Deploy
         run: |
-          eval $(ssh-agent -s)
-          echo "${{ secrets.DEPLOY_SSH_KEY }}" | ssh-add -
-          scp -o StrictHostKeyChecking=no docker-compose.prod.yml root@LAN_HOST_2:/srv/excerpta/docker-compose.prod.yml
-          ssh -o StrictHostKeyChecking=no root@LAN_HOST_2 \
-            "echo '${{ secrets.REGISTRY_TOKEN }}' | docker login GIT_HOST -u thomas --password-stdin && \
-             cd /srv/excerpta && docker compose -f docker-compose.prod.yml pull && docker compose -f docker-compose.prod.yml up -d"
+          cp docker-compose.prod.yml /srv/excerpta/docker-compose.prod.yml
+          docker compose -f /srv/excerpta/docker-compose.prod.yml pull
+          docker compose -f /srv/excerpta/docker-compose.prod.yml up -d
 
       - name: Health check
         run: sleep 5 && curl -sf http://localhost:8070/
