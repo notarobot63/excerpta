@@ -1,0 +1,53 @@
+name: Build & Deploy
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  build-deploy:
+    runs-on: lab
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Login registry
+        run: echo "${{ secrets.REGISTRY_TOKEN }}" | docker login GIT_HOST -u thomas --password-stdin
+
+      - name: Build & push
+        run: |
+          SHA=${GITHUB_SHA::7}
+          docker build \
+            --build-arg GIT_COMMIT=$SHA \
+            -t GIT_HOST/thomas/excerpta:$SHA \
+            -t GIT_HOST/thomas/excerpta:latest \
+            .
+          docker push GIT_HOST/thomas/excerpta:$SHA
+          docker push GIT_HOST/thomas/excerpta:latest
+
+      - name: Deploy
+        run: |
+          docker pull GIT_HOST/thomas/excerpta:latest
+          cp docker-compose.prod.yml /srv/excerpta/docker-compose.prod.yml
+          cd /srv/excerpta && docker compose -f docker-compose.prod.yml up -d
+
+      - name: Health check
+        run: |
+          sleep 5
+          curl -sf http://localhost:8070/ || exit 1
+
+      - name: Notify success
+        if: success()
+        run: |
+          curl -s -X POST https://NTFY_HOST/Deployments \
+            -H "Authorization: Bearer ${{ secrets.NTFY_TOKEN }}" \
+            -H "Title: ✅ Excerpta déployé" \
+            -d "commit ${GITHUB_SHA::7} en prod"
+
+      - name: Notify failure
+        if: failure()
+        run: |
+          curl -s -X POST https://NTFY_HOST/Deployments \
+            -H "Authorization: Bearer ${{ secrets.NTFY_TOKEN }}" \
+            -H "Title: ❌ Excerpta deploy failed" \
+            -d "commit ${GITHUB_SHA::7} — https://GIT_HOST/Thomas/excerpta/actions"
