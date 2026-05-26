@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{% block title %}Excerpta{% endblock %}</title>
   <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
-  <link rel="icon" href="/static/favicon.png" type="image/png">
   <link rel="stylesheet" href="/static/style.css">
   <script defer src="/static/alpine.min.js"></script>
   <script nonce="{{ request.state.nonce }}">
@@ -33,7 +32,7 @@
     <nav style="padding: 0.5rem 0; flex: 1;">
       <a href="/" class="sidebar-item {% if not current_tag and not current_group and not q %}active{% endif %}">
         <span>Tous les liens</span>
-        <span class="sidebar-count">{{ links|length if links is defined else '' }}</span>
+        <span class="sidebar-count">{{ total_links if total_links is defined else '' }}</span>
       </a>
       <a href="/tags" class="sidebar-item {% if request.url.path == '/tags' %}active{% endif %}">
         <span>🏷 Gérer les tags</span>

@@ -92,6 +92,9 @@ def sidebar_data(session: Session, user_id: int) -> dict:
             .order_by(Folder.sort_order, Folder.name)
         ).all()
     )
+    total_links = session.execute(
+        text("SELECT COUNT(*) FROM links WHERE user_id = :uid"), {"uid": user_id}
+    ).scalar_one()
     tag_counts = {
         row[0]: row[1]
         for row in session.execute(
@@ -121,4 +124,5 @@ def sidebar_data(session: Session, user_id: int) -> dict:
         "folder_tree": build_folder_tree(all_folders),
         "tag_counts": tag_counts,
         "folder_counts": folder_counts,
+        "total_links": total_links,
     }

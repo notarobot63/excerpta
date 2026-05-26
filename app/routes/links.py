@@ -69,6 +69,9 @@ _IMG_CACHE_MAX = 1000
 _img_cache: OrderedDict = OrderedDict()
 _img_cache_lock = asyncio.Lock()
 
+_DNS_CACHE_TTL = 600
+_dns_cache: dict[str, tuple[float, bool]] = {}
+
 PER_PAGE = 30
 MAX_TAGS_PER_LINK = 50
 MAX_TITLE_LEN = 500
@@ -104,10 +107,16 @@ def _is_private_host(host: str) -> bool:
 
 async def _hostname_resolves_public(hostname: str) -> bool:
     """Anti-DNS-rebinding : vérifie que le hostname ne résout pas vers une IP privée."""
+    now = time.time()
+    cached = _dns_cache.get(hostname)
+    if cached and now < cached[0]:
+        return cached[1]
     try:
         loop = asyncio.get_running_loop()
         results = await loop.run_in_executor(None, socket.getaddrinfo, hostname, None)
-        return all(not _is_private_host(r[4][0]) for r in results)
+        result = all(not _is_private_host(r[4][0]) for r in results)
+        _dns_cache[hostname] = (now + _DNS_CACHE_TTL, result)
+        return result
     except OSError:
         return False
 
@@ -285,6 +294,7 @@ async def list_links(
     session: Session = Depends(get_session),
 ):
     stmt = select(Link).where(Link.user_id == user.id)
+    fts_link_ids: list[int] = []
 
     if q:
         escaped = _fts_escape(q)
@@ -293,8 +303,8 @@ async def list_links(
                 text("SELECT link_id FROM fts_links WHERE fts_links MATCH :q ORDER BY rank"),
                 {"q": escaped},
             ).fetchall()
-            link_ids = [r[0] for r in rows]
-            stmt = stmt.where(Link.id.in_(link_ids)) if link_ids else stmt.where(Link.id < 0)
+            fts_link_ids = [r[0] for r in rows]
+            stmt = stmt.where(Link.id.in_(fts_link_ids)) if fts_link_ids else stmt.where(Link.id < 0)
         except Exception:
             q_like = f"%{q}%"
             stmt = stmt.where(
@@ -323,9 +333,16 @@ async def list_links(
 
     page = max(1, min(page, max(1, (total + PER_PAGE - 1) // PER_PAGE)))
     total_pages = max(1, (total + PER_PAGE - 1) // PER_PAGE)
-    links = list(session.exec(
-        stmt.order_by(Link.created_at.desc()).offset((page - 1) * PER_PAGE).limit(PER_PAGE)
-    ).all())
+
+    if fts_link_ids:
+        all_matches = list(session.exec(stmt).all())
+        rank_map = {id_: i for i, id_ in enumerate(fts_link_ids)}
+        all_matches.sort(key=lambda l: rank_map.get(l.id, len(fts_link_ids)))
+        links = all_matches[(page - 1) * PER_PAGE : page * PER_PAGE]
+    else:
+        links = list(session.exec(
+            stmt.order_by(Link.created_at.desc()).offset((page - 1) * PER_PAGE).limit(PER_PAGE)
+        ).all())
 
     def _qs(p: int) -> str:
         params: dict = {}

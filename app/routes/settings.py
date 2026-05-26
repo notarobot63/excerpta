@@ -341,6 +341,28 @@ async def purge_freshrss(
     return RedirectResponse(url="/settings?purged=freshrss", status_code=303)
 
 
+# ── Rebuild FTS ───────────────────────────────────────────────────────────────
+
+@router.post("/settings/rebuild-fts", dependencies=[Depends(rate_limit(3, 3600))])
+async def rebuild_fts(
+    user: User = Depends(get_current_user),
+    session: Session = Depends(get_session),
+):
+    links = list(session.exec(select(Link).where(Link.user_id == user.id)).all())
+    session.execute(
+        text("DELETE FROM fts_links WHERE link_id IN (SELECT id FROM links WHERE user_id = :uid)"),
+        {"uid": user.id},
+    )
+    for link in links:
+        tags = list(session.exec(
+            select(Tag).join(LinkTagLink, LinkTagLink.tag_id == Tag.id)
+            .where(LinkTagLink.link_id == link.id)
+        ).all())
+        refresh_link_fts(session, link, tags)
+    session.commit()
+    return RedirectResponse(url="/settings?fts_rebuilt=1", status_code=303)
+
+
 # ── Purge tout ────────────────────────────────────────────────────────────────
 
 @router.post("/settings/purge-all", dependencies=[Depends(rate_limit(1, 3600))])
