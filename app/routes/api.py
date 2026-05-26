@@ -107,7 +107,7 @@ async def api_list_links(
         escaped = _fts_escape(q)
         try:
             fts_rows = session.execute(
-                text("SELECT link_id FROM fts_links WHERE fts_links MATCH :q ORDER BY rank"),
+                text("SELECT rowid FROM fts_links WHERE fts_links MATCH :q ORDER BY rank"),
                 {"q": escaped},
             ).fetchall()
             fts_ids = [r[0] for r in fts_rows]
