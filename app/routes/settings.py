@@ -350,7 +350,7 @@ async def rebuild_fts(
 ):
     links = list(session.exec(select(Link).where(Link.user_id == user.id)).all())
     session.execute(
-        text("DELETE FROM fts_links WHERE link_id IN (SELECT id FROM links WHERE user_id = :uid)"),
+        text("DELETE FROM fts_links WHERE rowid IN (SELECT id FROM links WHERE user_id = :uid)"),
         {"uid": user.id},
     )
     for link in links:

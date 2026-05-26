@@ -23,26 +23,24 @@ def _set_sqlite_pragmas(dbapi_conn, _record):
 
 _FTS_SETUP = [
     """CREATE VIRTUAL TABLE IF NOT EXISTS fts_links USING fts5(
-        link_id UNINDEXED,
         title,
         description,
         note,
         url,
         tags,
-        content='',
         tokenize='unicode61 remove_diacritics 1'
     )""",
     """CREATE TRIGGER IF NOT EXISTS links_ai AFTER INSERT ON links BEGIN
-        INSERT INTO fts_links(link_id, title, description, note, url, tags)
+        INSERT INTO fts_links(rowid, title, description, note, url, tags)
         VALUES (new.id, new.title, new.description, new.note, new.url, '');
     END""",
     """CREATE TRIGGER IF NOT EXISTS links_au AFTER UPDATE ON links BEGIN
-        DELETE FROM fts_links WHERE link_id = old.id;
-        INSERT INTO fts_links(link_id, title, description, note, url, tags)
+        DELETE FROM fts_links WHERE rowid = old.id;
+        INSERT INTO fts_links(rowid, title, description, note, url, tags)
         VALUES (new.id, new.title, new.description, new.note, new.url, '');
     END""",
     """CREATE TRIGGER IF NOT EXISTS links_ad AFTER DELETE ON links BEGIN
-        DELETE FROM fts_links WHERE link_id = old.id;
+        DELETE FROM fts_links WHERE rowid = old.id;
     END""",
 ]
 
@@ -51,8 +49,30 @@ def init_db():
     SQLModel.metadata.create_all(engine)
     db_path = settings.database_url.removeprefix("sqlite:///")
     con = sqlite3.connect(db_path)
+    # Migration FTS : si l'ancienne table contentless (link_id UNINDEXED, content='')
+    # est présente, la supprimer pour la recréer correctement avec rowid.
+    fts_sql = con.execute(
+        "SELECT sql FROM sqlite_master WHERE type='table' AND name='fts_links'"
+    ).fetchone()
+    if fts_sql and "content=''" in fts_sql[0]:
+        con.execute("DROP TABLE IF EXISTS fts_links")
+        for trigger in ("links_ai", "links_au", "links_ad"):
+            con.execute(f"DROP TRIGGER IF EXISTS {trigger}")
     for stmt in _FTS_SETUP:
         con.execute(stmt)
+    if fts_sql and "content=''" in fts_sql[0]:
+        rows = con.execute("""
+            SELECT l.id, l.title, l.description, l.note, l.url,
+                   COALESCE(GROUP_CONCAT(t.name, ' '), '')
+            FROM links l
+            LEFT JOIN link_tags lt ON lt.link_id = l.id
+            LEFT JOIN tags t ON t.id = lt.tag_id
+            GROUP BY l.id
+        """).fetchall()
+        con.executemany(
+            "INSERT INTO fts_links(rowid, title, description, note, url, tags) VALUES (?,?,?,?,?,?)",
+            rows,
+        )
     # Migrations idempotentes
     # Migration groups → folders (ancienne DB)
     # Note : create_all() crée `folders` avant ce code, donc on détecte via la présence de `groups`

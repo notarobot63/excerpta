@@ -15,10 +15,10 @@ def get_or_create_tag(session: Session, user_id: int, name: str) -> Tag:
 
 def refresh_link_fts(session: Session, link: Link, tags: list[Tag]):
     tags_str = " ".join(t.name for t in tags)
-    session.execute(text("DELETE FROM fts_links WHERE link_id = :id"), {"id": link.id})
+    session.execute(text("DELETE FROM fts_links WHERE rowid = :id"), {"id": link.id})
     session.execute(
         text(
-            "INSERT INTO fts_links(link_id, title, description, note, url, tags)"
+            "INSERT INTO fts_links(rowid, title, description, note, url, tags)"
             " VALUES (:lid, :t, :d, :n, :u, :tg)"
         ),
         {"lid": link.id, "t": link.title, "d": link.description,
