@@ -6,7 +6,7 @@ on:
 
 jobs:
   build-deploy:
-    runs-on: host
+    runs-on: excerpta-host
 
     steps:
       - name: Checkout
