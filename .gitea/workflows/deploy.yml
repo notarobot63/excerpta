@@ -35,7 +35,7 @@ jobs:
           REGISTRY_IMAGE=$REGISTRY_IMAGE docker compose -f $DEPLOY_PATH/docker-compose.prod.yml up -d
 
       - name: Health check
-        run: sleep 5 && curl -sf http://localhost:$DEPLOY_PORT/
+        run: sleep 5 && curl -sf http://${DEPLOY_HOST:-localhost}:$DEPLOY_PORT/
 
       - name: Notify success
         if: success()
