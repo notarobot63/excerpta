@@ -77,7 +77,7 @@ class Link(SQLModel, table=True):
 
     user: Optional[User] = Relationship(back_populates="links")
     tags: List[Tag] = Relationship(back_populates="links", link_model=LinkTagLink, sa_relationship_kwargs={"lazy": "selectin"})
-    folder: Optional[Folder] = Relationship(back_populates="links")
+    folder: Optional[Folder] = Relationship(back_populates="links", sa_relationship_kwargs={"lazy": "selectin"})
 
 
 class FreshRSSConfig(SQLModel, table=True):

@@ -59,7 +59,10 @@ async def warm_img_cache() -> None:
             except Exception:
                 pass
 
-    await asyncio.gather(*[_fetch(u) for u in urls])
+    url_list = list(urls)
+    for i in range(0, len(url_list), 50):
+        await asyncio.gather(*[_fetch(u) for u in url_list[i:i + 50]])
+        await asyncio.sleep(0)
 
 
 router = APIRouter()

@@ -159,8 +159,7 @@ async def sync_user(config: FreshRSSConfig, session: Session) -> int:
     }
 
     freshrss_tag = get_or_create_tag(session, config.user_id, "freshrss")
-    added = 0
-    new_link_ids: list[int] = []
+    new_links: list[Link] = []
     for item in items:
         url = _extract_url(item)
         if not url or url in existing_urls:
@@ -192,24 +191,27 @@ async def sync_user(config: FreshRSSConfig, session: Session) -> int:
             **({"created_at": created, "updated_at": created} if created else {}),
         )
         session.add(link)
-        session.flush()
-        session.add(LinkTagLink(link_id=link.id, tag_id=freshrss_tag.id))
-        session.flush()
-        refresh_link_fts(session, link, [freshrss_tag])
+        new_links.append(link)
         existing_urls.add(url)
-        new_link_ids.append(link.id)
-        added += 1
+
+    if new_links:
+        session.flush()  # un seul flush pour assigner tous les IDs
+        for link in new_links:
+            session.add(LinkTagLink(link_id=link.id, tag_id=freshrss_tag.id))
+        session.flush()  # un seul flush pour les link_tags
+        for link in new_links:
+            refresh_link_fts(session, link, [freshrss_tag])
 
     config.last_sync = datetime.now(timezone.utc).replace(tzinfo=None)
-    config.synced_count += added
+    config.synced_count += len(new_links)
     session.add(config)
     session.commit()
 
-    if new_link_ids:
+    if new_links:
         import asyncio
-        asyncio.create_task(_refresh_new_links_bg(new_link_ids))
+        asyncio.create_task(_refresh_new_links_bg([l.id for l in new_links]))
 
-    return added
+    return len(new_links)
 
 
 async def sync_all_enabled() -> None:
