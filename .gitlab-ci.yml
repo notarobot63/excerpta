@@ -1,0 +1,44 @@
+stages:
+  - build
+  - deploy
+
+build:
+  stage: build
+  tags: [docker]
+  image: docker:latest
+  services:
+    - name: docker:dind
+      variables:
+        DOCKER_TLS_CERTDIR: ""
+  variables:
+    DOCKER_TLS_CERTDIR: ""
+  script:
+    - echo "$CI_REGISTRY_PASSWORD" | docker login "$CI_REGISTRY" -u "$CI_REGISTRY_USER" --password-stdin
+    - docker build --build-arg GIT_COMMIT="$CI_COMMIT_SHORT_SHA" -t "$CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA" -t "$CI_REGISTRY_IMAGE:latest" .
+    - docker push "$CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA"
+    - docker push "$CI_REGISTRY_IMAGE:latest"
+  only: [main]
+
+deploy:
+  stage: deploy
+  tags: [shell]
+  script:
+    - eval $(ssh-agent -s)
+    - echo "$DEPLOY_SSH_KEY" | tr -d '\r' | ssh-add -
+    - scp -o StrictHostKeyChecking=no docker-compose.prod.yml root@$DEPLOY_HOST:$DEPLOY_PATH/docker-compose.prod.yml
+    - |
+      ssh -o StrictHostKeyChecking=no root@$DEPLOY_HOST "
+        echo '$CI_JOB_TOKEN' | docker login $CI_REGISTRY -u gitlab-ci-token --password-stdin &&
+        REGISTRY_IMAGE=$CI_REGISTRY_IMAGE:latest docker compose -f $DEPLOY_PATH/docker-compose.prod.yml pull &&
+        REGISTRY_IMAGE=$CI_REGISTRY_IMAGE:latest docker compose -f $DEPLOY_PATH/docker-compose.prod.yml up -d"
+    - sleep 5
+    - curl -sf "http://$DEPLOY_HOST:$DEPLOY_PORT/"
+  after_script:
+    - |
+      if [ "$CI_JOB_STATUS" = "success" ]; then
+        curl -s -X POST "$NTFY_URL" -H "Authorization: Bearer $NTFY_TOKEN" -H "Title: Excerpta deploye" -d "commit $CI_COMMIT_SHORT_SHA en prod"
+      else
+        curl -s -X POST "$NTFY_URL" -H "Authorization: Bearer $NTFY_TOKEN" -H "Title: Excerpta deploy failed" -d "commit $CI_COMMIT_SHORT_SHA"
+      fi
+  only: [main]
+  needs: [build]
