@@ -31,6 +31,7 @@ deploy:
     - scp -o StrictHostKeyChecking=no docker-compose.prod.yml root@$DEPLOY_HOST:$DEPLOY_PATH/docker-compose.prod.yml
     - |
       ssh -o StrictHostKeyChecking=no root@$DEPLOY_HOST "
+        echo '$REGISTRY_TOKEN' | docker login $REGISTRY_URL -u $REGISTRY_USER --password-stdin &&
         REGISTRY_IMAGE=$IMAGE:latest docker compose -f $DEPLOY_PATH/docker-compose.prod.yml pull &&
         REGISTRY_IMAGE=$IMAGE:latest docker compose -f $DEPLOY_PATH/docker-compose.prod.yml up -d"
     - sleep 5
