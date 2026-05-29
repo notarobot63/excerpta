@@ -2,21 +2,26 @@ stages:
   - build
   - deploy
 
+variables:
+  REGISTRY: "LAN_HOST_1:5050"
+  IMAGE: "LAN_HOST_1:5050/thomas/excerpta"
+
 build:
   stage: build
   tags: [docker]
   image: docker:latest
   services:
     - name: docker:dind
+      command: ["--insecure-registry=LAN_HOST_1:5050"]
       variables:
         DOCKER_TLS_CERTDIR: ""
   variables:
     DOCKER_TLS_CERTDIR: ""
   script:
-    - echo "$CI_REGISTRY_PASSWORD" | docker login "$CI_REGISTRY" -u "$CI_REGISTRY_USER" --password-stdin
-    - docker build --build-arg GIT_COMMIT="$CI_COMMIT_SHORT_SHA" -t "$CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA" -t "$CI_REGISTRY_IMAGE:latest" .
-    - docker push "$CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA"
-    - docker push "$CI_REGISTRY_IMAGE:latest"
+    - echo "$CI_JOB_TOKEN" | docker login "$REGISTRY" -u gitlab-ci-token --password-stdin
+    - docker build --build-arg GIT_COMMIT="$CI_COMMIT_SHORT_SHA" -t "$IMAGE:$CI_COMMIT_SHORT_SHA" -t "$IMAGE:latest" .
+    - docker push "$IMAGE:$CI_COMMIT_SHORT_SHA"
+    - docker push "$IMAGE:latest"
   only: [main]
 
 deploy:
@@ -28,9 +33,9 @@ deploy:
     - scp -o StrictHostKeyChecking=no docker-compose.prod.yml root@$DEPLOY_HOST:$DEPLOY_PATH/docker-compose.prod.yml
     - |
       ssh -o StrictHostKeyChecking=no root@$DEPLOY_HOST "
-        echo '$CI_JOB_TOKEN' | docker login $CI_REGISTRY -u gitlab-ci-token --password-stdin &&
-        REGISTRY_IMAGE=$CI_REGISTRY_IMAGE:latest docker compose -f $DEPLOY_PATH/docker-compose.prod.yml pull &&
-        REGISTRY_IMAGE=$CI_REGISTRY_IMAGE:latest docker compose -f $DEPLOY_PATH/docker-compose.prod.yml up -d"
+        echo '$CI_JOB_TOKEN' | docker login $REGISTRY -u gitlab-ci-token --password-stdin &&
+        REGISTRY_IMAGE=$IMAGE:latest docker compose -f $DEPLOY_PATH/docker-compose.prod.yml pull &&
+        REGISTRY_IMAGE=$IMAGE:latest docker compose -f $DEPLOY_PATH/docker-compose.prod.yml up -d"
     - sleep 5
     - curl -sf "http://$DEPLOY_HOST:$DEPLOY_PORT/"
   after_script:
