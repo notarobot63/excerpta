@@ -304,13 +304,8 @@ async def freshrss_settings_save(
     session: Session = Depends(get_session),
 ):
     url = freshrss_url.strip().rstrip("/")
-    if url:
-        try:
-            p = urlparse(url)
-            if p.scheme not in ("http", "https") or not p.netloc:
-                raise ValueError
-        except Exception:
-            raise HTTPException(status_code=400, detail="URL FreshRSS invalide")
+    if url and not _safe_url(url):
+        raise HTTPException(status_code=400, detail="URL FreshRSS invalide ou adresse privée")
 
     config = session.exec(
         select(FreshRSSConfig).where(FreshRSSConfig.user_id == current_user.id)
@@ -329,7 +324,8 @@ async def freshrss_settings_save(
     return RedirectResponse(url="/settings/freshrss?saved=1", status_code=303)
 
 
-@settings_router.post("/settings/freshrss/sync-now")
+@settings_router.post("/settings/freshrss/sync-now",
+                       dependencies=[Depends(rate_limit(3, 3600))])
 async def freshrss_sync_now(
     request: Request,
     current_user: User = Depends(get_current_user),
