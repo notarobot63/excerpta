@@ -42,11 +42,10 @@ async def warm_img_cache() -> None:
                 if cached and time.time() < cached[0]:
                     return
             try:
-                async with httpx.AsyncClient(follow_redirects=True, timeout=5, max_redirects=3) as client:
-                    resp = await client.get(url, headers={
-                        "User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:128.0) Gecko/20100101 Firefox/128.0",
-                        "Accept": "image/avif,image/webp,image/png,image/svg+xml,image/*;q=0.8,*/*;q=0.5",
-                    })
+                resp = await _http_client.get(url, headers={
+                    "User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:128.0) Gecko/20100101 Firefox/128.0",
+                    "Accept": "image/avif,image/webp,image/png,image/svg+xml,image/*;q=0.8,*/*;q=0.5",
+                }, timeout=5)
                 if resp.status_code != 200:
                     return
                 ct = resp.headers.get("content-type", "image/jpeg").split(";")[0].strip()
@@ -66,6 +65,14 @@ async def warm_img_cache() -> None:
 
 
 router = APIRouter()
+
+_http_client: httpx.AsyncClient | None = None
+
+
+def set_http_client(client: httpx.AsyncClient) -> None:
+    global _http_client
+    _http_client = client
+
 
 _IMG_CACHE_TTL = 86400
 _IMG_CACHE_MAX = 1000
@@ -153,12 +160,11 @@ async def _fetch_meta(url: str) -> dict:
         if not await _hostname_resolves_public(_pre.hostname or ""):
             return {"title": "", "description": "", "favicon_url": ""}
     try:
-        async with httpx.AsyncClient(follow_redirects=True, timeout=5, max_redirects=5) as client:
-            resp = await client.get(url, headers={
-                "User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:128.0) Gecko/20100101 Firefox/128.0",
-                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-                "Accept-Language": "fr,fr-FR;q=0.8,en-US;q=0.5,en;q=0.3",
-            })
+        resp = await _http_client.get(url, headers={
+            "User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:128.0) Gecko/20100101 Firefox/128.0",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            "Accept-Language": "fr,fr-FR;q=0.8,en-US;q=0.5,en;q=0.3",
+        }, timeout=5)
         if resp.status_code >= 400:
             return {"title": "", "description": "", "favicon_url": ""}
         final_url = str(resp.url)
@@ -603,11 +609,10 @@ async def proxy_image(url: str, user: User = Depends(get_current_user)):
         if not await _hostname_resolves_public(_proxy_parsed.hostname or ""):
             raise HTTPException(status_code=400)
     try:
-        async with httpx.AsyncClient(follow_redirects=True, timeout=5, max_redirects=5) as client:
-            resp = await client.get(url, headers={
-                "User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:128.0) Gecko/20100101 Firefox/128.0",
-                "Accept": "image/avif,image/webp,image/png,image/svg+xml,image/*;q=0.8,*/*;q=0.5",
-            })
+        resp = await _http_client.get(url, headers={
+            "User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:128.0) Gecko/20100101 Firefox/128.0",
+            "Accept": "image/avif,image/webp,image/png,image/svg+xml,image/*;q=0.8,*/*;q=0.5",
+        }, timeout=5)
         if resp.status_code != 200:
             async with _img_cache_lock:
                 _img_cache[url] = (time.time() + 3600, None, None)

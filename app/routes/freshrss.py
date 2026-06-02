@@ -24,15 +24,22 @@ logger = logging.getLogger("excerpta.freshrss")
 settings_router = APIRouter()
 api_router = APIRouter(prefix="/api/v1")
 
+_http_client: httpx.AsyncClient | None = None
+
+
+def set_http_client(client: httpx.AsyncClient) -> None:
+    global _http_client
+    _http_client = client
+
 
 # ── Greader API helpers ───────────────────────────────────────────────────────
 
 async def _greader_auth(base_url: str, user: str, token: str) -> str:
-    async with httpx.AsyncClient(timeout=10) as client:
-        resp = await client.post(
-            f"{base_url}/api/greader.php/accounts/ClientLogin",
-            data={"Email": user, "Passwd": token},
-        )
+    resp = await _http_client.post(
+        f"{base_url}/api/greader.php/accounts/ClientLogin",
+        data={"Email": user, "Passwd": token},
+        timeout=10,
+    )
     if resp.status_code != 200:
         raise RuntimeError(f"Auth FreshRSS échouée (HTTP {resp.status_code})")
     for line in resp.text.splitlines():
@@ -49,20 +56,19 @@ async def _greader_starred(base_url: str, auth: str) -> list[dict]:
     headers = {"Authorization": f"GoogleLogin auth={auth}"}
     items: list[dict] = []
     continuation: str | None = None
-    async with httpx.AsyncClient(timeout=15) as client:
-        while True:
-            params: dict = {"output": "json", "n": 200}
-            if continuation:
-                params["c"] = continuation
-            resp = await client.get(url, headers=headers, params=params)
-            if resp.status_code != 200:
-                break
-            data = resp.json()
-            batch = data.get("items", [])
-            items.extend(batch)
-            continuation = data.get("continuation")
-            if not continuation or len(batch) < 200:
-                break
+    while True:
+        params: dict = {"output": "json", "n": 200}
+        if continuation:
+            params["c"] = continuation
+        resp = await _http_client.get(url, headers=headers, params=params, timeout=15)
+        if resp.status_code != 200:
+            break
+        data = resp.json()
+        batch = data.get("items", [])
+        items.extend(batch)
+        continuation = data.get("continuation")
+        if not continuation or len(batch) < 200:
+            break
     return items
 
 

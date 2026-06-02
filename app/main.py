@@ -3,6 +3,7 @@ import logging
 import secrets
 from contextlib import asynccontextmanager
 
+import httpx
 from fastapi import Depends, FastAPI, Request
 from fastapi.responses import RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
@@ -24,8 +25,8 @@ from .routes import admin as admin_router
 from .routes import api as api_router
 from .routes.freshrss import settings_router as freshrss_settings_router
 from .routes.freshrss import api_router as freshrss_api_router
-from .routes.freshrss import sync_all_enabled
-from .routes.links import warm_img_cache
+from .routes.freshrss import sync_all_enabled, set_http_client as freshrss_set_client
+from .routes.links import warm_img_cache, set_http_client as links_set_client
 
 logger = logging.getLogger("excerpta")
 
@@ -42,19 +43,26 @@ async def _freshrss_loop():
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    init_db()
-    task = asyncio.create_task(_freshrss_loop())
-    task_warmup = asyncio.create_task(warm_img_cache())
-    try:
-        yield
-    finally:
-        task.cancel()
-        task_warmup.cancel()
-        for t in [task, task_warmup]:
-            try:
-                await t
-            except asyncio.CancelledError:
-                pass
+    async with httpx.AsyncClient(
+        follow_redirects=True,
+        max_redirects=5,
+        limits=httpx.Limits(max_connections=50, max_keepalive_connections=20),
+    ) as http_client:
+        links_set_client(http_client)
+        freshrss_set_client(http_client)
+        init_db()
+        task = asyncio.create_task(_freshrss_loop())
+        task_warmup = asyncio.create_task(warm_img_cache())
+        try:
+            yield
+        finally:
+            task.cancel()
+            task_warmup.cancel()
+            for t in [task, task_warmup]:
+                try:
+                    await t
+                except asyncio.CancelledError:
+                    pass
 
 
 app = FastAPI(
