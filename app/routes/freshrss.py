@@ -1,3 +1,4 @@
+import ipaddress
 import logging
 from datetime import datetime, timezone
 from typing import Optional
@@ -15,7 +16,7 @@ from ..crypto import decrypt, encrypt, hmac_key
 from ..database import engine, get_session
 from ..models import Folder, FreshRSSConfig, Link, LinkTagLink, Tag, User
 from ..ratelimit import rate_limit
-from .links import _fetch_meta, _safe_url
+from .links import _fetch_meta, _hostname_resolves_public, _safe_url
 from ..templates_cfg import templates
 from ..utils import get_or_create_tag, refresh_link_fts, sidebar_data
 
@@ -134,6 +135,14 @@ async def _refresh_new_links_bg(link_ids: list[int]) -> None:
 
 async def sync_user(config: FreshRSSConfig, session: Session) -> int:
     """Sync les étoilés FreshRSS d'un utilisateur. Retourne le nombre de liens ajoutés."""
+    if not _safe_url(config.freshrss_url):
+        raise RuntimeError("URL FreshRSS invalide")
+    _h = urlparse(config.freshrss_url).hostname or ""
+    try:
+        ipaddress.ip_address(_h)
+    except ValueError:
+        if not await _hostname_resolves_public(_h):
+            raise RuntimeError("URL FreshRSS pointe vers une adresse privée")
     auth = await _greader_auth(config.freshrss_url, config.freshrss_user, decrypt(config.freshrss_token))
     items = await _greader_starred(config.freshrss_url, auth)
 
@@ -312,6 +321,13 @@ async def freshrss_settings_save(
     url = freshrss_url.strip().rstrip("/")
     if url and not _safe_url(url):
         raise HTTPException(status_code=400, detail="URL FreshRSS invalide ou adresse privée")
+    if url:
+        _h = urlparse(url).hostname or ""
+        try:
+            ipaddress.ip_address(_h)
+        except ValueError:
+            if not await _hostname_resolves_public(_h):
+                raise HTTPException(status_code=400, detail="URL FreshRSS invalide ou adresse privée")
 
     config = session.exec(
         select(FreshRSSConfig).where(FreshRSSConfig.user_id == current_user.id)
