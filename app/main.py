@@ -27,6 +27,7 @@ from .routes.freshrss import settings_router as freshrss_settings_router
 from .routes.freshrss import api_router as freshrss_api_router
 from .routes.freshrss import sync_all_enabled, set_http_client as freshrss_set_client
 from .routes.links import warm_img_cache, set_http_client as links_set_client
+from .routes.settings import set_http_client as settings_set_client
 
 logger = logging.getLogger("excerpta")
 
@@ -50,6 +51,7 @@ async def lifespan(app: FastAPI):
     ) as http_client:
         links_set_client(http_client)
         freshrss_set_client(http_client)
+        settings_set_client(http_client)
         init_db()
         task = asyncio.create_task(_freshrss_loop())
         task_warmup = asyncio.create_task(warm_img_cache())

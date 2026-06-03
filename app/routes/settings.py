@@ -26,6 +26,13 @@ from .links import _fetch_meta
 
 router = APIRouter()
 
+_http_client: httpx.AsyncClient | None = None
+
+
+def set_http_client(client: httpx.AsyncClient) -> None:
+    global _http_client
+    _http_client = client
+
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -398,11 +405,14 @@ async def export_links(
 
 # ── Broken link checker ───────────────────────────────────────────────────────
 
+_CHECKER_HEADERS = {"User-Agent": "Mozilla/5.0 (compatible; Excerpta/1.0; link-checker)"}
+
+
 async def _check_link(client: httpx.AsyncClient, link) -> dict:
     try:
-        resp = await client.head(link.url, follow_redirects=True, timeout=10)
+        resp = await client.head(link.url, follow_redirects=True, timeout=10, headers=_CHECKER_HEADERS)
         if resp.status_code >= 400:
-            resp = await client.get(link.url, follow_redirects=True, timeout=10)
+            resp = await client.get(link.url, follow_redirects=True, timeout=10, headers=_CHECKER_HEADERS)
         return {"link": link, "status": resp.status_code, "broken": resp.status_code >= 400, "error": None}
     except Exception as e:
         return {"link": link, "status": None, "broken": True, "error": str(e)[:100]}
@@ -417,9 +427,7 @@ async def _check_all(links) -> list[dict]:
             await asyncio.sleep(0.2)
             return result
 
-    headers = {"User-Agent": "Mozilla/5.0 (compatible; Excerpta/1.0; link-checker)"}
-    async with httpx.AsyncClient(timeout=10, follow_redirects=True, headers=headers) as client:
-        return await asyncio.gather(*[_guarded(client, lk) for lk in links])
+    return await asyncio.gather(*[_guarded(_http_client, lk) for lk in links])
 
 
 @router.get("/settings/check-links", response_class=HTMLResponse)
@@ -471,11 +479,12 @@ async def archive_link(
         raise HTTPException(status_code=404)
 
     try:
-        async with httpx.AsyncClient(timeout=20, follow_redirects=False) as client:
-            resp = await client.post(
-                f"https://web.archive.org/save/{link.url}",
-                headers={"User-Agent": "Excerpta/1.0"},
-            )
+        resp = await _http_client.post(
+            f"https://web.archive.org/save/{link.url}",
+            headers={"User-Agent": "Excerpta/1.0"},
+            follow_redirects=False,
+            timeout=20,
+        )
         location = resp.headers.get("location", "") or resp.headers.get("content-location", "")
         if location:
             archived = location if location.startswith("http") else f"https://web.archive.org{location}"

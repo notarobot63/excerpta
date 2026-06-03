@@ -48,6 +48,8 @@ async def warm_img_cache() -> None:
                 }, timeout=5)
                 if resp.status_code != 200:
                     return
+                if not _safe_url(str(resp.url)):
+                    return
                 ct = resp.headers.get("content-type", "image/jpeg").split(";")[0].strip()
                 if not ct.startswith("image/"):
                     return
