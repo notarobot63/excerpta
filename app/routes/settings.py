@@ -9,7 +9,7 @@ from .links import _safe_url
 import httpx
 import qrcode
 from bs4 import BeautifulSoup
-from fastapi import APIRouter, BackgroundTasks, Depends, File, Request, UploadFile
+from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, Request, UploadFile
 from fastapi.responses import HTMLResponse, RedirectResponse, Response, StreamingResponse
 from sqlalchemy import or_, text
 from sqlmodel import Session, select
@@ -121,6 +121,20 @@ async def settings_page(
             **sidebar_data(session, user.id),
         },
     )
+
+
+# ── Page publique ────────────────────────────────────────────────────────────
+
+@router.post("/settings/public-page")
+async def save_public_page(
+    public_page_title: str = Form("", max_length=100),
+    user: User = Depends(get_current_user),
+    session: Session = Depends(get_session),
+):
+    user.public_page_title = public_page_title.strip() or "Liens publics"
+    session.add(user)
+    session.commit()
+    return RedirectResponse(url="/settings?saved=public", status_code=303)
 
 
 # ── QR code Android ───────────────────────────────────────────────────────────

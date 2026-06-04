@@ -77,6 +77,9 @@ def init_db():
     cols = {r[1] for r in con.execute("PRAGMA table_info(links)").fetchall()}
     if "freshrss_item_id" not in cols:
         con.execute("ALTER TABLE links ADD COLUMN freshrss_item_id TEXT")
+    user_cols = {r[1] for r in con.execute("PRAGMA table_info(users)").fetchall()}
+    if "public_page_title" not in user_cols:
+        con.execute("ALTER TABLE users ADD COLUMN public_page_title TEXT NOT NULL DEFAULT 'Liens publics'")
     # Migration groups → folders (ancienne DB)
     # Note : create_all() crée `folders` avant ce code, donc on détecte via la présence de `groups`
     tables = {r[0] for r in con.execute("SELECT name FROM sqlite_master WHERE type='table'").fetchall()}

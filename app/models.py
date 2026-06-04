@@ -27,6 +27,7 @@ class User(SQLModel, table=True):
     theme: str = Field(default="light")
     is_admin: bool = Field(default=False)
     is_active: bool = Field(default=True)
+    public_page_title: str = Field(default="Liens publics")
     session_version: int = Field(default=0)
     created_at: datetime = Field(default_factory=_utcnow)
 
