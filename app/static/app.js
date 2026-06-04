@@ -1,5 +1,28 @@
 document.addEventListener('DOMContentLoaded', function () {
 
+  // Toggle vue liste / grille
+  var VIEW_KEY = 'excerpta-view';
+  function applyView(v) {
+    var list = document.querySelector('.links-list');
+    if (!list) return;
+    list.classList.toggle('view-grid', v === 'grid');
+    var btn = document.getElementById('view-toggle-btn');
+    if (!btn) return;
+    btn.querySelector('.icon-grid').style.display = v === 'grid' ? 'none' : '';
+    btn.querySelector('.icon-list').style.display = v === 'grid' ? '' : 'none';
+    btn.title = v === 'grid' ? 'Vue liste' : 'Vue grille';
+  }
+  var currentView = localStorage.getItem(VIEW_KEY) || 'list';
+  applyView(currentView);
+  var viewBtn = document.getElementById('view-toggle-btn');
+  if (viewBtn) {
+    viewBtn.addEventListener('click', function() {
+      currentView = currentView === 'list' ? 'grid' : 'list';
+      localStorage.setItem(VIEW_KEY, currentView);
+      applyView(currentView);
+    });
+  }
+
   // Raccourcis clavier globaux
   document.addEventListener('keydown', function (e) {
     var tag = (document.activeElement || {}).tagName || '';

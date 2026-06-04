@@ -659,3 +659,53 @@ a:hover { text-decoration: underline; }
 /* Fix CSP: hover sidebar add button */
 .sidebar-add-btn { color: var(--text-muted); transition: color 0.15s; }
 .sidebar-add-btn:hover { color: var(--text); }
+
+/* ── Vue grille ── */
+.links-list.view-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 1rem;
+  align-items: start;
+}
+
+.view-grid .link-card {
+  flex-direction: column;
+  padding: 0;
+  border-bottom: none;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  gap: 0;
+  cursor: default;
+}
+
+.view-grid .link-thumbnail,
+.view-grid .link-thumbnail-placeholder {
+  width: 100%;
+  height: 160px;
+  border-radius: 0;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  margin: 0;
+  align-self: auto;
+}
+
+.view-grid .link-body { padding: 0.75rem 1rem 0.5rem; }
+
+.view-grid .link-note { display: none; }
+
+.view-grid .link-description {
+  -webkit-line-clamp: 2;
+  margin-bottom: 0.35rem;
+}
+
+.view-grid .link-actions {
+  flex-direction: row;
+  justify-content: flex-end;
+  padding: 0 0.75rem 0.6rem;
+  opacity: 0;
+}
+
+.view-grid .link-card:hover .link-actions { opacity: 1; }
+
+.view-grid .link-footer { margin-top: 0.35rem; }
