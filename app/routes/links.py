@@ -550,10 +550,19 @@ async def delete_link(
     link_id: int,
     user: User = Depends(get_current_user),
     session: Session = Depends(get_session),
+    unstar_freshrss: str = Form(""),
 ):
+    from ..models import FreshRSSConfig
+    from .freshrss import unstar_item
     link = session.get(Link, link_id)
     if not link or link.user_id != user.id:
         raise HTTPException(status_code=404)
+    if unstar_freshrss and link.freshrss_item_id:
+        config = session.exec(
+            select(FreshRSSConfig).where(FreshRSSConfig.user_id == user.id)
+        ).first()
+        if config and config.freshrss_url:
+            await unstar_item(config, link.freshrss_item_id)
     session.delete(link)
     session.commit()
     return RedirectResponse(url="/", status_code=303)

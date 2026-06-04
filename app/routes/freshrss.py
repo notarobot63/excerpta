@@ -49,6 +49,31 @@ async def _greader_auth(base_url: str, user: str, token: str) -> str:
     raise RuntimeError("FreshRSS n'a pas retourné de token Auth")
 
 
+async def _greader_token(base_url: str, auth: str) -> str:
+    resp = await _http_client.get(
+        f"{base_url}/api/greader.php/reader/api/0/token",
+        headers={"Authorization": f"GoogleLogin auth={auth}"},
+        timeout=10,
+    )
+    return resp.text.strip() if resp.status_code == 200 else ""
+
+
+async def unstar_item(config: "FreshRSSConfig", item_id: str) -> bool:
+    """Déséttoile un article FreshRSS. Retourne True si succès."""
+    try:
+        auth = await _greader_auth(config.freshrss_url, config.freshrss_user, decrypt(config.freshrss_token))
+        t_token = await _greader_token(config.freshrss_url, auth)
+        resp = await _http_client.post(
+            f"{config.freshrss_url}/api/greader.php/reader/api/0/edit-tag",
+            headers={"Authorization": f"GoogleLogin auth={auth}"},
+            data={"i": item_id, "r": "user/-/state/com.google/starred", "T": t_token},
+            timeout=10,
+        )
+        return resp.status_code == 200
+    except Exception:
+        return False
+
+
 async def _greader_starred(base_url: str, auth: str) -> list[dict]:
     url = (
         f"{base_url}/api/greader.php/reader/api/0/stream/contents"
@@ -203,6 +228,7 @@ async def sync_user(config: FreshRSSConfig, session: Session) -> int:
             favicon_url="",
             thumbnail_url=_extract_thumbnail(item),
             folder_id=folder.id,
+            freshrss_item_id=item.get("id") or None,
             **({"created_at": created, "updated_at": created} if created else {}),
         )
         session.add(link)

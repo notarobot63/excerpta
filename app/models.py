@@ -72,6 +72,7 @@ class Link(SQLModel, table=True):
     archived_url: Optional[str] = Field(default=None)
     archived_at: Optional[datetime] = Field(default=None)
     folder_id: Optional[int] = Field(default=None, foreign_key="folders.id")
+    freshrss_item_id: Optional[str] = Field(default=None)
     created_at: datetime = Field(default_factory=_utcnow)
     updated_at: datetime = Field(default_factory=_utcnow)
 
