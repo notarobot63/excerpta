@@ -182,6 +182,18 @@ curl -X POST https://votre-instance.example.com/api/v1/freshrss/sync \
 { "added": 3 }
 ```
 
+---
+
+### GET /public/feed.xml
+
+Flux RSS public, sans authentification. Retourne les 100 derniers liens publics au format RSS 2.0.
+
+```bash
+curl https://votre-instance.example.com/public/feed.xml
+```
+
+Disponible aussi via la balise `<link rel="alternate">` dans la page publique (détection automatique par les lecteurs RSS).
+
 ## Codes d'erreur
 
 | Code | Signification |

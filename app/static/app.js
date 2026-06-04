@@ -1,5 +1,18 @@
 document.addEventListener('DOMContentLoaded', function () {
 
+  // Raccourcis clavier globaux
+  document.addEventListener('keydown', function (e) {
+    var tag = (document.activeElement || {}).tagName || '';
+    if (['INPUT', 'TEXTAREA', 'SELECT'].includes(tag)) return;
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    if (e.key === 'n') { e.preventDefault(); window.location.href = '/links/add'; }
+    if (e.key === '/') {
+      e.preventDefault();
+      var s = document.querySelector('input[name="q"]');
+      if (s) { s.focus(); s.select(); }
+    }
+  });
+
   // Confirm dialogs — remplace onsubmit="return confirm(...)"
   document.querySelectorAll('form[data-confirm]').forEach(function (form) {
     form.addEventListener('submit', function (e) {

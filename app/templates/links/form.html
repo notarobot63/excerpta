@@ -4,6 +4,11 @@
 
 {% block content %}
 <div class="form-card">
+  {% if request.query_params.get('duplicate') %}
+  <div style="background:var(--warning-bg,#fff8e1);border:1px solid var(--warning-border,#ffe082);border-radius:6px;padding:0.6rem 0.9rem;margin-bottom:1rem;font-size:0.875rem;color:var(--text);">
+    ⚠️ Ce lien existe déjà dans ta collection — tu peux le modifier ci-dessous.
+  </div>
+  {% endif %}
   <h2 style="font-size: 1.1rem; font-weight: 600; margin: 0 0 1.25rem;">
     {% if link %}Modifier le lien{% else %}Ajouter un lien{% endif %}
   </h2>

@@ -50,6 +50,19 @@ Le bookmarklet est disponible dans **Paramètres → Bookmarklet**. Le glisser d
 - **Import** : favoris au format Netscape HTML (Firefox, Chrome, Safari) — les dossiers sont recréés automatiquement
 - **Export** : `Paramètres → Export` — génère un fichier Netscape HTML avec dossiers et tags
 
+## Raccourcis clavier
+
+| Touche | Action |
+|---|---|
+| `n` | Nouveau lien |
+| `/` | Focus sur la recherche |
+
+Les raccourcis sont désactivés quand le focus est dans un champ de saisie.
+
+## Détection de doublons
+
+Si tu essaies d'ajouter une URL déjà présente dans ta collection (via le formulaire ou le bookmarklet), Excerpta redirige automatiquement vers la page d'édition du lien existant avec un avertissement.
+
 ## Vérification des liens
 
 `Paramètres → Vérifier les liens` lance une vérification asynchrone de tous les liens (10 en parallèle). Les liens cassés (4xx, 5xx, timeout) sont signalés avec leur statut HTTP.
