@@ -21,7 +21,7 @@
 {% if links %}
 <div class="links-list">
 {% for link in links %}
-<article class="link-card" draggable="true" data-link-id="{{ link.id }}"
+<article class="link-card" draggable="true" data-link-id="{{ link.id }}" data-folder-id="{{ link.folder_id or '' }}"
          style="cursor:grab;" title="Glisser vers un dossier de la sidebar">
   {% if link.thumbnail_url %}
   <a href="{{ link.url }}" target="_blank" rel="noopener" class="link-thumbnail">
