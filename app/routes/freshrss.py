@@ -190,13 +190,19 @@ async def sync_user(config: FreshRSSConfig, session: Session) -> int:
     for i, u in enumerate(candidate_urls):
         params[f"u{i}"] = u
     placeholders = ", ".join(f":u{i}" for i in range(len(candidate_urls)))
-    existing_urls = {
-        row[0]
-        for row in session.execute(
-            text(f"SELECT url FROM links WHERE user_id = :uid AND url IN ({placeholders})"),
-            params,
-        ).fetchall()
-    }
+    existing_rows = session.execute(
+        text(f"SELECT id, url, freshrss_item_id FROM links WHERE user_id = :uid AND url IN ({placeholders})"),
+        params,
+    ).fetchall()
+    existing_urls = {row[1] for row in existing_rows}
+    # Backfill : associer l'ID GReader aux liens déjà importés qui ne l'ont pas encore
+    url_to_item_id = {_extract_url(i): i.get("id") for i in items if _extract_url(i) and i.get("id")}
+    for link_id, url, current_item_id in existing_rows:
+        if current_item_id is None and url in url_to_item_id:
+            session.execute(
+                text("UPDATE links SET freshrss_item_id = :iid WHERE id = :lid"),
+                {"iid": url_to_item_id[url], "lid": link_id},
+            )
 
     freshrss_tag = get_or_create_tag(session, config.user_id, "freshrss")
     new_links: list[Link] = []
