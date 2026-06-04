@@ -82,11 +82,31 @@
       {% if all_tags %}
       <div class="sidebar-section">Tags</div>
       {% for tag in all_tags %}
-      <a href="/?tag={{ tag.name|urlencode }}"
-         class="sidebar-item {% if current_tag == tag.name %}active{% endif %}">
-        <span># {{ tag.name }}</span>
-        <span class="sidebar-count">{{ tag_counts.get(tag.name, 0) }}</span>
-      </a>
+      <div class="sidebar-item sidebar-tag-item {% if current_tag == tag.name %}active{% endif %}"
+           x-data="sidebarTag({{ tag.id }}, {{ tag.name|tojson }})"
+           @mouseenter="hovered = true"
+           @mouseleave="if (!editing) hovered = false">
+        <template x-if="!editing">
+          <a :href="'/?tag=' + encodeURIComponent(currentName)"
+             style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:inherit;text-decoration:none;"
+             x-text="'# ' + currentName"></a>
+        </template>
+        <template x-if="editing">
+          <input type="text" class="sidebar-tag-input" x-model="editName"
+                 x-init="$nextTick(() => $el.select())"
+                 @keydown.enter.prevent="save()"
+                 @keydown.escape.prevent="cancel()" />
+        </template>
+        <span class="sidebar-count" x-show="!editing">{{ tag_counts.get(tag.name, 0) }}</span>
+        <span :style="(hovered && !editing) ? 'display:flex;gap:0.1rem' : 'display:none'">
+          <button class="sidebar-tag-btn" @click.prevent.stop="editing = true; editName = currentName" title="Renommer">✏️</button>
+          <button class="sidebar-tag-btn" @click.prevent.stop="del()" title="Supprimer">🗑</button>
+        </span>
+        <span :style="editing ? 'display:flex;gap:0.1rem' : 'display:none'">
+          <button class="sidebar-tag-btn" @click.prevent.stop="save()" title="Valider">✓</button>
+          <button class="sidebar-tag-btn" @click.prevent.stop="cancel()" title="Annuler">✕</button>
+        </span>
+      </div>
       {% endfor %}
       {% endif %}
     </nav>
@@ -220,6 +240,54 @@
   });
 })();
 </script>
+
+<script nonce="{{ request.state.nonce }}">
+function sidebarTag(id, initialName) {
+  return {
+    id, currentName: initialName, editName: initialName, editing: false, hovered: false,
+    async save() {
+      var name = this.editName.trim();
+      if (!name || name === this.currentName) { this.cancel(); return; }
+      var csrf = document.querySelector('input[name="csrf_token"]');
+      var r = await fetch('/tags/' + this.id + '/rename', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf ? csrf.value : '' },
+        body: JSON.stringify({ name }),
+      });
+      if (r.ok) {
+        var data = await r.json();
+        if (data.merged) { this.$el.remove(); return; }
+        this.currentName = name;
+        this.editing = false;
+        this.hovered = false;
+      }
+    },
+    cancel() { this.editName = this.currentName; this.editing = false; },
+    async del() {
+      if (!confirm('Supprimer le tag #' + this.currentName + ' ?')) return;
+      var csrf = document.querySelector('input[name="csrf_token"]');
+      var r = await fetch('/tags/' + this.id + '/delete', {
+        method: 'POST',
+        headers: { 'X-CSRF-Token': csrf ? csrf.value : '' },
+      });
+      if (r.ok) this.$el.remove();
+    },
+  };
+}
+</script>
+
+<style>
+.sidebar-tag-input {
+  flex: 1; min-width: 0; font-size: 0.875rem;
+  border: 1px solid var(--primary, #4a90d9); border-radius: 3px;
+  padding: 0 0.25rem; background: var(--bg); color: var(--text); outline: none;
+}
+.sidebar-tag-btn {
+  background: none; border: none; cursor: pointer;
+  padding: 0 0.1rem; font-size: 0.8rem; color: var(--text-muted); line-height: 1;
+}
+.sidebar-tag-btn:hover { color: var(--text); }
+</style>
 
 </body>
 </html>
