@@ -83,7 +83,9 @@
       <div class="sidebar-section">Tags</div>
       {% for tag in all_tags %}
       <div class="sidebar-item sidebar-tag-item {% if current_tag == tag.name %}active{% endif %}"
-           x-data="sidebarTag({{ tag.id }}, {{ tag.name|tojson }})"
+           x-data="sidebarTag()"
+           data-id="{{ tag.id }}"
+           data-name="{{ tag.name|e }}"
            @mouseenter="hovered = true"
            @mouseleave="if (!editing) hovered = false">
         <template x-if="!editing">
@@ -242,9 +244,14 @@
 </script>
 
 <script nonce="{{ request.state.nonce }}">
-function sidebarTag(id, initialName) {
+function sidebarTag() {
   return {
-    id, currentName: initialName, editName: initialName, editing: false, hovered: false,
+    id: 0, currentName: '', editName: '', editing: false, hovered: false,
+    init() {
+      this.id = parseInt(this.$el.dataset.id);
+      this.currentName = this.$el.dataset.name;
+      this.editName = this.currentName;
+    },
     async save() {
       var name = this.editName.trim();
       if (!name || name === this.currentName) { this.cancel(); return; }
