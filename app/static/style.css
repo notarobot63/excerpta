@@ -709,3 +709,15 @@ a:hover { text-decoration: underline; }
 .view-grid .link-card:hover .link-actions { opacity: 1; }
 
 .view-grid .link-footer { margin-top: 0.35rem; }
+
+/* ── Sidebar tag actions ── */
+.sidebar-tag-input {
+  flex: 1; min-width: 0; font-size: 0.875rem;
+  border: 1px solid var(--primary, #4a90d9); border-radius: 3px;
+  padding: 0 0.25rem; background: var(--bg); color: var(--text); outline: none;
+}
+.sidebar-tag-btn {
+  background: none; border: none; cursor: pointer;
+  padding: 0 0.1rem; font-size: 0.8rem; color: var(--text-muted); line-height: 1;
+}
+.sidebar-tag-btn:hover { color: var(--text); }

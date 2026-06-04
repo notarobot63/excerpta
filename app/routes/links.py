@@ -568,7 +568,8 @@ async def delete_link(
             select(FreshRSSConfig).where(FreshRSSConfig.user_id == user.id)
         ).first()
         if config and config.freshrss_url:
-            await unstar_item(config, link.freshrss_item_id)
+            item_id = link.freshrss_item_id
+            asyncio.create_task(unstar_item(config, item_id))
     session.delete(link)
     session.commit()
     return RedirectResponse(url="/", status_code=303)
