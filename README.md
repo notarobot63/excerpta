@@ -34,7 +34,7 @@
 ### Intégrations
 - **Synchronisation FreshRSS** : import automatique des articles étoilés toutes les N minutes (configurable)
 - **Bookmarklet** navigateur pour ajout rapide depuis n'importe quelle page
-- **Application Android** ([excerpta-android](https://GIT_HOST/Thomas/excerpta-android)) : QR code de configuration intégré (`GET /settings/android-qr.png`)
+- **Application Android** (excerpta-android) : QR code de configuration intégré (`GET /settings/android-qr.png`)
 
 ### Interface
 - **9 thèmes CSS** : light, dark, dracula, nord, nord-dark, catppuccin, gruvbox, solarized, rosepine — toggle light/dark en un clic
@@ -141,6 +141,8 @@ Endpoints :
 ## Application Android
 
 L'application compagnon **excerpta-android** permet l'ajout rapide de liens depuis le partage système Android. Elle se configure en scannant le QR code disponible dans **Paramètres → Compte**.
+
+> Le dépôt excerpta-android n'est pas encore publié.
 
 ---
 
