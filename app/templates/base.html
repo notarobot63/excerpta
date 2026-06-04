@@ -64,6 +64,7 @@
       <a href="/?group_id={{ folder.id }}"
          class="sidebar-item {% if current_group == folder.id %}active{% endif %} sidebar-folder-drop sidebar-folder-item"
          data-folder-id="{{ folder.id }}"
+         data-folder-name="{{ folder.name }}"
          data-parent-id="{{ folder.parent_id or '' }}"
          style="padding-left: {{ 0.875 + depth * 0.875 }}rem;">
         <span class="drag-handle" title="Réorganiser">⠿</span>
@@ -178,16 +179,40 @@
         body: JSON.stringify({ folder_id: parseInt(folderId) }),
       }).then(function(r) {
         if (r.ok) {
-          // Mettre à jour le compteur visuellement
-          var countEl = el.querySelector('[data-count-folder="' + folderId + '"]');
-          if (countEl) countEl.textContent = parseInt(countEl.textContent || 0) + 1;
-          // Retirer la carte de la liste si on est dans la vue d'un autre dossier
           var card = document.querySelector('.link-card[data-link-id="' + linkId + '"]');
-          if (card && window.location.search.includes('group_id') &&
-              !window.location.search.includes('group_id=' + folderId)) {
-            card.style.transition = 'opacity 0.25s';
-            card.style.opacity = '0';
-            setTimeout(function() { card.remove(); }, 260);
+
+          var oldFolderId = card ? card.dataset.folderId : '';
+          if (oldFolderId) {
+            var oldCount = document.querySelector('[data-count-folder="' + oldFolderId + '"]');
+            if (oldCount) oldCount.textContent = Math.max(0, parseInt(oldCount.textContent || 0) - 1);
+          }
+
+          var newCount = el.querySelector('[data-count-folder="' + folderId + '"]');
+          if (newCount) newCount.textContent = parseInt(newCount.textContent || 0) + 1;
+
+          if (card) {
+            card.dataset.folderId = folderId;
+            var badge = card.querySelector('.link-folder-tag');
+            var folderName = el.dataset.folderName || '';
+            if (badge) {
+              badge.href = '/?group_id=' + folderId;
+              badge.textContent = '📁 ' + folderName;
+            } else if (folderName) {
+              var footer = card.querySelector('.link-footer');
+              if (footer) {
+                var a = document.createElement('a');
+                a.href = '/?group_id=' + folderId;
+                a.className = 'link-folder-tag';
+                a.textContent = '📁 ' + folderName;
+                footer.prepend(a);
+              }
+            }
+            if (window.location.search.includes('group_id') &&
+                !window.location.search.includes('group_id=' + folderId)) {
+              card.style.transition = 'opacity 0.25s';
+              card.style.opacity = '0';
+              setTimeout(function() { card.remove(); }, 260);
+            }
           }
         }
       });
