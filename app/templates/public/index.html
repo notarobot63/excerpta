@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Liens publics - Excerpta</title>
   <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+  <link rel="alternate" type="application/rss+xml" title="Liens publics - Excerpta" href="/public/feed.xml">
   <link rel="stylesheet" href="/static/style.css">
   <script nonce="{{ request.state.nonce }}">
     (function() {
@@ -27,6 +28,7 @@
       {% if q %}<a href="/public" class="btn btn-ghost btn-sm">✕</a>{% endif %}
     </form>
 
+    <a href="/public/feed.xml" title="Flux RSS" style="color:var(--text-muted);text-decoration:none;font-size:1.1rem;">🔶</a>
     <select class="theme-select" id="theme-select">
       <option value="light">☀️ Light</option>
       <option value="dark">🌙 Dark</option>

@@ -434,6 +434,12 @@ async def add_link(
     if not _safe_url(url):
         raise HTTPException(status_code=400, detail="URL invalide")
 
+    existing = session.exec(
+        select(Link).where(Link.user_id == user.id, Link.url == url)
+    ).first()
+    if existing:
+        return RedirectResponse(url=f"/links/{existing.id}/edit?duplicate=1", status_code=303)
+
     link = Link(
         user_id=user.id,
         url=url,
