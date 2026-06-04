@@ -70,6 +70,7 @@
     <form action="/links/{{ link.id }}/delete" method="post"
           data-confirm="Supprimer ce lien ?">
       {{ csrf_input(request) }}
+      {% if link.freshrss_item_id %}<input type="hidden" name="unstar_freshrss" value="1">{% endif %}
       <button type="submit" class="btn btn-ghost btn-sm" title="Supprimer">🗑️</button>
     </form>
   </div>
