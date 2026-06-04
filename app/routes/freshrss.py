@@ -70,7 +70,8 @@ async def unstar_item(config: "FreshRSSConfig", item_id: str) -> bool:
             timeout=10,
         )
         return resp.status_code == 200
-    except Exception:
+    except Exception as exc:
+        logger.warning("FreshRSS unstar failed item_id=%s : %s", item_id, exc)
         return False
 
 
@@ -158,16 +159,23 @@ async def _refresh_new_links_bg(link_ids: list[int]) -> None:
             pass
 
 
-async def sync_user(config: FreshRSSConfig, session: Session) -> int:
-    """Sync les étoilés FreshRSS d'un utilisateur. Retourne le nombre de liens ajoutés."""
-    if not _safe_url(config.freshrss_url):
-        raise RuntimeError("URL FreshRSS invalide")
-    _h = urlparse(config.freshrss_url).hostname or ""
+async def _assert_safe_freshrss_url(url: str) -> None:
+    if not _safe_url(url):
+        raise ValueError("URL FreshRSS invalide")
+    _h = urlparse(url).hostname or ""
     try:
         ipaddress.ip_address(_h)
     except ValueError:
         if not await _hostname_resolves_public(_h):
-            raise RuntimeError("URL FreshRSS pointe vers une adresse privée")
+            raise ValueError("URL FreshRSS pointe vers une adresse privée")
+
+
+async def sync_user(config: FreshRSSConfig, session: Session) -> int:
+    """Sync les étoilés FreshRSS d'un utilisateur. Retourne le nombre de liens ajoutés."""
+    try:
+        await _assert_safe_freshrss_url(config.freshrss_url)
+    except ValueError as exc:
+        raise RuntimeError(str(exc))
     auth = await _greader_auth(config.freshrss_url, config.freshrss_user, decrypt(config.freshrss_token))
     items = await _greader_starred(config.freshrss_url, auth)
 
@@ -351,15 +359,11 @@ async def freshrss_settings_save(
     session: Session = Depends(get_session),
 ):
     url = freshrss_url.strip().rstrip("/")
-    if url and not _safe_url(url):
-        raise HTTPException(status_code=400, detail="URL FreshRSS invalide ou adresse privée")
     if url:
-        _h = urlparse(url).hostname or ""
         try:
-            ipaddress.ip_address(_h)
+            await _assert_safe_freshrss_url(url)
         except ValueError:
-            if not await _hostname_resolves_public(_h):
-                raise HTTPException(status_code=400, detail="URL FreshRSS invalide ou adresse privée")
+            raise HTTPException(status_code=400, detail="URL FreshRSS invalide ou adresse privée")
 
     config = session.exec(
         select(FreshRSSConfig).where(FreshRSSConfig.user_id == current_user.id)

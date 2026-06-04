@@ -26,19 +26,19 @@ async def public_feed(
     owner = session.exec(select(User).where(User.is_active == True).order_by(User.id)).first()
     page_title = (owner.public_page_title if owner else None) or "Liens publics"
     base = settings.base_url.rstrip("/")
-    items = ""
+    parts = []
     for lk in links:
         pub = lk.created_at.strftime("%a, %d %b %Y %H:%M:%S +0000")
-        desc = xml_escape(lk.description or "")
-        items += (
+        parts.append(
             f"<item>"
             f"<title>{xml_escape(lk.title or lk.url)}</title>"
             f"<link>{xml_escape(lk.url)}</link>"
-            f"<description>{desc}</description>"
+            f"<description>{xml_escape(lk.description or '')}</description>"
             f"<pubDate>{pub}</pubDate>"
             f"<guid>{xml_escape(lk.url)}</guid>"
-            f"</item>\n"
+            f"</item>"
         )
+    items = "\n".join(parts)
     xml = (
         '<?xml version="1.0" encoding="UTF-8"?>'
         '<rss version="2.0"><channel>'

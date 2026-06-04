@@ -160,6 +160,7 @@ def init_db():
                 )
 
     # Index de performance
+    con.execute("CREATE INDEX IF NOT EXISTS idx_links_user_url ON links(user_id, url)")
     con.execute("CREATE INDEX IF NOT EXISTS idx_links_user_created ON links(user_id, created_at DESC)")
     con.execute("CREATE INDEX IF NOT EXISTS idx_tags_user_id ON tags(user_id)")
     con.execute("CREATE INDEX IF NOT EXISTS idx_folders_user_id ON folders(user_id)")
