@@ -55,6 +55,19 @@
 
 ---
 
+## Documentation
+
+| | |
+|---|---|
+| [Installation](docs/installation.md) | Docker, variables d'env, reverse proxy, sauvegarde |
+| [Configuration](docs/configuration.md) | OIDC, thèmes, clé API, import/export |
+| [FreshRSS](docs/freshrss.md) | Sync articles étoilés, déséttoilage automatique |
+| [API REST](docs/api.md) | Référence complète avec exemples curl |
+| [Android](docs/android.md) | Application compagnon, QR code |
+| [Contribuer](docs/contributing.md) | Stack, structure, migrations, sécurité |
+
+---
+
 ## Stack
 
 | Composant | Technologie |
