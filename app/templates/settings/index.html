@@ -165,6 +165,22 @@
 
   <hr style="border:none;border-top:1px solid var(--border);margin:1.5rem 0">
 
+  <h3 style="font-size:0.9rem;font-weight:600;margin:0 0 0.75rem;color:var(--text-muted)">Page publique</h3>
+  <form action="/settings/public-page" method="post" style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;">
+    {{ csrf_input(request) }}
+    <input type="text" name="public_page_title" maxlength="100"
+           value="{{ user.public_page_title|e }}"
+           placeholder="Liens publics"
+           class="form-input" style="flex:1;min-width:180px;max-width:320px;">
+    <button type="submit" class="btn btn-primary btn-sm">Enregistrer</button>
+    <a href="/public" target="_blank" class="btn btn-ghost btn-sm">Voir →</a>
+  </form>
+  {% if request.query_params.get('saved') == 'public' %}
+  <p style="font-size:0.82rem;color:var(--success,#2bb24c);margin:0.4rem 0 0;">Titre mis à jour.</p>
+  {% endif %}
+
+  <hr style="border:none;border-top:1px solid var(--border);margin:1.5rem 0">
+
   <h3 style="font-size:0.9rem;font-weight:600;margin:0 0 0.75rem;color:var(--text-muted)">Compte</h3>
   <p><strong>{{ user.name|e }}</strong> - {{ user.email|e }}</p>
   <p><a href="/auth/logout" class="btn btn-ghost btn-sm">Se déconnecter</a></p>

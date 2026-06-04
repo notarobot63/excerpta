@@ -7,7 +7,7 @@ from sqlmodel import Session, select
 
 from ..config import settings
 from ..database import get_session
-from ..models import Link
+from ..models import Link, User
 from ..templates_cfg import templates
 
 router = APIRouter()
@@ -23,6 +23,8 @@ async def public_feed(
             select(Link).where(Link.is_public == True).order_by(Link.created_at.desc()).limit(100)
         ).all()
     )
+    owner = session.exec(select(User).where(User.is_active == True)).first()
+    page_title = (owner.public_page_title if owner else None) or "Liens publics"
     base = settings.base_url.rstrip("/")
     items = ""
     for lk in links:
@@ -40,9 +42,9 @@ async def public_feed(
     xml = (
         '<?xml version="1.0" encoding="UTF-8"?>'
         '<rss version="2.0"><channel>'
-        f"<title>Liens publics - Excerpta</title>"
+        f"<title>{xml_escape(page_title)} - Excerpta</title>"
         f"<link>{xml_escape(base)}/public</link>"
-        f"<description>Liens publics partagés via Excerpta</description>"
+        f"<description>{xml_escape(page_title)} partagés via Excerpta</description>"
         f"{items}"
         "</channel></rss>"
     )
@@ -56,6 +58,9 @@ async def public_links(
     tag: Optional[str] = None,
     session: Session = Depends(get_session),
 ):
+    owner = session.exec(select(User).where(User.is_active == True)).first()
+    page_title = (owner.public_page_title if owner else None) or "Liens publics"
+
     links = list(
         session.exec(
             select(Link).where(Link.is_public == True).order_by(Link.created_at.desc())
@@ -93,5 +98,6 @@ async def public_links(
             "current_tag": tag,
             "q": q or "",
             "total": len(links),
+            "page_title": page_title,
         },
     )
