@@ -74,6 +74,9 @@ def init_db():
             rows,
         )
     # Migrations idempotentes
+    cols = {r[1] for r in con.execute("PRAGMA table_info(links)").fetchall()}
+    if "freshrss_item_id" not in cols:
+        con.execute("ALTER TABLE links ADD COLUMN freshrss_item_id TEXT")
     # Migration groups → folders (ancienne DB)
     # Note : create_all() crée `folders` avant ce code, donc on détecte via la présence de `groups`
     tables = {r[0] for r in con.execute("SELECT name FROM sqlite_master WHERE type='table'").fetchall()}
