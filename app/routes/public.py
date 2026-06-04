@@ -23,7 +23,7 @@ async def public_feed(
             select(Link).where(Link.is_public == True).order_by(Link.created_at.desc()).limit(100)
         ).all()
     )
-    owner = session.exec(select(User).where(User.is_active == True)).first()
+    owner = session.exec(select(User).where(User.is_active == True).order_by(User.id)).first()
     page_title = (owner.public_page_title if owner else None) or "Liens publics"
     base = settings.base_url.rstrip("/")
     items = ""
@@ -58,7 +58,7 @@ async def public_links(
     tag: Optional[str] = None,
     session: Session = Depends(get_session),
 ):
-    owner = session.exec(select(User).where(User.is_active == True)).first()
+    owner = session.exec(select(User).where(User.is_active == True).order_by(User.id)).first()
     page_title = (owner.public_page_title if owner else None) or "Liens publics"
 
     links = list(

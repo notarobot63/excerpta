@@ -8,7 +8,8 @@ from ..auth import get_current_user
 from ..database import get_session
 from ..models import Tag, User
 from ..templates_cfg import templates
-from ..utils import sidebar_data
+from ..models import Link, LinkTagLink
+from ..utils import refresh_link_fts, sidebar_data
 
 router = APIRouter()
 
@@ -46,12 +47,25 @@ async def rename_tag(
         select(Tag).where(Tag.user_id == user.id, Tag.name == new_name)
     ).first()
     if existing and existing.id != tag_id:
+        # Liens qui n'ont pas encore le tag cible (évite les doublons)
+        affected_ids = [
+            row[0] for row in session.execute(
+                text("SELECT link_id FROM link_tags WHERE tag_id = :old_id AND link_id NOT IN (SELECT link_id FROM link_tags WHERE tag_id = :new_id)"),
+                {"old_id": tag_id, "new_id": existing.id},
+            ).fetchall()
+        ]
         session.execute(
             text("INSERT OR IGNORE INTO link_tags (link_id, tag_id) SELECT link_id, :new_id FROM link_tags WHERE tag_id = :old_id"),
             {"new_id": existing.id, "old_id": tag_id},
         )
         session.execute(text("DELETE FROM link_tags WHERE tag_id = :id"), {"id": tag_id})
         session.delete(tag)
+        session.flush()
+        # Mettre à jour le FTS des liens réassignés
+        for link_id in affected_ids:
+            link = session.get(Link, link_id)
+            if link:
+                refresh_link_fts(session, link, list(link.tags))
         session.commit()
         return JSONResponse({"ok": True, "merged": True, "new_id": existing.id, "new_name": new_name})
     tag.name = new_name
