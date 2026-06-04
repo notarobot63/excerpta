@@ -74,8 +74,20 @@
 
 ### Démarrage rapide
 
+**Option A — image pré-buildée (recommandé)**
+
 ```bash
-git clone <url-du-repo>
+cp .env.example .env
+# Éditer .env avec tes valeurs
+
+curl -O https://GIT_HOST/Thomas/excerpta/-/raw/main/docker-compose.prod.yml
+REGISTRY_IMAGE=REGISTRY_HOST/thomas/excerpta:latest docker compose -f docker-compose.prod.yml up -d
+```
+
+**Option B — build local**
+
+```bash
+git clone https://GIT_HOST/Thomas/excerpta.git
 cd excerpta
 cp .env.example .env
 # Éditer .env avec tes valeurs
