@@ -41,6 +41,8 @@ class LinkIn(BaseModel):
     title: str = Field("", max_length=500)
     note: str = Field("", max_length=50_000)
     tags: List[str] = []
+    folder_id: Optional[int] = None
+    is_public: bool = False
 
 
 @router.post("/links", status_code=201)
@@ -52,6 +54,13 @@ async def api_add_link(
     if not _safe_url(body.url):
         raise HTTPException(status_code=400, detail="URL invalide")
 
+    validated_folder_id: Optional[int] = None
+    if body.folder_id is not None:
+        folder = session.exec(
+            select(Folder).where(Folder.user_id == user.id, Folder.id == body.folder_id)
+        ).first()
+        validated_folder_id = body.folder_id if folder else None
+
     link = Link(
         user_id=user.id,
         url=body.url,
@@ -59,6 +68,8 @@ async def api_add_link(
         note=body.note,
         description="",
         favicon_url="",
+        is_public=body.is_public,
+        folder_id=validated_folder_id,
     )
     session.add(link)
     session.flush()

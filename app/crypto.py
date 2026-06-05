@@ -9,11 +9,16 @@ from .config import settings
 
 _log = logging.getLogger("excerpta.crypto")
 
+_fernet_instance: Fernet | None = None
+
 
 def _fernet() -> Fernet:
-    src = settings.encryption_key or settings.secret_key
-    raw = hashlib.sha256(src.encode()).digest()
-    return Fernet(base64.urlsafe_b64encode(raw))
+    global _fernet_instance
+    if _fernet_instance is None:
+        src = settings.encryption_key or settings.secret_key
+        raw = hashlib.sha256(src.encode()).digest()
+        _fernet_instance = Fernet(base64.urlsafe_b64encode(raw))
+    return _fernet_instance
 
 
 def encrypt(value: str) -> str:
