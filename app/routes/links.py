@@ -557,6 +557,7 @@ async def delete_link(
     user: User = Depends(get_current_user),
     session: Session = Depends(get_session),
     unstar_freshrss: str = Form(""),
+    return_to: str = Form("/"),
 ):
     from ..models import FreshRSSConfig
     from .freshrss import unstar_item
@@ -572,7 +573,8 @@ async def delete_link(
             asyncio.create_task(unstar_item(config, item_id))
     session.delete(link)
     session.commit()
-    return RedirectResponse(url="/", status_code=303)
+    redirect_url = return_to if return_to.startswith("/") else "/"
+    return RedirectResponse(url=redirect_url, status_code=303)
 
 
 # ─── Move (drag & drop sidebar) ──────────────────────────────────────────────
