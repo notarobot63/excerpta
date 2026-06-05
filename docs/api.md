@@ -92,6 +92,8 @@ curl -X POST https://votre-instance.example.com/api/v1/links \
 | `title` | string | Titre (défaut : URL) |
 | `note` | string | Note Markdown |
 | `tags` | array | Liste de tags |
+| `folder_id` | int | ID du dossier (optionnel, ignoré si invalide) |
+| `is_public` | bool | Rendre le lien public dès la création (défaut : false) |
 
 ```json
 { "id": 43, "url": "https://example.com", "title": "Exemple" }
