@@ -1,4 +1,5 @@
 import asyncio
+import hashlib
 import ipaddress
 import re
 import socket
@@ -605,22 +606,28 @@ async def api_fetch_meta(url: str, user: User = Depends(get_current_user)):
 
 
 @router.get("/proxy/img", dependencies=[Depends(rate_limit(120, 60))])
-async def proxy_image(url: str, user: User = Depends(get_current_user)):
+async def proxy_image(request: Request, url: str, user: User = Depends(get_current_user)):
     if not _safe_url(url):
         raise HTTPException(status_code=400)
-    async with _img_cache_lock:
-        if url in _img_cache:
-            expiry, content_type, content = _img_cache[url]
-            if time.time() < expiry:
+    etag = hashlib.md5(url.encode()).hexdigest()
+    if request.headers.get("if-none-match") == etag:
+        return Response(status_code=304)
+    cached = _img_cache.get(url)
+    if cached:
+        expiry, content_type, content = cached
+        if time.time() < expiry:
+            async with _img_cache_lock:
                 _img_cache.move_to_end(url)
-                if content is None:
-                    raise HTTPException(status_code=404)
-                return Response(
-                    content=content,
-                    media_type=content_type,
-                    headers={"Cache-Control": "public, max-age=86400", "Cross-Origin-Resource-Policy": "cross-origin"},
-                )
-            del _img_cache[url]
+            if content is None:
+                raise HTTPException(status_code=404)
+            return Response(
+                content=content,
+                media_type=content_type,
+                headers={"Cache-Control": "public, max-age=86400", "ETag": etag, "Cross-Origin-Resource-Policy": "cross-origin"},
+            )
+        async with _img_cache_lock:
+            if url in _img_cache:
+                del _img_cache[url]
 
     _proxy_parsed = urlparse(url)
     try:
@@ -653,7 +660,7 @@ async def proxy_image(url: str, user: User = Depends(get_current_user)):
         return Response(
             content=content,
             media_type=content_type,
-            headers={"Cache-Control": "public, max-age=86400", "Cross-Origin-Resource-Policy": "cross-origin"},
+            headers={"Cache-Control": "public, max-age=86400", "ETag": etag, "Cross-Origin-Resource-Policy": "cross-origin"},
         )
     except HTTPException:
         raise
