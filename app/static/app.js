@@ -36,10 +36,34 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   });
 
-  // Confirm dialogs — remplace onsubmit="return confirm(...)"
-  document.querySelectorAll('form[data-confirm]').forEach(function (form) {
-    form.addEventListener('submit', function (e) {
-      if (!confirm(form.getAttribute('data-confirm'))) e.preventDefault();
+  // Undo toast — remplace les confirm() de suppression
+  function _showUndoToast(msg, onConfirm, onUndo) {
+    var existing = document.getElementById('undo-toast');
+    if (existing) { clearTimeout(existing._timer); existing.remove(); }
+    var toast = document.createElement('div');
+    toast.id = 'undo-toast';
+    toast.className = 'undo-toast';
+    toast.innerHTML = msg + ' <button class="undo-toast-btn" type="button">Annuler</button>';
+    document.body.appendChild(toast);
+    var timer = setTimeout(function() { toast.remove(); onConfirm(); }, 5000);
+    toast._timer = timer;
+    toast.querySelector('.undo-toast-btn').addEventListener('click', function() {
+      clearTimeout(timer); toast.remove(); if (onUndo) onUndo();
+    });
+  }
+
+  document.querySelectorAll('form[data-confirm]').forEach(function(form) {
+    var fired = false;
+    form.addEventListener('submit', function(e) {
+      if (fired) return;
+      e.preventDefault();
+      var card = form.closest('.link-card');
+      if (card) card.classList.add('link-deleting');
+      _showUndoToast(
+        'Lien supprimé',
+        function() { fired = true; form.submit(); },
+        function() { if (card) card.classList.remove('link-deleting'); }
+      );
     });
   });
 
