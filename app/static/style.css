@@ -1,6 +1,6 @@
 /* ── Thèmes ── */
 :root {
-  --font-display: 'Plus Jakarta Sans', system-ui, sans-serif;
+  --font-display: system-ui, -apple-system, 'Segoe UI', sans-serif;
   --ease-out: cubic-bezier(0.2, 0, 0, 1);
 }
 
