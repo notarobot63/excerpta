@@ -6,70 +6,120 @@
 <div class="form-card">
   <h2 style="font-size: 1.1rem; font-weight: 600; margin: 0 0 0.5rem;">Vérifier les liens</h2>
   <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0 0 1.5rem;">
-    Teste chaque lien et signale ceux qui renvoient une erreur (4xx/5xx) ou sont inaccessibles.
+    Teste chaque lien et persiste le résultat pour l'afficher dans la liste.
   </p>
 
-  {% if results is none %}
-  <form method="post" action="/settings/check-links">
-    {{ csrf_input(request) }}
-    <button type="submit" class="btn btn-primary">Lancer la vérification</button>
-    <a href="/settings" class="btn btn-ghost" style="margin-left: 0.5rem;">Annuler</a>
-  </form>
-
-  {% else %}
-  <div style="margin-bottom: 1.25rem; display: flex; align-items: center; gap: 1.5rem; flex-wrap: wrap;">
-    <span style="font-size: 0.85rem; color: var(--text-muted);">
-      {{ total }} lien{% if total > 1 %}s{% endif %} vérifiés
-    </span>
-    {% if broken %}
-    <span style="font-size: 0.875rem; font-weight: 600; color: var(--btn-danger);">
-      {{ broken|length }} lien{% if broken|length > 1 %}s{% endif %} cassé{% if broken|length > 1 %}s{% endif %}
-    </span>
-    {% else %}
-    <span style="font-size: 0.875rem; font-weight: 600; color: #16a34a;">Tous les liens sont valides ✓</span>
-    {% endif %}
-    <form method="post" action="/settings/check-links" style="margin-left: auto;">
-      {{ csrf_input(request) }}
-      <button type="submit" class="btn btn-ghost btn-sm">Relancer</button>
-    </form>
+  {% if job.running %}
+  <div id="check-progress" style="margin-bottom: 1.5rem;">
+    <div style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.5rem;">
+      Vérification en cours&hellip; <span id="prog-text">{{ job.done }}/{{ job.total }}</span>
+    </div>
+    <progress id="prog-bar" value="{{ job.done }}" max="{{ job.total }}"
+              style="width: 100%; height: 8px; border-radius: 4px;"></progress>
   </div>
+  {% else %}
+  <div style="display:flex; align-items:center; gap:1rem; margin-bottom:1.5rem; flex-wrap:wrap;">
+    <form method="post" action="/settings/check-links">
+      {{ csrf_input(request) }}
+      <button type="submit" class="btn btn-primary">Lancer la vérification</button>
+    </form>
+    {% if checked_count > 0 %}
+    <span style="font-size:0.85rem; color:var(--text-muted);">
+      {{ checked_count }}/{{ total_count }} liens vérifiés
+      {% if broken %}
+      &mdash; <strong style="color:var(--btn-danger);">{{ broken|length }} cassé{% if broken|length > 1 %}s{% endif %}</strong>
+      {% else %}
+      &mdash; <strong style="color:#16a34a;">tous valides ✓</strong>
+      {% endif %}
+    </span>
+    {% endif %}
+  </div>
+  {% endif %}
 
   {% if broken %}
-  <div class="links-list" style="border-top: 1px solid var(--border);">
-    {% for r in broken %}
-    <div class="link-card">
-      <div class="link-body">
-        <div class="link-source">
-          <img class="link-favicon" src="{{ r.link.favicon_url }}"
-               data-hide-on-error="hidden" alt="">
-          <span class="link-domain">{{ r.link.url | domain }}</span>
-        </div>
-        <a class="link-title" href="{{ r.link.url }}" target="_blank" rel="noopener">
-          {{ r.link.title or r.link.url }}
-        </a>
-        <div style="margin-top: 0.3rem; font-size: 0.78rem;">
-          {% if r.status %}
-          <span style="background: var(--btn-danger); color: #fff; border-radius: 4px; padding: 0.1rem 0.4rem; font-weight: 600;">
-            {{ r.status }}
-          </span>
-          {% else %}
-          <span style="background: var(--btn-danger); color: #fff; border-radius: 4px; padding: 0.1rem 0.4rem; font-weight: 600;">
-            Erreur réseau
-          </span>
-          {% endif %}
-          {% if r.error %}
-          <span style="color: var(--text-muted); margin-left: 0.4rem;">{{ r.error }}</span>
-          {% endif %}
-        </div>
-      </div>
-      <div class="link-actions" style="opacity: 1;">
-        <a href="/links/{{ r.link.id }}/edit" class="btn btn-ghost btn-sm" title="Modifier">✏️</a>
-      </div>
-    </div>
-    {% endfor %}
-  </div>
-  {% endif %}
+  <form method="post" action="/links/bulk-delete" id="bulk-form">
+    {{ csrf_input(request) }}
+    <input type="hidden" name="return_to" value="/settings/check-links">
 
+    <div style="display:flex; align-items:center; gap:1rem; margin-bottom:0.75rem; border-top:1px solid var(--border); padding-top:1rem;">
+      <label style="display:flex; align-items:center; gap:0.4rem; font-size:0.85rem; cursor:pointer;">
+        <input type="checkbox" id="select-all" onchange="toggleAll(this)"> Tout sélectionner
+      </label>
+      <button type="submit" id="bulk-btn" class="btn btn-danger btn-sm" style="display:none;"
+              onclick="return confirm('Supprimer les liens sélectionnés ?')">
+        Supprimer la sélection
+      </button>
+    </div>
+
+    <div class="links-list" style="border-top:1px solid var(--border);">
+      {% for link in broken %}
+      <div class="link-card">
+        <label style="display:flex; align-items:center; padding:0 0.5rem; cursor:pointer; flex-shrink:0;">
+          <input type="checkbox" name="link_ids" value="{{ link.id }}" class="broken-check" onchange="updateBulkBtn()">
+        </label>
+        <div class="link-body">
+          <div class="link-source">
+            <img class="link-favicon" src="{{ link.favicon_url }}" data-hide-on-error="hidden" alt="">
+            <span class="link-domain">{{ link.url | domain }}</span>
+          </div>
+          <a class="link-title" href="{{ link.url }}" target="_blank" rel="noopener">
+            {{ link.title or link.url }}
+          </a>
+        </div>
+        <div class="link-actions" style="opacity:1;">
+          <a href="/links/{{ link.id }}/edit" class="btn btn-ghost btn-sm" title="Modifier">&#9999;</a>
+          <form method="post" action="/links/{{ link.id }}/delete"
+                data-confirm="Supprimer ce lien ?">
+            {{ csrf_input(request) }}
+            <input type="hidden" name="return_to" value="/settings/check-links">
+            <button type="submit" class="btn btn-ghost btn-sm" title="Supprimer">&#128465;</button>
+          </form>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </form>
   {% endif %}
 </div>
+
+{% if job.running %}
+<script nonce="{{ request.state.nonce }}">
+(function() {
+  var bar = document.getElementById('prog-bar');
+  var txt = document.getElementById('prog-text');
+  var poll = setInterval(function() {
+    fetch('/settings/check-links/status')
+      .then(function(r) { return r.json(); })
+      .then(function(d) {
+        bar.value = d.done;
+        bar.max = d.total || 1;
+        txt.textContent = d.done + '/' + d.total;
+        if (!d.running) {
+          clearInterval(poll);
+          window.location.reload();
+        }
+      })
+      .catch(function() {});
+  }, 2000);
+})();
+</script>
+{% endif %}
+
+<script nonce="{{ request.state.nonce }}">
+function updateBulkBtn() {
+  var checked = document.querySelectorAll('.broken-check:checked').length;
+  var btn = document.getElementById('bulk-btn');
+  if (btn) btn.style.display = checked > 0 ? '' : 'none';
+  var all = document.getElementById('select-all');
+  if (all) {
+    var total = document.querySelectorAll('.broken-check').length;
+    all.indeterminate = checked > 0 && checked < total;
+    all.checked = checked === total && total > 0;
+  }
+}
+function toggleAll(cb) {
+  document.querySelectorAll('.broken-check').forEach(function(c) { c.checked = cb.checked; });
+  updateBulkBtn();
+}
+</script>
 {% endblock %}

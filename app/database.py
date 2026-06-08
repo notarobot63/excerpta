@@ -127,6 +127,10 @@ def init_db():
     lcols = [r[1] for r in con.execute("PRAGMA table_info(links)").fetchall()]
     if "thumbnail_url" not in lcols:
         con.execute("ALTER TABLE links ADD COLUMN thumbnail_url TEXT NOT NULL DEFAULT ''")
+    if "is_broken" not in lcols:
+        con.execute("ALTER TABLE links ADD COLUMN is_broken INTEGER")
+    if "last_checked_at" not in lcols:
+        con.execute("ALTER TABLE links ADD COLUMN last_checked_at TEXT")
 
     # Chiffrement api_key + ajout api_key_hmac
     ucols = [r[1] for r in con.execute("PRAGMA table_info(users)").fetchall()]

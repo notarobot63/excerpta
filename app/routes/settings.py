@@ -420,28 +420,66 @@ async def export_links(
 # ── Broken link checker ───────────────────────────────────────────────────────
 
 _CHECKER_HEADERS = {"User-Agent": "Mozilla/5.0 (compatible; Excerpta/1.0; link-checker)"}
+_check_jobs: dict[int, dict] = {}  # user_id → {total, done, running}
 
 
-async def _check_link(client: httpx.AsyncClient, link) -> dict:
+async def _check_url(client: httpx.AsyncClient, url: str) -> dict:
     try:
-        resp = await client.head(link.url, follow_redirects=True, timeout=10, headers=_CHECKER_HEADERS)
+        resp = await client.head(url, follow_redirects=True, timeout=10, headers=_CHECKER_HEADERS)
         if resp.status_code >= 400:
-            resp = await client.get(link.url, follow_redirects=True, timeout=10, headers=_CHECKER_HEADERS)
-        return {"link": link, "status": resp.status_code, "broken": resp.status_code >= 400, "error": None}
+            resp = await client.get(url, follow_redirects=True, timeout=10, headers=_CHECKER_HEADERS)
+        return {"status": resp.status_code, "broken": resp.status_code >= 400, "error": None}
     except Exception as e:
-        return {"link": link, "status": None, "broken": True, "error": str(e)[:100]}
+        return {"status": None, "broken": True, "error": str(e)[:100]}
 
 
-async def _check_all(links) -> list[dict]:
-    sem = asyncio.Semaphore(5)
+async def _run_check_background(user_id: int) -> None:
+    _check_jobs[user_id] = {"total": 0, "done": 0, "running": True}
+    try:
+        with Session(db_engine) as s:
+            link_ids = [lk.id for lk in s.exec(select(Link).where(Link.user_id == user_id)).all()]
+        _check_jobs[user_id]["total"] = len(link_ids)
+        sem = asyncio.Semaphore(5)
 
-    async def _guarded(client, link):
-        async with sem:
-            result = await _check_link(client, link)
-            await asyncio.sleep(0.2)
-            return result
+        async def _check_one(lid: int):
+            async with sem:
+                with Session(db_engine) as s:
+                    lk = s.get(Link, lid)
+                    url = lk.url if lk else None
+                if not url:
+                    _check_jobs[user_id]["done"] += 1
+                    return
+                result = await _check_url(_http_client, url)
+                with Session(db_engine) as s:
+                    lk2 = s.get(Link, lid)
+                    if lk2:
+                        lk2.is_broken = result["broken"]
+                        lk2.last_checked_at = datetime.now(timezone.utc).replace(tzinfo=None)
+                        s.add(lk2)
+                        s.commit()
+                _check_jobs[user_id]["done"] += 1
+                await asyncio.sleep(0.2)
 
-    return await asyncio.gather(*[_guarded(_http_client, lk) for lk in links])
+        await asyncio.gather(*[_check_one(lid) for lid in link_ids])
+    finally:
+        _check_jobs[user_id]["running"] = False
+
+
+@router.get("/settings/check-links/status")
+async def check_links_status(
+    user: User = Depends(get_current_user),
+    session: Session = Depends(get_session),
+):
+    job = _check_jobs.get(user.id, {"total": 0, "done": 0, "running": False})
+    broken_count = len(session.exec(select(Link).where(Link.user_id == user.id, Link.is_broken == True)).all())
+    checked_count = len(session.exec(select(Link).where(Link.user_id == user.id, Link.last_checked_at != None)).all())
+    return {
+        "total": job["total"],
+        "done": job["done"],
+        "running": job["running"],
+        "broken_count": broken_count,
+        "checked_count": checked_count,
+    }
 
 
 @router.get("/settings/check-links", response_class=HTMLResponse)
@@ -450,33 +488,31 @@ async def check_links_form(
     user: User = Depends(get_current_user),
     session: Session = Depends(get_session),
 ):
-    return templates.TemplateResponse(
-        "settings/check_links.html",
-        {"request": request, "user": user, "results": None, **sidebar_data(session, user.id)},
-    )
-
-
-@router.post("/settings/check-links", response_class=HTMLResponse,
-             dependencies=[Depends(rate_limit(3, 3600))])
-async def check_links_run(
-    request: Request,
-    user: User = Depends(get_current_user),
-    session: Session = Depends(get_session),
-):
-    links = list(session.exec(select(Link).where(Link.user_id == user.id)).all())
-    results = await _check_all(links)
-    broken = [r for r in results if r["broken"]]
+    job = _check_jobs.get(user.id, {"total": 0, "done": 0, "running": False})
+    broken = list(session.exec(select(Link).where(Link.user_id == user.id, Link.is_broken == True)).all())
+    checked_count = len(session.exec(select(Link).where(Link.user_id == user.id, Link.last_checked_at != None)).all())
+    total_count = len(session.exec(select(Link).where(Link.user_id == user.id)).all())
     return templates.TemplateResponse(
         "settings/check_links.html",
         {
             "request": request,
             "user": user,
-            "results": results,
+            "job": job,
             "broken": broken,
-            "total": len(links),
+            "checked_count": checked_count,
+            "total_count": total_count,
             **sidebar_data(session, user.id),
         },
     )
+
+
+@router.post("/settings/check-links", dependencies=[Depends(rate_limit(3, 3600))])
+async def check_links_run(
+    user: User = Depends(get_current_user),
+):
+    if not _check_jobs.get(user.id, {}).get("running", False):
+        asyncio.create_task(_run_check_background(user.id))
+    return RedirectResponse("/settings/check-links", status_code=303)
 
 
 # ── Archive Internet Archive ───────────────────────────────────────────────────
