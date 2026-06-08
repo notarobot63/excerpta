@@ -79,13 +79,13 @@
     </div>
   </div>
   <div class="link-actions">
-    <a href="/links/{{ link.id }}/edit" class="btn btn-ghost btn-sm" title="Modifier">✏️</a>
+    <a href="/links/{{ link.id }}/edit" class="btn btn-ghost btn-sm" title="Modifier"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></a>
     <form action="/links/{{ link.id }}/delete" method="post"
           data-confirm="Supprimer ce lien ?">
       {{ csrf_input(request) }}
       <input type="hidden" name="return_to" value="{{ request.url.path }}{% if request.url.query %}?{{ request.url.query }}{% endif %}">
       {% if link.freshrss_item_id %}<input type="hidden" name="unstar_freshrss" value="1">{% endif %}
-      <button type="submit" class="btn btn-ghost btn-sm" title="Supprimer">🗑️</button>
+      <button type="submit" class="btn btn-ghost btn-sm" title="Supprimer"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg></button>
     </form>
   </div>
 </article>
@@ -173,15 +173,43 @@ function clearBulkSelect() {
 }
 
 function submitBulkDelete() {
-  if (!confirm('Supprimer les ' + _selectedIds.size + ' lien(s) sélectionné(s) ?')) return;
-  var form = document.getElementById('bulk-delete-form');
-  form.querySelectorAll('input[name="link_ids"]').forEach(function(i) { i.remove(); });
-  _selectedIds.forEach(function(id) {
-    var inp = document.createElement('input');
-    inp.type = 'hidden'; inp.name = 'link_ids'; inp.value = id;
-    form.appendChild(inp);
+  var n = _selectedIds.size;
+  var ids = Array.from(_selectedIds);
+  var cards = ids.map(function(id) { return document.querySelector('.link-card[data-link-id="' + id + '"]'); });
+  cards.forEach(function(c) { if (c) c.classList.add('link-deleting'); });
+  clearBulkSelect();
+  var existing = document.getElementById('undo-toast');
+  if (existing) { clearTimeout(existing._timer); existing.remove(); }
+  var toast = document.createElement('div');
+  toast.id = 'undo-toast';
+  toast.className = 'undo-toast';
+  toast.innerHTML = n + ' lien' + (n > 1 ? 's' : '') + ' supprimé' + (n > 1 ? 's' : '') +
+    ' <button class="undo-toast-btn" type="button">Annuler</button>';
+  document.body.appendChild(toast);
+  var timer = setTimeout(function() {
+    toast.remove();
+    var form = document.getElementById('bulk-delete-form');
+    form.querySelectorAll('input[name="link_ids"]').forEach(function(i) { i.remove(); });
+    ids.forEach(function(id) {
+      var inp = document.createElement('input');
+      inp.type = 'hidden'; inp.name = 'link_ids'; inp.value = id;
+      form.appendChild(inp);
+    });
+    form.submit();
+  }, 5000);
+  toast._timer = timer;
+  toast.querySelector('.undo-toast-btn').addEventListener('click', function() {
+    clearTimeout(timer); toast.remove();
+    cards.forEach(function(c) { if (c) c.classList.remove('link-deleting'); });
+    ids.forEach(function(id) { _selectedIds.add(id); });
+    updateBulkBar();
+    document.querySelectorAll('.link-select').forEach(function(cb) {
+      if (ids.indexOf(cb.value) !== -1) {
+        cb.checked = true;
+        cb.closest('.link-card').classList.add('link-selected');
+      }
+    });
   });
-  form.submit();
 }
 </script>
 
