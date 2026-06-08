@@ -19,10 +19,22 @@
 {% endif %}
 
 {% if links %}
+<div id="bulk-bar" class="bulk-bar">
+  <span id="bulk-count"></span>
+  <button type="button" class="btn btn-danger btn-sm" onclick="submitBulkDelete()">Supprimer</button>
+  <button type="button" class="btn btn-ghost btn-sm" onclick="clearBulkSelect()">Annuler</button>
+</div>
+<form id="bulk-delete-form" method="post" action="/links/bulk-delete">
+  {{ csrf_input(request) }}
+  <input type="hidden" name="return_to" value="{{ request.url.path }}{% if request.url.query %}?{{ request.url.query }}{% endif %}">
+</form>
 <div class="links-list">
 {% for link in links %}
-<article class="link-card" draggable="true" data-link-id="{{ link.id }}" data-folder-id="{{ link.folder_id or '' }}"
+<article class="link-card{% if link.is_broken %} link-broken{% endif %}" draggable="true" data-link-id="{{ link.id }}" data-folder-id="{{ link.folder_id or '' }}"
          style="cursor:grab;" title="Glisser vers un dossier de la sidebar">
+  <label class="link-select-wrap" onmousedown="event.stopPropagation()" onclick="event.stopPropagation()" draggable="false">
+    <input type="checkbox" class="link-select" value="{{ link.id }}" onchange="onSelectChange(this)">
+  </label>
   {% if link.thumbnail_url %}
   <a href="{{ link.url }}" target="_blank" rel="noopener" class="link-thumbnail">
     <img src="{{ link.thumbnail_url | proxy_img }}"
@@ -47,6 +59,7 @@
            alt="">
       {% endif %}
       <span class="link-domain">{{ link.url | domain }}</span>
+      {% if link.is_broken %}<span class="broken-badge" title="Lien cassé">&#9888;</span>{% endif %}
     </div>
     <a class="link-title" href="{{ link.url }}" target="_blank" rel="noopener">{{ link.title or link.url }}</a>
     {% if link.description %}
@@ -113,6 +126,9 @@
 (function() {
   document.querySelectorAll('.link-card[data-link-id]').forEach(function(card) {
     card.addEventListener('dragstart', function(e) {
+      if (e.target.classList.contains('link-select-wrap') || e.target.classList.contains('link-select')) {
+        e.preventDefault(); return;
+      }
       window._draggedLinkId = card.dataset.linkId;
       e.dataTransfer.effectAllowed = 'move';
       e.dataTransfer.setData('text/plain', card.dataset.linkId);
@@ -124,6 +140,49 @@
     });
   });
 })();
+
+var _selectedIds = new Set();
+
+function onSelectChange(cb) {
+  var card = cb.closest('.link-card');
+  if (cb.checked) {
+    _selectedIds.add(cb.value);
+    card.classList.add('link-selected');
+  } else {
+    _selectedIds.delete(cb.value);
+    card.classList.remove('link-selected');
+  }
+  updateBulkBar();
+}
+
+function updateBulkBar() {
+  var bar = document.getElementById('bulk-bar');
+  var cnt = document.getElementById('bulk-count');
+  var n = _selectedIds.size;
+  bar.classList.toggle('bulk-bar--visible', n > 0);
+  cnt.textContent = n + ' lien' + (n > 1 ? 's' : '') + ' sélectionné' + (n > 1 ? 's' : '');
+}
+
+function clearBulkSelect() {
+  document.querySelectorAll('.link-select').forEach(function(c) {
+    c.checked = false;
+    c.closest('.link-card').classList.remove('link-selected');
+  });
+  _selectedIds.clear();
+  updateBulkBar();
+}
+
+function submitBulkDelete() {
+  if (!confirm('Supprimer les ' + _selectedIds.size + ' lien(s) sélectionné(s) ?')) return;
+  var form = document.getElementById('bulk-delete-form');
+  form.querySelectorAll('input[name="link_ids"]').forEach(function(i) { i.remove(); });
+  _selectedIds.forEach(function(id) {
+    var inp = document.createElement('input');
+    inp.type = 'hidden'; inp.name = 'link_ids'; inp.value = id;
+    form.appendChild(inp);
+  });
+  form.submit();
+}
 </script>
 
 {% endblock %}

@@ -578,6 +578,26 @@ async def delete_link(
     return RedirectResponse(url=redirect_url, status_code=303)
 
 
+# ─── Bulk delete ─────────────────────────────────────────────────────────────
+
+@router.post("/links/bulk-delete")
+async def bulk_delete_links(
+    request: Request,
+    user: User = Depends(get_current_user),
+    session: Session = Depends(get_session),
+):
+    form = await request.form()
+    link_ids = [int(v) for v in form.getlist("link_ids") if str(v).isdigit()]
+    return_to = str(form.get("return_to", "/"))
+    if link_ids:
+        links = session.exec(select(Link).where(Link.id.in_(link_ids), Link.user_id == user.id)).all()
+        for lk in links:
+            session.delete(lk)
+        session.commit()
+    redirect_url = return_to if return_to.startswith("/") else "/"
+    return RedirectResponse(url=redirect_url, status_code=303)
+
+
 # ─── Move (drag & drop sidebar) ──────────────────────────────────────────────
 
 @router.post("/links/{link_id}/move")
