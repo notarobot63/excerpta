@@ -469,7 +469,13 @@ async def _run_check_background(user_id: int) -> None:
                 _check_jobs[user_id]["done"] += 1
                 await asyncio.sleep(0.2)
 
-        await asyncio.gather(*[_check_one(lid) for lid in link_ids])
+        async def _check_one_safe(lid: int):
+            try:
+                await asyncio.wait_for(_check_one(lid), timeout=30)
+            except asyncio.TimeoutError:
+                _check_jobs[user_id]["done"] += 1
+
+        await asyncio.gather(*[_check_one_safe(lid) for lid in link_ids])
     finally:
         _check_jobs[user_id]["running"] = False
 

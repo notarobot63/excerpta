@@ -87,24 +87,21 @@
 
 {% if job.running %}
 <script nonce="{{ request.state.nonce }}">
-(function() {
+var _checkPoll = setInterval(function() {
   var bar = document.getElementById('prog-bar');
   var txt = document.getElementById('prog-text');
-  var poll = setInterval(function() {
-    fetch('/settings/check-links/status')
-      .then(function(r) { return r.json(); })
-      .then(function(d) {
-        bar.value = d.done;
-        bar.max = d.total || 1;
-        txt.textContent = d.done + '/' + d.total;
-        if (!d.running) {
-          clearInterval(poll);
-          window.location.reload();
-        }
-      })
-      .catch(function() {});
-  }, 2000);
-})();
+  fetch('/settings/check-links/status')
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      if (bar) { bar.value = d.done; bar.max = d.total || 1; }
+      if (txt) txt.textContent = d.done + '/' + d.total;
+      if (!d.running) {
+        clearInterval(_checkPoll);
+        window.location.reload();
+      }
+    })
+    .catch(function() {});
+}, 2000);
 </script>
 {% endif %}
 
@@ -124,6 +121,10 @@ function toggleAll(cb) {
   document.querySelectorAll('.broken-check').forEach(function(c) { c.checked = cb.checked; });
   updateBulkBtn();
 }
+function _stopPollAndSubmit(form) {
+  if (typeof _checkPoll !== 'undefined') clearInterval(_checkPoll);
+  form.submit();
+}
 function deleteAll() {
   var form = document.getElementById('bulk-form');
   form.querySelectorAll('input[name="link_ids"]').forEach(function(i) { i.remove(); });
@@ -132,7 +133,7 @@ function deleteAll() {
     inp.type = 'hidden'; inp.name = 'link_ids'; inp.value = c.value;
     form.appendChild(inp);
   });
-  form.submit();
+  _stopPollAndSubmit(form);
 }
 function submitBulkCheckLinks() {
   var ids = Array.from(document.querySelectorAll('.broken-check:checked')).map(function(c) { return c.value; });
@@ -144,7 +145,7 @@ function submitBulkCheckLinks() {
     inp.type = 'hidden'; inp.name = 'link_ids'; inp.value = id;
     form.appendChild(inp);
   });
-  form.submit();
+  _stopPollAndSubmit(form);
 }
 </script>
 {% endblock %}
