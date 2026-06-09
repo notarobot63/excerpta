@@ -42,9 +42,12 @@
     <input type="hidden" name="return_to" value="/settings/check-links">
   </form>
 
-  <div style="display:flex; align-items:center; gap:1rem; margin-bottom:0.75rem; border-top:1px solid var(--border); padding-top:1rem;">
+  <div style="display:flex; align-items:center; gap:1rem; margin-bottom:0.75rem; border-top:1px solid var(--border); padding-top:1rem; flex-wrap:wrap;">
+    <button type="button" class="btn btn-danger btn-sm" onclick="deleteAll()">
+      Supprimer tout ({{ broken|length }})
+    </button>
     <label style="display:flex; align-items:center; gap:0.4rem; font-size:0.85rem; cursor:pointer;">
-      <input type="checkbox" id="select-all" onchange="toggleAll(this)"> Tout sélectionner
+      <input type="checkbox" id="select-all" onchange="toggleAll(this)"> Sélection manuelle
     </label>
     <button type="button" id="bulk-btn" class="btn btn-danger btn-sm" style="display:none;"
             onclick="submitBulkCheckLinks()">
@@ -120,6 +123,16 @@ function updateBulkBtn() {
 function toggleAll(cb) {
   document.querySelectorAll('.broken-check').forEach(function(c) { c.checked = cb.checked; });
   updateBulkBtn();
+}
+function deleteAll() {
+  var form = document.getElementById('bulk-form');
+  form.querySelectorAll('input[name="link_ids"]').forEach(function(i) { i.remove(); });
+  document.querySelectorAll('.broken-check').forEach(function(c) {
+    var inp = document.createElement('input');
+    inp.type = 'hidden'; inp.name = 'link_ids'; inp.value = c.value;
+    form.appendChild(inp);
+  });
+  form.submit();
 }
 function submitBulkCheckLinks() {
   var ids = Array.from(document.querySelectorAll('.broken-check:checked')).map(function(c) { return c.value; });
