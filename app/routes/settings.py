@@ -462,6 +462,7 @@ async def _run_check_background(user_id: int) -> None:
                     lk2 = s.get(Link, lid)
                     if lk2:
                         lk2.is_broken = result["broken"]
+                        lk2.check_status = result["status"]
                         lk2.last_checked_at = datetime.now(timezone.utc).replace(tzinfo=None)
                         s.add(lk2)
                         s.commit()
