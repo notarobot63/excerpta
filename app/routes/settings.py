@@ -419,16 +419,24 @@ async def export_links(
 
 # ── Broken link checker ───────────────────────────────────────────────────────
 
-_CHECKER_HEADERS = {"User-Agent": "Mozilla/5.0 (compatible; Excerpta/1.0; link-checker)"}
+_CHECKER_HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+    "Accept": "text/html,application/xhtml+xml,*/*;q=0.8",
+    "Accept-Language": "fr,en;q=0.7",
+}
 _check_jobs: dict[int, dict] = {}  # user_id → {total, done, running}
+
+# Codes ambigus (protection anti-bot probable) — ne pas marquer comme cassé
+_AMBIGUOUS_CODES = {401, 403, 405, 406, 429}
 
 
 async def _check_url(client: httpx.AsyncClient, url: str) -> dict:
     try:
         resp = await client.head(url, follow_redirects=True, timeout=10, headers=_CHECKER_HEADERS)
-        if resp.status_code >= 400:
+        if resp.status_code in _AMBIGUOUS_CODES or resp.status_code >= 400:
             resp = await client.get(url, follow_redirects=True, timeout=10, headers=_CHECKER_HEADERS)
-        return {"status": resp.status_code, "broken": resp.status_code >= 400, "error": None}
+        broken = resp.status_code >= 400 and resp.status_code not in _AMBIGUOUS_CODES
+        return {"status": resp.status_code, "broken": broken, "error": None}
     except Exception as e:
         return {"status": None, "broken": True, "error": str(e)[:100]}
 
