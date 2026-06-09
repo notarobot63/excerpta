@@ -61,6 +61,7 @@
           <div class="link-source">
             <img class="link-favicon" src="{{ link.favicon_url }}" data-hide-on-error="hidden" alt="">
             <span class="link-domain">{{ link.url | domain }}</span>
+            {% if link.check_status %}<span class="broken-badge" title="Code HTTP">{{ link.check_status }}</span>{% endif %}
           </div>
           <a class="link-title" href="{{ link.url }}" target="_blank" rel="noopener">
             {{ link.title or link.url }}

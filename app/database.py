@@ -129,6 +129,8 @@ def init_db():
         con.execute("ALTER TABLE links ADD COLUMN thumbnail_url TEXT NOT NULL DEFAULT ''")
     if "is_broken" not in lcols:
         con.execute("ALTER TABLE links ADD COLUMN is_broken INTEGER")
+    if "check_status" not in lcols:
+        con.execute("ALTER TABLE links ADD COLUMN check_status INTEGER")
     if "last_checked_at" not in lcols:
         con.execute("ALTER TABLE links ADD COLUMN last_checked_at TEXT")
 
