@@ -21,7 +21,7 @@ from ..database import engine as db_engine, get_session
 from ..models import Folder, Link, LinkTagLink, Tag, User
 from ..ratelimit import rate_limit
 from ..templates_cfg import templates
-from ..utils import get_or_create_tag, refresh_link_fts, sidebar_data
+from ..utils import get_or_create_tag, refresh_link_fts, sidebar_data, slugify
 from .links import _fetch_meta
 
 router = APIRouter()
@@ -128,10 +128,27 @@ async def settings_page(
 @router.post("/settings/public-page")
 async def save_public_page(
     public_page_title: str = Form("", max_length=100),
+    public_slug: str = Form("", max_length=64),
     user: User = Depends(get_current_user),
     session: Session = Depends(get_session),
 ):
     user.public_page_title = public_page_title.strip() or "Liens publics"
+
+    new_slug = slugify(public_slug)
+    if new_slug != (user.public_slug or ""):
+        if not new_slug:
+            session.add(user)
+            session.commit()
+            return RedirectResponse(url="/settings?slug_error=empty", status_code=303)
+        taken = session.exec(
+            select(User).where(User.public_slug == new_slug, User.id != user.id)
+        ).first()
+        if taken:
+            session.add(user)
+            session.commit()
+            return RedirectResponse(url="/settings?slug_error=taken", status_code=303)
+        user.public_slug = new_slug
+
     session.add(user)
     session.commit()
     return RedirectResponse(url="/settings?saved=public", status_code=303)
