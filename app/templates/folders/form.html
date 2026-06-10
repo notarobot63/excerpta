@@ -26,7 +26,7 @@
              style="cursor:pointer; padding:0.5rem 0.75rem; border:1px solid var(--border);
                     border-radius:4px; background:var(--bg); display:flex; align-items:center; justify-content:space-between;">
           <span x-text="selectedLabel()"></span>
-          <span x-text="open ? '▲' : '▼'" style="color:var(--text-muted); font-size:0.75rem;"></span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color:var(--text-muted);transition:transform 0.15s var(--ease-out);" :style="open ? 'transform:rotate(180deg)' : ''"><path d="m6 9 6 6 6-6"/></svg>
         </div>
         <input type="hidden" name="parent_id" :value="selected || ''">
         <div x-show="open" @click.outside="open = false"
@@ -45,7 +45,7 @@
                  :style="{{ f.id }} === selected ? 'background:var(--primary-light, #e8f0fe);font-weight:600;' : ''"
                  class="folder-option"
                  data-id="{{ f.id }}" data-label="{{ '↳ ' * depth }}{{ f.name }}">
-              {% if depth > 0 %}<span style="color:var(--text-muted);">{{ '↳ ' * depth }}</span>{% else %}📁 {% endif %}{{ f.name }}
+              {% if depth > 0 %}<span style="color:var(--text-muted);">{{ '↳ ' * depth }}</span>{% else %}<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;margin-right:0.3rem;opacity:0.75;"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>{% endif %}{{ f.name }}
             </div>
             {% endif %}
           {% endfor %}

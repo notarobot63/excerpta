@@ -27,7 +27,7 @@
   <hr style="border:none;border-top:1px solid var(--border);margin:1.5rem 0;">
 
   <h3 style="font-size:0.9rem;font-weight:600;color:var(--text-muted);margin:0 0 0.75rem;">Bookmarklet</h3>
-  <a href="{{ bookmarklet|e }}" class="btn btn-primary btn-sm" style="margin-bottom:0.5rem;">📌 Ajouter à Excerpta</a>
+  <a href="{{ bookmarklet|e }}" class="btn btn-primary btn-sm" style="margin-bottom:0.5rem;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;margin-right:0.3rem;"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>Ajouter à Excerpta</a>
   <p style="font-size:0.78rem;color:var(--text-muted);margin:0.25rem 0 0;">À glisser dans la barre de favoris du navigateur.</p>
 
   <hr style="border:none;border-top:1px solid var(--border);margin:1.5rem 0;">
@@ -39,9 +39,9 @@
     <button class="btn btn-ghost btn-sm" id="copy-apikey-btn" data-value="{{ target.api_key }}">Copier</button>
   </div>
   <form action="/admin/users/{{ target.id }}/regen-key" method="post" style="margin-top:0.5rem;"
-        data-confirm="Régénérer la clé API ? L'ancienne sera invalidée.">
+        data-confirm="Régénérer la clé API ? L’ancienne sera invalidée.">
     {{ csrf_input(request) }}
-    <button type="submit" class="btn btn-ghost btn-sm">🔄 Régénérer</button>
+    <button type="submit" class="btn btn-ghost btn-sm"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;margin-right:0.3rem;"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M3 21v-5h5"/></svg>Régénérer</button>
   </form>
 
   {% if recent_links %}
@@ -70,7 +70,7 @@
           data-confirm="{% if target.is_active %}Désactiver{% else %}Réactiver{% endif %} cet utilisateur ?">
       {{ csrf_input(request) }}
       <button type="submit" class="btn btn-ghost btn-sm">
-        {% if target.is_active %}⏸ Désactiver{% else %}▶ Réactiver{% endif %}
+        {% if target.is_active %}<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;margin-right:0.3rem;"><rect x="14" y="4" width="4" height="16" rx="1"/><rect x="6" y="4" width="4" height="16" rx="1"/></svg>Désactiver{% else %}<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;margin-right:0.3rem;" fill="currentColor" stroke="none"><polygon points="6 3 20 12 6 21 6 3"/></svg>Réactiver{% endif %}
       </button>
     </form>
 
@@ -80,7 +80,7 @@
       {{ csrf_input(request) }}
       <button type="submit" class="btn btn-ghost btn-sm"
               {% if target.is_admin and admin_count <= 1 %}disabled{% endif %}>
-        {% if target.is_admin %}👤 Retirer admin{% else %}🛡 Donner admin{% endif %}
+        {% if target.is_admin %}<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;margin-right:0.3rem;"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Retirer admin{% else %}<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;margin-right:0.3rem;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>Donner admin{% endif %}
       </button>
     </form>
 

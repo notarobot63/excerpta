@@ -23,9 +23,9 @@
          style="display:flex; align-items:center; gap:0.5rem; padding:0.4rem 0.5rem;
                 border-bottom:1px solid var(--border); cursor:grab;"
          draggable="true">
-      <span class="drag-handle" style="color:var(--text-muted); cursor:grab; user-select:none;">⠿</span>
+      <span class="drag-handle" style="color:var(--text-muted); cursor:grab; user-select:none;"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="9" cy="5" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="9" cy="19" r="1.6"/><circle cx="15" cy="5" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="15" cy="19" r="1.6"/></svg></span>
       <span style="flex:1; font-weight:{% if depth == 0 %}600{% else %}400{% endif %};">
-        {% if depth > 0 %}<span style="color:var(--text-muted); margin-right:0.25rem;">↳</span>{% else %}📁 {% endif %}
+        {% if depth > 0 %}<span style="color:var(--text-muted); margin-right:0.25rem;">↳</span>{% else %}<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;margin-right:0.3rem;"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>{% endif %}
         {{ folder.name }}
       </span>
       <span class="tag" style="{% if not folder.is_public %}background:var(--border);{% endif %}">
@@ -61,7 +61,7 @@
 
 {% else %}
 <div class="empty-state">
-  <p>Aucun dossier pour l'instant.</p>
+  <p>Aucun dossier pour l’instant.</p>
   <a href="/folders/add" class="btn btn-primary">Créer un dossier</a>
 </div>
 {% endif %}
