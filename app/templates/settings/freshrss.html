@@ -7,10 +7,10 @@
   <h2 style="font-size: 1.1rem; font-weight: 600; margin: 0 0 1.25rem;">Synchronisation FreshRSS</h2>
 
   {% if request.query_params.get('saved') is not none %}
-  <p style="font-size:0.85rem;color:#2ecc71;margin:0 0 0.75rem;">✓ Configuration sauvegardée.</p>
+  <p style="font-size:0.85rem;color:var(--color-success);margin:0 0 0.75rem;">✓ Configuration sauvegardée.</p>
   {% endif %}
   {% if request.query_params.get('synced') is not none %}
-  <p style="font-size:0.85rem;color:#2ecc71;margin:0 0 0.75rem;">✓ Synchronisation effectuée.</p>
+  <p style="font-size:0.85rem;color:var(--color-success);margin:0 0 0.75rem;">✓ Synchronisation effectuée.</p>
   {% endif %}
 
   <hr style="border:none;border-top:1px solid var(--border);margin:1.5rem 0">
@@ -24,7 +24,7 @@
     </div>
 
     <div style="margin-bottom: 0.75rem;">
-      <label style="display:block;font-size:0.85rem;color:var(--text-muted);margin-bottom:0.25rem;">Nom d'utilisateur</label>
+      <label style="display:block;font-size:0.85rem;color:var(--text-muted);margin-bottom:0.25rem;">Nom d’utilisateur</label>
       <input type="text" name="freshrss_user" value="{{ config.freshrss_user if config else '' }}" style="width:100%;padding:0.5rem;border:1px solid var(--border);border-radius:4px;background:var(--bg-secondary);color:inherit;">
     </div>
 
@@ -70,7 +70,7 @@
 
   <form action="/settings/freshrss/sync-now" method="post">
     {{ csrf_input(request) }}
-    <button type="submit" class="btn btn-ghost btn-sm">🔄 Synchroniser maintenant</button>
+    <button type="submit" class="btn btn-ghost btn-sm"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;margin-right:0.3rem;"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M3 21v-5h5"/></svg>Synchroniser maintenant</button>
   </form>
   {% endif %}
   {% endif %}

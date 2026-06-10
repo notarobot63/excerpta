@@ -51,6 +51,7 @@ document.addEventListener('DOMContentLoaded', function () {
       clearTimeout(timer); toast.remove(); if (onUndo) onUndo();
     });
   }
+  window._showUndoToast = _showUndoToast; // réutilisable depuis les composants Alpine
 
   document.querySelectorAll('form[data-confirm]').forEach(function(form) {
     var fired = false;

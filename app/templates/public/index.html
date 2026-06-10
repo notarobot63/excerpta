@@ -19,13 +19,13 @@
 <div style="max-width: 780px; margin: 0 auto; padding: 1.5rem 1rem;">
 
   <header style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1.5rem; gap:1rem; flex-wrap:wrap;">
-    <div style="font-size:1.1rem; font-weight:700;display:flex;align-items:center;gap:6px;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" style="vertical-align:middle;flex-shrink:0;"><path d="M6 3 L18 3 C19.1 3 20 3.9 20 5 L20 21 L12 17.5 L4 21 L4 5 C4 3.9 4.9 3 6 3 Z" fill="#2BB24C"/><rect x="7.5" y="7.5" width="5.5" height="2" rx="1" fill="white" opacity="0.9"/><rect x="7.5" y="11" width="7" height="2" rx="1" fill="white" opacity="0.65"/><rect x="7.5" y="14.5" width="4" height="2" rx="1" fill="white" opacity="0.4"/></svg>{{ page_title }}</div>
+    <div style="font-size:1.1rem; font-weight:700;display:flex;align-items:center;gap:6px;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" style="vertical-align:middle;flex-shrink:0;"><path d="M6 3 L18 3 C19.1 3 20 3.9 20 5 L20 21 L12 17.5 L4 21 L4 5 C4 3.9 4.9 3 6 3 Z" fill="var(--btn-primary)"/><rect x="7.5" y="7.5" width="5.5" height="2" rx="1" fill="white" opacity="0.9"/><rect x="7.5" y="11" width="7" height="2" rx="1" fill="white" opacity="0.65"/><rect x="7.5" y="14.5" width="4" height="2" rx="1" fill="white" opacity="0.4"/></svg>{{ page_title }}</div>
 
     <form action="/public" method="get" style="display:flex; gap:0.5rem; flex:1; max-width:400px;">
       {% if current_tag %}<input type="hidden" name="tag" value="{{ current_tag }}">{% endif %}
       <input type="search" name="q" value="{{ q }}"
              placeholder="Rechercher…" class="search-input">
-      {% if q %}<a href="/public" class="btn btn-ghost btn-sm">✕</a>{% endif %}
+      {% if q %}<a href="/public" class="btn btn-ghost btn-sm"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;margin-right:0.3rem;"><path d="M18 6 6 18M6 6l12 12"/></svg></a>{% endif %}
     </form>
 
     <a href="/public/feed.xml" title="Flux RSS" style="text-decoration:none;display:flex;align-items:center;">
@@ -98,7 +98,7 @@
     {% if q or current_tag %}
     <p>Aucun résultat.</p>
     {% else %}
-    <p>Aucun lien public pour l'instant.</p>
+    <p>Aucun lien public pour l’instant.</p>
     {% endif %}
   </div>
   {% endif %}

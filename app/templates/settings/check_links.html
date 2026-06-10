@@ -6,7 +6,7 @@
 <div class="form-card">
   <h2 style="font-size: 1.1rem; font-weight: 600; margin: 0 0 0.5rem;">Vérifier les liens</h2>
   <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0 0 1.5rem;">
-    Teste chaque lien et persiste le résultat pour l'afficher dans la liste.
+    Teste chaque lien et persiste le résultat pour l’afficher dans la liste.
   </p>
 
   {% if job.running %}
@@ -29,7 +29,7 @@
       {% if broken %}
       &mdash; <strong style="color:var(--btn-danger);">{{ broken|length }} cassé{% if broken|length > 1 %}s{% endif %}</strong>
       {% else %}
-      &mdash; <strong style="color:#16a34a;">tous valides ✓</strong>
+      &mdash; <strong style="color:var(--color-success);">tous valides ✓</strong>
       {% endif %}
     </span>
     {% endif %}

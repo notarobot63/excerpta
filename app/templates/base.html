@@ -72,8 +72,8 @@
          data-folder-name="{{ folder.name }}"
          data-parent-id="{{ folder.parent_id or '' }}"
          style="padding-left: {{ 0.875 + depth * 0.875 }}rem;">
-        <span class="drag-handle" title="Réorganiser">⠿</span>
-        <span style="flex:1;min-width:0;">{% if depth > 0 %}<span style="color:var(--text-muted);margin-right:0.2rem">↳</span>{% else %}📁 {% endif %}{{ folder.name }}</span>
+        <span class="drag-handle" title="Réorganiser"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="9" cy="5" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="9" cy="19" r="1.6"/><circle cx="15" cy="5" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="15" cy="19" r="1.6"/></svg></span>
+        <span style="flex:1;min-width:0;display:flex;align-items:center;gap:0.35rem;">{% if depth > 0 %}<span style="color:var(--text-muted);">↳</span>{% else %}<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink:0;opacity:0.75;"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>{% endif %}<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ folder.name }}</span></span>
         <span class="sidebar-count" data-count-folder="{{ folder.id }}">{{ folder_counts.get(folder.id, 0) }}</span>
       </a>
       {% endfor %}
@@ -106,12 +106,12 @@
         </template>
         <span class="sidebar-count" x-show="!editing">{{ tag_counts.get(tag.name, 0) }}</span>
         <span :style="(hovered && !editing) ? 'display:flex;gap:0.1rem' : 'display:none'">
-          <button class="sidebar-tag-btn" @click.prevent.stop="editing = true; editName = currentName" title="Renommer">✏️</button>
-          <button class="sidebar-tag-btn" @click.prevent.stop="del()" title="Supprimer">🗑</button>
+          <button class="sidebar-tag-btn" @click.prevent.stop="editing = true; editName = currentName" title="Renommer"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+          <button class="sidebar-tag-btn" @click.prevent.stop="del()" title="Supprimer"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg></button>
         </span>
         <span :style="editing ? 'display:flex;gap:0.1rem' : 'display:none'">
-          <button class="sidebar-tag-btn" @click.prevent.stop="save()" title="Valider">✓</button>
-          <button class="sidebar-tag-btn" @click.prevent.stop="cancel()" title="Annuler">✕</button>
+          <button class="sidebar-tag-btn" @click.prevent.stop="save()" title="Valider"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></button>
+          <button class="sidebar-tag-btn" @click.prevent.stop="cancel()" title="Annuler"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
         </span>
       </div>
       {% endfor %}
@@ -120,7 +120,7 @@
 
     <div class="sidebar-bottom">
       {% if user is defined %}
-      <a href="/auth/logout" class="btn btn-ghost btn-sm" title="Déconnexion">↪</a>
+      <a href="/auth/logout" class="btn btn-ghost btn-sm" title="Déconnexion"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></svg></a>
       {% endif %}
     </div>
   </aside>
@@ -143,7 +143,7 @@
         <input type="search" name="q" value="{{ q|default('') }}"
                placeholder="Rechercher…" class="search-input">
         {% if q %}
-        <a href="/" class="btn btn-ghost btn-sm">✕</a>
+        <a href="/" class="btn btn-ghost btn-sm" title="Effacer la recherche"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></a>
         {% endif %}
       </form>
 
@@ -225,16 +225,21 @@
             card.dataset.folderId = folderId;
             var badge = card.querySelector('.link-folder-tag');
             var folderName = el.dataset.folderName || '';
+            var folderSvg = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink:0;"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>';
+            function setFolderTag(a, name) {
+              a.innerHTML = folderSvg;                       // SVG statique = sûr
+              a.appendChild(document.createTextNode(' ' + name)); // nom = textNode, pas d'XSS
+            }
             if (badge) {
               badge.href = '/?group_id=' + folderId;
-              badge.textContent = '📁 ' + folderName;
+              setFolderTag(badge, folderName);
             } else if (folderName) {
               var footer = card.querySelector('.link-footer');
               if (footer) {
                 var a = document.createElement('a');
                 a.href = '/?group_id=' + folderId;
                 a.className = 'link-folder-tag';
-                a.textContent = '📁 ' + folderName;
+                setFolderTag(a, folderName);
                 footer.prepend(a);
               }
             }
@@ -279,14 +284,26 @@ function sidebarTag() {
       }
     },
     cancel() { this.editName = this.currentName; this.editing = false; },
-    async del() {
-      if (!confirm('Supprimer le tag #' + this.currentName + ' ?')) return;
-      var csrf = document.querySelector('input[name="csrf_token"]');
-      var r = await fetch('/tags/' + this.id + '/delete', {
-        method: 'POST',
-        headers: { 'X-CSRF-Token': csrf ? csrf.value : '' },
-      });
-      if (r.ok) this.$el.remove();
+    del() {
+      var self = this, el = this.$el;
+      function doDelete() {
+        var csrf = document.querySelector('input[name="csrf_token"]');
+        fetch('/tags/' + self.id + '/delete', {
+          method: 'POST',
+          headers: { 'X-CSRF-Token': csrf ? csrf.value : '' },
+        }).then(function(r) { if (r.ok) el.remove(); else el.style.display = ''; });
+      }
+      // Optimistic delete + undo toast (cohérent avec le reste de l'app)
+      if (typeof window._showUndoToast === 'function') {
+        el.style.display = 'none';
+        window._showUndoToast(
+          'Tag #' + this.currentName + ' supprimé',
+          doDelete,
+          function() { el.style.display = ''; }
+        );
+      } else {
+        doDelete();
+      }
     },
   };
 }

@@ -52,7 +52,7 @@
 
   <h3 style="font-size:0.9rem;font-weight:600;margin:0 0 0.75rem;color:var(--text-muted)">Bookmarklet</h3>
   <p>Glisse ce lien dans ta barre de favoris :</p>
-  <a href="{{ bookmarklet|e }}" class="btn btn-primary">📌 Ajouter à Excerpta</a>
+  <a href="{{ bookmarklet|e }}" class="btn btn-primary"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;margin-right:0.3rem;"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>Ajouter à Excerpta</a>
   <p style="margin-top:0.5rem;font-size:0.85rem;color:var(--text-muted)">Fais glisser le bouton ci-dessus dans la barre de favoris de ton navigateur.</p>
 
   <hr style="border:none;border-top:1px solid var(--border);margin:1.5rem 0">
@@ -66,14 +66,14 @@
   <hr style="border:none;border-top:1px solid var(--border);margin:1.5rem 0">
 
   <h3 style="font-size:0.9rem;font-weight:600;margin:0 0 0.75rem;color:var(--text-muted)">App Android</h3>
-  <p style="font-size:0.85rem;color:var(--text-muted);margin:0 0 0.75rem;">Scanne ce QR code depuis l'app Excerpta pour la configurer automatiquement.</p>
+  <p style="font-size:0.85rem;color:var(--text-muted);margin:0 0 0.75rem;">Scanne ce QR code depuis l’app Excerpta pour la configurer automatiquement.</p>
   <img src="/settings/android-qr.png" alt="QR code Android"
        style="width:180px;height:180px;border:1px solid var(--border);border-radius:8px;display:block;">
 
   <hr style="border:none;border-top:1px solid var(--border);margin:1.5rem 0">
 
   <h3 style="font-size:0.9rem;font-weight:600;margin:0 0 0.75rem;color:var(--text-muted)">Intégrations</h3>
-  <a href="/settings/freshrss" class="btn btn-ghost">📡 FreshRSS</a>
+  <a href="/settings/freshrss" class="btn btn-ghost"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;margin-right:0.3rem;"><path d="M4 11a9 9 0 0 1 9 9"/><path d="M4 4a16 16 0 0 1 16 16"/><circle cx="5" cy="19" r="1"/></svg>FreshRSS</a>
 
   <hr style="border:none;border-top:1px solid var(--border);margin:1.5rem 0">
 
@@ -83,13 +83,13 @@
     <a href="/settings/import" class="btn btn-ghost">Importer</a>
     <a href="/settings/check-links" class="btn btn-ghost"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:middle"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg> Vérifier les liens</a>
     <form action="/settings/rebuild-fts" method="post"
-          data-confirm="Reconstruire l'index de recherche pour {{ link_count }} liens ?">
+          data-confirm="Reconstruire l’index de recherche pour {{ link_count }} liens ?">
       {{ csrf_input(request) }}
-      <button type="submit" class="btn btn-ghost">🔎 Reconstruire l'index de recherche</button>
+      <button type="submit" class="btn btn-ghost"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;margin-right:0.3rem;"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>Reconstruire l’index de recherche</button>
     </form>
     <form id="refresh-form" action="/settings/refresh-metadata" method="post">
       {{ csrf_input(request) }}
-      <button id="refresh-btn" type="submit" class="btn btn-ghost">🔄 Rafraîchir les métadonnées</button>
+      <button id="refresh-btn" type="submit" class="btn btn-ghost"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;margin-right:0.3rem;"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M3 21v-5h5"/></svg>Rafraîchir les métadonnées</button>
     </form>
   </div>
   <div id="refresh-progress" style="display:none;margin-top:1rem;">
@@ -176,7 +176,7 @@
     <a href="/public" target="_blank" class="btn btn-ghost btn-sm">Voir →</a>
   </form>
   {% if request.query_params.get('saved') == 'public' %}
-  <p style="font-size:0.82rem;color:var(--success,#2bb24c);margin:0.4rem 0 0;">Titre mis à jour.</p>
+  <p style="font-size:0.82rem;color:var(--color-success);margin:0.4rem 0 0;">Titre mis à jour.</p>
   {% endif %}
 
   <hr style="border:none;border-top:1px solid var(--border);margin:1.5rem 0">

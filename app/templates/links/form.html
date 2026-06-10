@@ -6,7 +6,7 @@
 <div class="form-card">
   {% if request.query_params.get('duplicate') %}
   <div style="background:var(--warning-bg,#fff8e1);border:1px solid var(--warning-border,#ffe082);border-radius:6px;padding:0.6rem 0.9rem;margin-bottom:1rem;font-size:0.875rem;color:var(--text);">
-    ⚠️ Ce lien existe déjà dans ta collection — tu peux le modifier ci-dessous.
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;margin-right:0.3rem;"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>Ce lien existe déjà dans ta collection — tu peux le modifier ci-dessous.
   </div>
   {% endif %}
   <h2 style="font-size: 1.1rem; font-weight: 600; margin: 0 0 1.25rem;">
@@ -26,7 +26,7 @@
                placeholder="https://…"
                @change="if (!titleDirty) fetchMeta()">
         <button type="button" class="btn btn-ghost btn-sm" @click="fetchMeta()" :disabled="loading">
-          <span x-show="!loading">⬇ Métadonnées</span>
+          <span x-show="!loading"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;margin-right:0.3rem;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/></svg>Métadonnées</span>
           <span x-show="loading">…</span>
         </button>
       </div>
@@ -70,7 +70,7 @@
              style="cursor:pointer; padding:0.5rem 0.75rem; border:1px solid var(--border);
                     border-radius:4px; background:var(--bg); display:flex; align-items:center; justify-content:space-between;">
           <span x-text="selectedLabel()" style="color: var(--text);"></span>
-          <span x-text="open ? '▲' : '▼'" style="color:var(--text-muted); font-size:0.75rem;"></span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color:var(--text-muted);transition:transform 0.15s var(--ease-out);" :style="open ? 'transform:rotate(180deg)' : ''"><path d="m6 9 6 6 6-6"/></svg>
         </div>
         <input type="hidden" name="folder_id" :value="selected || ''">
         <div x-show="open" @click.outside="open = false"
@@ -86,7 +86,7 @@
                :style="{{ f.id }} === selected ? 'background:var(--primary-light,#e8f0fe);font-weight:600;' : ''"
                style="padding:0.4rem 0.75rem; padding-left:{{ 0.75 + depth * 1.25 }}rem; cursor:pointer;"
                class="folder-opt" data-id="{{ f.id }}" data-label="{{ '↳ ' * depth }}{{ f.name }}">
-            {% if depth > 0 %}<span style="color:var(--text-muted);">{{ '↳ ' * depth }}</span>{% else %}📁 {% endif %}{{ f.name }}
+            {% if depth > 0 %}<span style="color:var(--text-muted);">{{ '↳ ' * depth }}</span>{% else %}<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;margin-right:0.3rem;"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>{% endif %}{{ f.name }}
             <span class="sidebar-count" style="margin-left:0.5rem;">{{ folder_counts.get(f.id, 0) }}</span>
           </div>
           {% endfor %}
@@ -113,12 +113,12 @@
             title="{% if link.archived_url %}Ré-archiver{% else %}Archiver sur Wayback Machine{% endif %}">
         {{ csrf_input(request) }}
         <button type="submit" class="btn btn-ghost">
-          {% if link.archived_url %}🏛 Ré-archiver{% else %}🏛 Archiver{% endif %}
+          {% if link.archived_url %}<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;margin-right:0.3rem;"><rect width="20" height="5" x="2" y="3" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"/><path d="M10 12h4"/></svg>Ré-archiver{% else %}<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;margin-right:0.3rem;"><rect width="20" height="5" x="2" y="3" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"/><path d="M10 12h4"/></svg>Archiver{% endif %}
         </button>
       </form>
       {% if link.archived_url %}
       <a href="{{ link.archived_url }}" target="_blank" class="btn btn-ghost" style="color:var(--text-muted)">
-        📎 Archive
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;margin-right:0.3rem;"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>Archive
       </a>
       {% endif %}
       <form action="/links/{{ link.id }}/delete" method="post" style="margin-left: auto;display:flex;align-items:center;gap:0.75rem;"
