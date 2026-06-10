@@ -20,6 +20,15 @@
   --font-body: 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
   --ease-out: cubic-bezier(0.2, 0, 0, 1);
   --color-success: #16a34a; /* défaut global, surchargé par thème si besoin */
+
+  /* Teintes d'icônes par section (désaturées, défaut light).
+     Chaque thème peut surcharger ces tokens dans son bloc [data-theme].
+     --icon-home suit l'accent du thème (--btn-primary). */
+  --icon-tags: oklch(70% 0.14 70);     /* ambre */
+  --icon-folders: oklch(62% 0.13 250); /* bleu */
+  --icon-settings: var(--text-muted);  /* neutre */
+  --icon-public: oklch(65% 0.12 200);  /* cyan */
+  --icon-admin: oklch(58% 0.15 300);   /* violet */
 }
 
 :root, [data-theme="light"] {
@@ -41,6 +50,20 @@
   --input-border: #d1d5db;
   --card-hover: #f9fafb;
   --color-success: #16a34a;
+}
+
+/* Teintes d'icônes relevées en clarté pour les thèmes à fond sombre */
+[data-theme="dark"],
+[data-theme="dracula"],
+[data-theme="nord-dark"],
+[data-theme="catppuccin"],
+[data-theme="gruvbox"],
+[data-theme="rosepine"],
+[data-theme="solarized-dark"] {
+  --icon-tags: oklch(80% 0.13 75);
+  --icon-folders: oklch(74% 0.12 250);
+  --icon-public: oklch(76% 0.11 200);
+  --icon-admin: oklch(74% 0.14 300);
 }
 
 [data-theme="dark"] {
@@ -181,6 +204,7 @@
   --input-bg: #fdf6e3;
   --input-border: #dfd5b0;
   --card-hover: #eee8d5;
+  --icon-tags: #b58900; /* yellow solarized, plus foncé sur fond crème */
 }
 
 [data-theme="rosepine"] {
@@ -336,6 +360,20 @@ a:hover { text-decoration: underline; }
 .sidebar-item:hover { background: var(--card-hover); text-decoration: none; }
 .sidebar-item.active { background: var(--sidebar-active); color: var(--sidebar-active-text); font-weight: 500; }
 .sidebar-item.drop-target { background: var(--sidebar-active); outline: 2px solid var(--sidebar-active-text); }
+
+/* Teintes d'icônes par section. Le SVG porte sa couleur via le token ;
+   l'item actif reprend currentColor pour garder le signal "tu es ici". */
+.sidebar-item .icon-home    { color: var(--btn-primary); }
+.sidebar-item .icon-tags    { color: var(--icon-tags); }
+.sidebar-item .icon-folders { color: var(--icon-folders); }
+.sidebar-item .icon-settings{ color: var(--icon-settings); }
+.sidebar-item .icon-public  { color: var(--icon-public); }
+.sidebar-item .icon-admin   { color: var(--icon-admin); }
+.sidebar-item.active svg { color: var(--sidebar-active-text); }
+
+/* Dossiers listés : teinte "dossier" cohérente avec la section Dossiers */
+.sidebar-folder-item .folder-glyph { color: var(--icon-folders); }
+.sidebar-folder-item.active .folder-glyph { color: var(--sidebar-active-text); }
 
 .sidebar-count {
   font-size: 0.75rem;
