@@ -43,14 +43,13 @@
   </form>
 
   <div style="display:flex; align-items:center; gap:1rem; margin-bottom:0.75rem; border-top:1px solid var(--border); padding-top:1rem; flex-wrap:wrap;">
-    <button type="button" class="btn btn-danger btn-sm" onclick="deleteAll()">
+    <button type="button" id="delete-all-btn" class="btn btn-danger btn-sm">
       Supprimer tout ({{ broken|length }})
     </button>
     <label style="display:flex; align-items:center; gap:0.4rem; font-size:0.85rem; cursor:pointer;">
-      <input type="checkbox" id="select-all" onchange="toggleAll(this)"> Sélection manuelle
+      <input type="checkbox" id="select-all"> Sélection manuelle
     </label>
-    <button type="button" id="bulk-btn" class="btn btn-danger btn-sm" style="display:none;"
-            onclick="submitBulkCheckLinks()">
+    <button type="button" id="bulk-btn" class="btn btn-danger btn-sm" style="display:none;">
       Supprimer la sélection
     </button>
   </div>
@@ -59,7 +58,7 @@
     {% for link in broken %}
     <div class="link-card" data-link-id="{{ link.id }}">
       <label style="display:flex; align-items:center; padding:0 0.5rem; cursor:pointer; flex-shrink:0;">
-        <input type="checkbox" value="{{ link.id }}" class="broken-check" onchange="updateBulkBtn()">
+        <input type="checkbox" value="{{ link.id }}" class="broken-check">
       </label>
       <div class="link-body">
         <div class="link-source">
@@ -147,5 +146,19 @@ function submitBulkCheckLinks() {
   });
   _stopPollAndSubmit(form);
 }
+
+// La CSP (script-src avec nonce, sans 'unsafe-inline') bloque les handlers
+// inline onclick/onchange : on les attache via addEventListener.
+(function() {
+  var delAll = document.getElementById('delete-all-btn');
+  if (delAll) delAll.addEventListener('click', deleteAll);
+  var selAll = document.getElementById('select-all');
+  if (selAll) selAll.addEventListener('change', function() { toggleAll(this); });
+  var bulkBtn = document.getElementById('bulk-btn');
+  if (bulkBtn) bulkBtn.addEventListener('click', submitBulkCheckLinks);
+  document.querySelectorAll('.broken-check').forEach(function(c) {
+    c.addEventListener('change', updateBulkBtn);
+  });
+})();
 </script>
 {% endblock %}

@@ -21,8 +21,8 @@
 {% if links %}
 <div id="bulk-bar" class="bulk-bar">
   <span id="bulk-count"></span>
-  <button type="button" class="btn btn-danger btn-sm" onclick="submitBulkDelete()">Supprimer</button>
-  <button type="button" class="btn btn-ghost btn-sm" onclick="clearBulkSelect()">Annuler</button>
+  <button type="button" id="bulk-delete-btn" class="btn btn-danger btn-sm">Supprimer</button>
+  <button type="button" id="bulk-cancel-btn" class="btn btn-ghost btn-sm">Annuler</button>
 </div>
 <form id="bulk-delete-form" method="post" action="/links/bulk-delete">
   {{ csrf_input(request) }}
@@ -32,8 +32,8 @@
 {% for link in links %}
 <article class="link-card{% if link.is_broken %} link-broken{% endif %}" draggable="true" data-link-id="{{ link.id }}" data-folder-id="{{ link.folder_id or '' }}"
          style="cursor:grab;" title="Glisser vers un dossier de la sidebar">
-  <label class="link-select-wrap" onmousedown="event.stopPropagation()" onclick="event.stopPropagation()" draggable="false">
-    <input type="checkbox" class="link-select" value="{{ link.id }}" onchange="onSelectChange(this)">
+  <label class="link-select-wrap" draggable="false">
+    <input type="checkbox" class="link-select" value="{{ link.id }}">
   </label>
   {% if link.thumbnail_url %}
   <a href="{{ link.url }}" target="_blank" rel="noopener" class="link-thumbnail">
@@ -211,6 +211,22 @@ function submitBulkDelete() {
     });
   });
 }
+
+// La CSP (script-src avec nonce, sans 'unsafe-inline') bloque les handlers
+// inline onclick/onchange : on les attache via addEventListener.
+(function() {
+  var delBtn = document.getElementById('bulk-delete-btn');
+  if (delBtn) delBtn.addEventListener('click', submitBulkDelete);
+  var cancelBtn = document.getElementById('bulk-cancel-btn');
+  if (cancelBtn) cancelBtn.addEventListener('click', clearBulkSelect);
+  document.querySelectorAll('.link-select').forEach(function(cb) {
+    cb.addEventListener('change', function() { onSelectChange(this); });
+  });
+  document.querySelectorAll('.link-select-wrap').forEach(function(w) {
+    w.addEventListener('mousedown', function(e) { e.stopPropagation(); });
+    w.addEventListener('click', function(e) { e.stopPropagation(); });
+  });
+})();
 </script>
 
 {% endblock %}
