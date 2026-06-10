@@ -9,6 +9,7 @@ from ..config import settings
 from ..crypto import encrypt, hmac_key
 from ..database import get_session
 from ..models import User
+from ..utils import unique_public_slug
 
 router = APIRouter()
 
@@ -91,6 +92,7 @@ async def oidc_callback(request: Request, session: Session = Depends(get_session
                 )
                 session.add(user)
                 session.flush()
+                user.public_slug = unique_public_slug(session, user.name, user.id)
                 _maybe_promote_admin(session, user, is_new=True)
                 session.commit()
                 session.refresh(user)

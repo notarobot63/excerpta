@@ -82,11 +82,20 @@ async def delete_tag(
     tag = session.get(Tag, tag_id)
     if not tag or tag.user_id != user.id:
         raise HTTPException(status_code=404)
-    session.execute(
-        text("DELETE FROM fts_links WHERE link_id IN (SELECT link_id FROM link_tags WHERE tag_id = :tid)"),
-        {"tid": tag_id},
-    )
+    # Liens portant ce tag : ils survivent à la suppression du tag, leur
+    # entrée FTS doit être rafraîchie (colonne tags) et non supprimée.
+    affected_ids = [
+        row[0] for row in session.execute(
+            text("SELECT link_id FROM link_tags WHERE tag_id = :tid"),
+            {"tid": tag_id},
+        ).fetchall()
+    ]
     session.execute(text("DELETE FROM link_tags WHERE tag_id = :id"), {"id": tag_id})
     session.delete(tag)
+    session.flush()
+    for link_id in affected_ids:
+        link = session.get(Link, link_id)
+        if link:
+            refresh_link_fts(session, link, list(link.tags))
     session.commit()
     return RedirectResponse(url="/tags", status_code=303)

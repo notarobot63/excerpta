@@ -346,7 +346,7 @@ async def purge_freshrss(
                 {"fid": folder.id},
             )
             session.execute(
-                text("DELETE FROM fts_links WHERE link_id IN "
+                text("DELETE FROM fts_links WHERE rowid IN "
                      "(SELECT id FROM links WHERE folder_id = :fid)"),
                 {"fid": folder.id},
             )
@@ -392,7 +392,7 @@ async def purge_all(
     session: Session = Depends(get_session),
 ):
     session.execute(text("DELETE FROM link_tags WHERE link_id IN (SELECT id FROM links WHERE user_id = :uid)"), {"uid": user.id})
-    session.execute(text("DELETE FROM fts_links WHERE link_id IN (SELECT id FROM links WHERE user_id = :uid)"), {"uid": user.id})
+    session.execute(text("DELETE FROM fts_links WHERE rowid IN (SELECT id FROM links WHERE user_id = :uid)"), {"uid": user.id})
     session.execute(text("DELETE FROM links WHERE user_id = :uid"), {"uid": user.id})
     session.execute(text("DELETE FROM tags WHERE user_id = :uid"), {"uid": user.id})
     session.execute(text("DELETE FROM folders WHERE user_id = :uid"), {"uid": user.id})

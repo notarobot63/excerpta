@@ -1,7 +1,7 @@
 from typing import Optional
 from xml.sax.saxutils import escape as xml_escape
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import HTMLResponse, Response
 from sqlmodel import Session, select
 
@@ -13,19 +13,33 @@ from ..templates_cfg import templates
 router = APIRouter()
 
 
-@router.get("/public/feed.xml")
+def _get_public_owner(session: Session, slug: str) -> User:
+    owner = session.exec(
+        select(User).where(User.public_slug == slug, User.is_active == True)
+    ).first()
+    if not owner:
+        raise HTTPException(status_code=404, detail="Page publique introuvable")
+    return owner
+
+
+@router.get("/u/{slug}/feed.xml")
 async def public_feed(
+    slug: str,
     request: Request,
     session: Session = Depends(get_session),
 ):
+    owner = _get_public_owner(session, slug)
     links = list(
         session.exec(
-            select(Link).where(Link.is_public == True).order_by(Link.created_at.desc()).limit(100)
+            select(Link)
+            .where(Link.user_id == owner.id, Link.is_public == True)
+            .order_by(Link.created_at.desc())
+            .limit(100)
         ).all()
     )
-    owner = session.exec(select(User).where(User.is_active == True).order_by(User.id)).first()
-    page_title = (owner.public_page_title if owner else None) or "Liens publics"
+    page_title = owner.public_page_title or "Liens publics"
     base = settings.base_url.rstrip("/")
+    feed_link = f"{base}/u/{owner.public_slug}"
     parts = []
     for lk in links:
         pub = lk.created_at.strftime("%a, %d %b %Y %H:%M:%S +0000")
@@ -43,7 +57,7 @@ async def public_feed(
         '<?xml version="1.0" encoding="UTF-8"?>'
         '<rss version="2.0"><channel>'
         f"<title>{xml_escape(page_title)} - Excerpta</title>"
-        f"<link>{xml_escape(base)}/public</link>"
+        f"<link>{xml_escape(feed_link)}</link>"
         f"<description>{xml_escape(page_title)} partagés via Excerpta</description>"
         f"{items}"
         "</channel></rss>"
@@ -51,19 +65,22 @@ async def public_feed(
     return Response(content=xml, media_type="application/rss+xml")
 
 
-@router.get("/public", response_class=HTMLResponse)
+@router.get("/u/{slug}", response_class=HTMLResponse)
 async def public_links(
+    slug: str,
     request: Request,
     q: Optional[str] = None,
     tag: Optional[str] = None,
     session: Session = Depends(get_session),
 ):
-    owner = session.exec(select(User).where(User.is_active == True).order_by(User.id)).first()
-    page_title = (owner.public_page_title if owner else None) or "Liens publics"
+    owner = _get_public_owner(session, slug)
+    page_title = owner.public_page_title or "Liens publics"
 
     links = list(
         session.exec(
-            select(Link).where(Link.is_public == True).order_by(Link.created_at.desc())
+            select(Link)
+            .where(Link.user_id == owner.id, Link.is_public == True)
+            .order_by(Link.created_at.desc())
         ).all()
     )
 
@@ -99,5 +116,6 @@ async def public_links(
             "q": q or "",
             "total": len(links),
             "page_title": page_title,
+            "base_path": f"/u/{owner.public_slug}",
         },
     )

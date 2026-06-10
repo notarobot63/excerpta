@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{{ page_title }} - Excerpta</title>
   <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
-  <link rel="alternate" type="application/rss+xml" title="{{ page_title }} - Excerpta" href="/public/feed.xml">
+  <link rel="alternate" type="application/rss+xml" title="{{ page_title }} - Excerpta" href="{{ base_path }}/feed.xml">
   <link rel="stylesheet" href="/static/style.css">
   <script nonce="{{ request.state.nonce }}">
     (function() {
@@ -21,14 +21,14 @@
   <header style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1.5rem; gap:1rem; flex-wrap:wrap;">
     <div style="font-size:1.1rem; font-weight:700;display:flex;align-items:center;gap:6px;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" style="vertical-align:middle;flex-shrink:0;"><path d="M6 3 L18 3 C19.1 3 20 3.9 20 5 L20 21 L12 17.5 L4 21 L4 5 C4 3.9 4.9 3 6 3 Z" fill="var(--btn-primary)"/><rect x="7.5" y="7.5" width="5.5" height="2" rx="1" fill="white" opacity="0.9"/><rect x="7.5" y="11" width="7" height="2" rx="1" fill="white" opacity="0.65"/><rect x="7.5" y="14.5" width="4" height="2" rx="1" fill="white" opacity="0.4"/></svg>{{ page_title }}</div>
 
-    <form action="/public" method="get" style="display:flex; gap:0.5rem; flex:1; max-width:400px;">
+    <form action="{{ base_path }}" method="get" style="display:flex; gap:0.5rem; flex:1; max-width:400px;">
       {% if current_tag %}<input type="hidden" name="tag" value="{{ current_tag }}">{% endif %}
       <input type="search" name="q" value="{{ q }}"
              placeholder="Rechercher…" class="search-input">
-      {% if q %}<a href="/public" class="btn btn-ghost btn-sm"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;margin-right:0.3rem;"><path d="M18 6 6 18M6 6l12 12"/></svg></a>{% endif %}
+      {% if q %}<a href="{{ base_path }}" class="btn btn-ghost btn-sm"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;margin-right:0.3rem;"><path d="M18 6 6 18M6 6l12 12"/></svg></a>{% endif %}
     </form>
 
-    <a href="/public/feed.xml" title="Flux RSS" style="text-decoration:none;display:flex;align-items:center;">
+    <a href="{{ base_path }}/feed.xml" title="Flux RSS" style="text-decoration:none;display:flex;align-items:center;">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 8 8" width="18" height="18">
         <rect width="8" height="8" rx="1.5" fill="#f26522"/>
         <circle cx="2" cy="6" r="1" fill="white"/>
@@ -45,10 +45,10 @@
 
   {% if all_tags %}
   <div style="display:flex; gap:0.4rem; flex-wrap:wrap; margin-bottom:1rem;">
-    <a href="/public{% if q %}?q={{ q }}{% endif %}"
+    <a href="{{ base_path }}{% if q %}?q={{ q }}{% endif %}"
        class="tag" style="{% if not current_tag %}opacity:1{% else %}opacity:0.5{% endif %}">Tous</a>
     {% for t in all_tags %}
-    <a href="/public?tag={{ t|urlencode }}{% if q %}&q={{ q }}{% endif %}"
+    <a href="{{ base_path }}?tag={{ t|urlencode }}{% if q %}&q={{ q }}{% endif %}"
        class="tag" style="{% if current_tag == t %}outline:2px solid var(--tag-text){% endif %}">{{ t }}</a>
     {% endfor %}
   </div>
@@ -59,7 +59,7 @@
     {{ total }} lien{% if total != 1 %}s{% endif %}
     {% if current_tag %} - tag <strong>#{{ current_tag }}</strong>{% endif %}
     {% if q %} - recherche « {{ q }} »{% endif %}
-    - <a href="/public">voir tout</a>
+    - <a href="{{ base_path }}">voir tout</a>
   </p>
   {% endif %}
 
@@ -84,7 +84,7 @@
       {% endif %}
       <div class="link-footer">
         {% for t in link.tags %}
-        <a href="/public?tag={{ t.name|urlencode }}" class="tag">{{ t.name }}</a>
+        <a href="{{ base_path }}?tag={{ t.name|urlencode }}" class="tag">{{ t.name }}</a>
         {% endfor %}
         <span class="link-date">{{ link.created_at.strftime('%d/%m/%Y') }}</span>
       </div>

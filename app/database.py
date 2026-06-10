@@ -1,5 +1,5 @@
 import sqlite3
-from sqlalchemy import event, text
+from sqlalchemy import event
 from sqlalchemy.engine import Engine
 from sqlmodel import create_engine, Session, SQLModel
 
@@ -124,6 +124,29 @@ def init_db():
         con.execute("ALTER TABLE users ADD COLUMN is_active INTEGER NOT NULL DEFAULT 1")
     if "session_version" not in ucols:
         con.execute("ALTER TABLE users ADD COLUMN session_version INTEGER NOT NULL DEFAULT 0")
+    if "public_slug" not in ucols:
+        con.execute("ALTER TABLE users ADD COLUMN public_slug TEXT")
+        con.execute("CREATE UNIQUE INDEX IF NOT EXISTS ix_users_public_slug ON users(public_slug)")
+    # Backfill des slugs manquants (multi-tenant page publique)
+    from .utils import slugify
+    missing = con.execute(
+        "SELECT id, name FROM users WHERE public_slug IS NULL OR public_slug = ''"
+    ).fetchall()
+    if missing:
+        taken = {
+            r[0] for r in con.execute(
+                "SELECT public_slug FROM users WHERE public_slug IS NOT NULL AND public_slug != ''"
+            ).fetchall()
+        }
+        for uid, name in missing:
+            base = slugify(name) or f"u{uid}"
+            slug = base
+            n = 0
+            while slug in taken:
+                n += 1
+                slug = f"{base}-{uid}" if n == 1 else f"{base}-{uid}-{n}"
+            con.execute("UPDATE users SET public_slug = ? WHERE id = ?", (slug, uid))
+            taken.add(slug)
     lcols = [r[1] for r in con.execute("PRAGMA table_info(links)").fetchall()]
     if "thumbnail_url" not in lcols:
         con.execute("ALTER TABLE links ADD COLUMN thumbnail_url TEXT NOT NULL DEFAULT ''")
@@ -175,15 +198,6 @@ def init_db():
 
     con.commit()
     con.close()
-
-
-def refresh_link_fts(conn, link_id: int, title: str, description: str, note: str, url: str, tags: str):
-    """Call after tag changes to keep fts_links.tags in sync."""
-    conn.execute(text("DELETE FROM fts_links WHERE link_id = :id"), {"id": link_id})
-    conn.execute(
-        text("INSERT INTO fts_links(link_id, title, description, note, url, tags) VALUES (:lid, :t, :d, :n, :u, :tg)"),
-        {"lid": link_id, "t": title, "d": description, "n": note, "u": url, "tg": tags},
-    )
 
 
 def get_session():

@@ -99,7 +99,7 @@
       <label class="form-check">
         <input type="checkbox" name="is_public" value="1"
                {% if link and link.is_public %}checked{% endif %}>
-        Lien public (visible sur la page publique)
+        Lien public (visible sur <strong>votre</strong> page publique <code>/u/{{ user.public_slug }}</code>)
       </label>
     </div>
 

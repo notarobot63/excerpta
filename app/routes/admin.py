@@ -207,7 +207,7 @@ async def delete_user(
         raise HTTPException(status_code=400, detail="Impossible de supprimer son propre compte")
     target_name = target.name
     # Cascade manuelle dans l'ordre des dépendances FK
-    session.execute(text("DELETE FROM fts_links   WHERE link_id IN (SELECT id FROM links WHERE user_id=:id)"), {"id": uid})
+    session.execute(text("DELETE FROM fts_links   WHERE rowid IN (SELECT id FROM links WHERE user_id=:id)"), {"id": uid})
     session.execute(text("DELETE FROM link_tags   WHERE link_id IN (SELECT id FROM links WHERE user_id=:id)"), {"id": uid})
     session.execute(text("UPDATE links SET folder_id = NULL WHERE user_id=:id"), {"id": uid})
     session.execute(text("DELETE FROM links       WHERE user_id=:id"), {"id": uid})
