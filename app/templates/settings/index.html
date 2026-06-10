@@ -173,7 +173,7 @@
            placeholder="Liens publics"
            class="form-input" style="flex:1;min-width:180px;max-width:320px;">
     <button type="submit" class="btn btn-primary btn-sm">Enregistrer</button>
-    <a href="/public" target="_blank" class="btn btn-ghost btn-sm">Voir →</a>
+    <a href="/u/{{ user.public_slug }}" target="_blank" class="btn btn-ghost btn-sm">Voir →</a>
   </form>
   {% if request.query_params.get('saved') == 'public' %}
   <p style="font-size:0.82rem;color:var(--color-success);margin:0.4rem 0 0;">Titre mis à jour.</p>

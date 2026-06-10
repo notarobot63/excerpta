@@ -19,13 +19,13 @@ _PLACEHOLDER_COLORS = [
 
 def _domain_color(url: str) -> str:
     host = urlparse(url).netloc or url
-    host = host.lstrip("www.")
+    host = host.removeprefix("www.")
     idx = sum(ord(c) for c in host) % len(_PLACEHOLDER_COLORS)
     return _PLACEHOLDER_COLORS[idx]
 
 def _domain_initial(url: str) -> str:
     host = urlparse(url).netloc or url
-    host = host.lstrip("www.")
+    host = host.removeprefix("www.")
     return host[0].upper() if host else "?"
 
 def _proxy_img(url: str) -> str:

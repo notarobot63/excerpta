@@ -28,9 +28,6 @@
         {% if depth > 0 %}<span style="color:var(--text-muted); margin-right:0.25rem;">↳</span>{% else %}<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;margin-right:0.3rem;"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>{% endif %}
         {{ folder.name }}
       </span>
-      <span class="tag" style="{% if not folder.is_public %}background:var(--border);{% endif %}">
-        {% if folder.is_public %}public{% else %}privé{% endif %}
-      </span>
       <span class="sidebar-count">{{ folder_counts.get(folder.id, 0) }}</span>
       <a href="/folders/{{ folder.id }}/edit" class="btn btn-ghost btn-sm">Modifier</a>
       <form action="/folders/{{ folder.id }}/delete" method="post" style="display:inline;"

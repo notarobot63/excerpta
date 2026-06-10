@@ -1,7 +1,36 @@
+import re
+import unicodedata
+
 from sqlalchemy import text
 from sqlmodel import Session, select
 
-from .models import Folder, Link, Tag
+from .models import Folder, Link, Tag, User
+
+
+def slugify(value: str) -> str:
+    """Normalise une chaîne en slug URL (ASCII, minuscules, tirets)."""
+    value = unicodedata.normalize("NFKD", value or "").encode("ascii", "ignore").decode()
+    value = re.sub(r"[^a-zA-Z0-9]+", "-", value).strip("-").lower()
+    return value
+
+
+def unique_public_slug(session: Session, name: str, user_id: int) -> str:
+    """Génère un slug unique pour la page publique d'un utilisateur.
+
+    Base = slugify(name) ou 'u<id>' si le nom ne donne rien. En cas de
+    collision, suffixe l'id puis un compteur.
+    """
+    base = slugify(name) or f"u{user_id}"
+    candidate = base
+    suffix = 0
+    while True:
+        existing = session.exec(
+            select(User).where(User.public_slug == candidate, User.id != user_id)
+        ).first()
+        if not existing:
+            return candidate
+        suffix += 1
+        candidate = f"{base}-{user_id}" if suffix == 1 else f"{base}-{user_id}-{suffix}"
 
 
 def get_or_create_tag(session: Session, user_id: int, name: str) -> Tag:
