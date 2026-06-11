@@ -35,6 +35,9 @@ def set_http_client(client: httpx.AsyncClient) -> None:
 
 # ── Greader API helpers ───────────────────────────────────────────────────────
 
+# Plafond d'articles étoilés importés en une passe (anti-DoS mémoire)
+_MAX_STARRED_ITEMS = 5000
+
 async def _greader_auth(base_url: str, user: str, token: str) -> str:
     resp = await _http_client.post(
         f"{base_url}/api/greader.php/accounts/ClientLogin",
@@ -93,6 +96,10 @@ async def _greader_starred(base_url: str, auth: str) -> list[dict]:
         data = resp.json()
         batch = data.get("items", [])
         items.extend(batch)
+        # Plafond anti-DoS : borne l'ingestion mémoire sur un compte hostile/volumineux
+        if len(items) >= _MAX_STARRED_ITEMS:
+            del items[_MAX_STARRED_ITEMS:]
+            break
         continuation = data.get("continuation")
         if not continuation or len(batch) < 200:
             break

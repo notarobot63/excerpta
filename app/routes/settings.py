@@ -1,9 +1,10 @@
 import asyncio
 import io
+import ipaddress
 import json
 from datetime import datetime, timezone
 from typing import Optional
-from urllib.parse import urlparse
+from urllib.parse import urljoin, urlparse
 from .links import _safe_url
 
 import httpx
@@ -22,7 +23,7 @@ from ..models import Folder, Link, LinkTagLink, Tag, User
 from ..ratelimit import rate_limit
 from ..templates_cfg import templates
 from ..utils import get_or_create_tag, refresh_link_fts, sidebar_data, slugify
-from .links import _fetch_meta
+from .links import _fetch_meta, _hostname_resolves_public
 
 router = APIRouter()
 
@@ -445,13 +446,46 @@ _check_jobs: dict[int, dict] = {}  # user_id → {total, done, running}
 
 # Codes ambigus (protection anti-bot probable) — ne pas marquer comme cassé
 _AMBIGUOUS_CODES = {401, 403, 405, 406, 429}
+_MAX_REDIRECTS = 5
+
+
+async def _check_url_safe(url: str) -> bool:
+    """Anti-SSRF : URL bien formée + le hostname ne résout pas vers une IP privée."""
+    if not _safe_url(url):
+        return False
+    host = urlparse(url).hostname or ""
+    try:
+        ipaddress.ip_address(host)  # IP littérale déjà filtrée par _safe_url
+        return True
+    except ValueError:
+        return await _hostname_resolves_public(host)
+
+
+async def _request_no_private_redirect(client: httpx.AsyncClient, method: str, url: str):
+    """Effectue la requête en suivant les redirections manuellement, en re-validant
+    chaque saut contre la politique SSRF (anti-rebinding/redirection vers IP privée)."""
+    current = url
+    for _ in range(_MAX_REDIRECTS):
+        if not await _check_url_safe(current):
+            raise ValueError("URL non autorisée (SSRF)")
+        resp = await client.request(
+            method, current, follow_redirects=False, timeout=10, headers=_CHECKER_HEADERS
+        )
+        if resp.status_code in (301, 302, 303, 307, 308):
+            location = resp.headers.get("location", "")
+            if not location:
+                return resp
+            current = urljoin(current, location)
+            continue
+        return resp
+    raise ValueError("Trop de redirections")
 
 
 async def _check_url(client: httpx.AsyncClient, url: str) -> dict:
     try:
-        resp = await client.head(url, follow_redirects=True, timeout=10, headers=_CHECKER_HEADERS)
+        resp = await _request_no_private_redirect(client, "HEAD", url)
         if resp.status_code in _AMBIGUOUS_CODES or resp.status_code >= 400:
-            resp = await client.get(url, follow_redirects=True, timeout=10, headers=_CHECKER_HEADERS)
+            resp = await _request_no_private_redirect(client, "GET", url)
         broken = resp.status_code >= 400 and resp.status_code not in _AMBIGUOUS_CODES
         return {"status": resp.status_code, "broken": broken, "error": None}
     except Exception as e:

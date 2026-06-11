@@ -43,19 +43,20 @@ async def warm_img_cache() -> None:
                 if cached and time.time() < cached[0]:
                     return
             try:
-                resp = await _http_client.get(url, headers={
+                async with _http_client.stream("GET", url, headers={
                     "User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:128.0) Gecko/20100101 Firefox/128.0",
                     "Accept": "image/avif,image/webp,image/png,image/svg+xml,image/*;q=0.8,*/*;q=0.5",
-                }, timeout=5)
-                if resp.status_code != 200:
-                    return
-                if not _safe_url(str(resp.url)):
-                    return
-                ct = resp.headers.get("content-type", "image/jpeg").split(";")[0].strip()
-                if not ct.startswith("image/"):
-                    return
+                }, timeout=5) as resp:
+                    if resp.status_code != 200:
+                        return
+                    if not _safe_url(str(resp.url)):
+                        return
+                    ct = resp.headers.get("content-type", "image/jpeg").split(";")[0].strip()
+                    if not ct.startswith("image/"):
+                        return
+                    content = await _read_limited(resp, _MAX_IMG_BYTES)
                 async with _img_cache_lock:
-                    _img_cache[url] = (time.time() + _IMG_CACHE_TTL, ct, resp.content)
+                    _img_cache[url] = (time.time() + _IMG_CACHE_TTL, ct, content)
                     if len(_img_cache) > _IMG_CACHE_MAX:
                         _img_cache.popitem(last=False)
             except Exception:
@@ -81,6 +82,37 @@ _IMG_CACHE_TTL = 86400
 _IMG_CACHE_MAX = 1000
 _img_cache: OrderedDict = OrderedDict()
 _img_cache_lock = asyncio.Lock()
+
+# Plafonds de téléchargement (anti-DoS mémoire)
+_MAX_IMG_BYTES = 10 * 1024 * 1024   # 10 Mo pour une image proxifiée
+_MAX_HTML_BYTES = 5 * 1024 * 1024   # 5 Mo pour le HTML d'une page (extraction meta)
+
+
+class _TooLarge(Exception):
+    pass
+
+
+async def _read_limited(resp: httpx.Response, max_bytes: int) -> bytes:
+    """Lit le corps d'une réponse httpx en streaming, en coupant à max_bytes.
+
+    Rejette tôt via Content-Length si annoncé, sinon borne pendant la lecture.
+    L'appelant doit avoir ouvert resp via client.stream(...).
+    """
+    cl = resp.headers.get("content-length")
+    if cl is not None:
+        try:
+            if int(cl) > max_bytes:
+                raise _TooLarge()
+        except ValueError:
+            pass
+    chunks: list[bytes] = []
+    total = 0
+    async for chunk in resp.aiter_bytes():
+        total += len(chunk)
+        if total > max_bytes:
+            raise _TooLarge()
+        chunks.append(chunk)
+    return b"".join(chunks)
 
 _DNS_CACHE_TTL = 600
 _dns_cache: dict[str, tuple[float, bool]] = {}
@@ -163,18 +195,22 @@ async def _fetch_meta(url: str) -> dict:
         if not await _hostname_resolves_public(_pre.hostname or ""):
             return {"title": "", "description": "", "favicon_url": ""}
     try:
-        resp = await _http_client.get(url, headers={
+        async with _http_client.stream("GET", url, headers={
             "User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:128.0) Gecko/20100101 Firefox/128.0",
             "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
             "Accept-Language": "fr,fr-FR;q=0.8,en-US;q=0.5,en;q=0.3",
-        }, timeout=5)
-        if resp.status_code >= 400:
-            return {"title": "", "description": "", "favicon_url": ""}
-        final_url = str(resp.url)
-        if not _safe_url(final_url):
-            return {"title": "", "description": "", "favicon_url": ""}
+        }, timeout=5) as resp:
+            if resp.status_code >= 400:
+                return {"title": "", "description": "", "favicon_url": ""}
+            final_url = str(resp.url)
+            if not _safe_url(final_url):
+                return {"title": "", "description": "", "favicon_url": ""}
+            try:
+                body = await _read_limited(resp, _MAX_HTML_BYTES)
+            except _TooLarge:
+                return {"title": "", "description": "", "favicon_url": ""}
         parsed = urlparse(final_url)
-        soup = BeautifulSoup(resp.text, "html.parser")
+        soup = BeautifulSoup(body.decode(resp.encoding or "utf-8", errors="replace"), "html.parser")
         title = soup.find("title")
         desc = soup.find("meta", attrs={"property": "og:description"}) or soup.find(
             "meta", attrs={"name": "description"}
@@ -656,23 +692,26 @@ async def proxy_image(request: Request, url: str, user: User = Depends(get_curre
         if not await _hostname_resolves_public(_proxy_parsed.hostname or ""):
             raise HTTPException(status_code=400)
     try:
-        resp = await _http_client.get(url, headers={
+        async with _http_client.stream("GET", url, headers={
             "User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:128.0) Gecko/20100101 Firefox/128.0",
             "Accept": "image/avif,image/webp,image/png,image/svg+xml,image/*;q=0.8,*/*;q=0.5",
-        }, timeout=5)
-        if resp.status_code != 200:
-            async with _img_cache_lock:
-                _img_cache[url] = (time.time() + 3600, None, None)
-                if len(_img_cache) > _IMG_CACHE_MAX:
-                    _img_cache.popitem(last=False)
-            raise HTTPException(status_code=404)
-        final_url = str(resp.url)
-        if not _safe_url(final_url):
-            raise HTTPException(status_code=400)
-        content_type = resp.headers.get("content-type", "image/jpeg").split(";")[0].strip()
-        if not content_type.startswith("image/"):
-            raise HTTPException(status_code=415)
-        content = resp.content
+        }, timeout=5) as resp:
+            if resp.status_code != 200:
+                async with _img_cache_lock:
+                    _img_cache[url] = (time.time() + 3600, None, None)
+                    if len(_img_cache) > _IMG_CACHE_MAX:
+                        _img_cache.popitem(last=False)
+                raise HTTPException(status_code=404)
+            final_url = str(resp.url)
+            if not _safe_url(final_url):
+                raise HTTPException(status_code=400)
+            content_type = resp.headers.get("content-type", "image/jpeg").split(";")[0].strip()
+            if not content_type.startswith("image/"):
+                raise HTTPException(status_code=415)
+            try:
+                content = await _read_limited(resp, _MAX_IMG_BYTES)
+            except _TooLarge:
+                raise HTTPException(status_code=413)
         async with _img_cache_lock:
             _img_cache[url] = (time.time() + _IMG_CACHE_TTL, content_type, content)
             if len(_img_cache) > _IMG_CACHE_MAX:

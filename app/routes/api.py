@@ -23,7 +23,7 @@ async def _get_api_user(
 ) -> User:
     if not x_api_key:
         raise HTTPException(status_code=401, detail="Authentification requise")
-    _api_rate_limit(request)
+    await _api_rate_limit(request)
     computed_hmac = hmac_key(x_api_key)
     user = session.exec(select(User).where(User.api_key_hmac == computed_hmac)).first()
     if not user or not user.is_active:
