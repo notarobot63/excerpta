@@ -22,10 +22,10 @@ async def csrf_protect(request: Request) -> None:
         raise HTTPException(status_code=403, detail="CSRF token manquant")
     # Accepter le token via header (requêtes JSON/AJAX same-origin)
     header_token = request.headers.get("X-CSRF-Token", "")
-    if header_token == expected:
+    if header_token and secrets.compare_digest(header_token, expected):
         return
     form = await request.form()
-    if form.get("csrf_token", "") != expected:
+    if not secrets.compare_digest(str(form.get("csrf_token", "")), expected):
         raise HTTPException(status_code=403, detail="CSRF token invalide")
 
 
