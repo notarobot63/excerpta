@@ -6,7 +6,7 @@
   <title>{{ page_title }} - Excerpta</title>
   <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
   <link rel="alternate" type="application/rss+xml" title="{{ page_title }} - Excerpta" href="{{ base_path }}/feed.xml">
-  <link rel="stylesheet" href="/static/style.css">
+  <link rel="stylesheet" href="/static/style.css?v={{ static_version }}">
   <script nonce="{{ request.state.nonce }}">
     (function() {
       var t = localStorage.getItem('theme') || 'light';
@@ -105,7 +105,7 @@
 
 </div>
 
-<script src="/static/theme.js"></script>
-<script src="/static/app.js"></script>
+<script src="/static/theme.js?v={{ static_version }}"></script>
+<script src="/static/app.js?v={{ static_version }}"></script>
 </body>
 </html>
