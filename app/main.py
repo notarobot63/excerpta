@@ -13,7 +13,7 @@ from starlette.middleware.sessions import SessionMiddleware
 from .auth import NotAuthenticated
 from .config import settings
 from .csrf import csrf_protect
-from .database import init_db
+from .database import init_db, cleanup_freshrss_tag
 from . import models  # noqa: F401
 from .routes import auth as auth_router
 from .routes import links as links_router
@@ -54,6 +54,7 @@ async def lifespan(app: FastAPI):
         freshrss_set_client(http_client)
         settings_set_client(http_client)
         init_db()
+        cleanup_freshrss_tag()
         task = asyncio.create_task(_freshrss_loop())
         task_warmup = asyncio.create_task(warm_img_cache())
         try:
