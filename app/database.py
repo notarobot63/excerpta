@@ -210,3 +210,38 @@ def init_db():
 def get_session():
     with Session(engine) as session:
         yield session
+
+
+def cleanup_freshrss_tag() -> None:
+    """Migration unique idempotente : retire le tag 'freshrss' (redondant avec
+    le dossier FreshRSS) de tous les liens, supprime le tag, et rafraîchit le
+    FTS des liens affectés avec leurs tags restants. Ne fait rien si absent."""
+    from sqlmodel import select
+    from sqlalchemy import text as _text
+    from .models import Tag, Link, LinkTagLink
+    from .utils import refresh_link_fts
+
+    with Session(engine) as session:
+        tags = list(session.exec(select(Tag).where(Tag.name == "freshrss")).all())
+        if not tags:
+            return
+        tag_ids = [t.id for t in tags]
+        ph = ",".join(str(i) for i in tag_ids)
+        affected_ids = [
+            r[0] for r in session.execute(
+                _text(f"SELECT DISTINCT link_id FROM link_tags WHERE tag_id IN ({ph})")
+            ).fetchall()
+        ]
+        session.execute(_text(f"DELETE FROM link_tags WHERE tag_id IN ({ph})"))
+        for t in tags:
+            session.delete(t)
+        session.flush()
+        for lid in affected_ids:
+            link = session.get(Link, lid)
+            if link:
+                remaining = list(session.exec(
+                    select(Tag).join(LinkTagLink, LinkTagLink.tag_id == Tag.id)
+                    .where(LinkTagLink.link_id == lid)
+                ).all())
+                refresh_link_fts(session, link, remaining)
+        session.commit()

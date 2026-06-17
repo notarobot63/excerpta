@@ -15,11 +15,11 @@ from sqlmodel import Session, select
 from ..auth import get_current_user
 from ..crypto import decrypt, encrypt, hmac_key
 from ..database import engine, get_session
-from ..models import Folder, FreshRSSConfig, Link, LinkTagLink, Tag, User
+from ..models import Folder, FreshRSSConfig, Link, User
 from ..ratelimit import rate_limit
 from .links import _fetch_meta, _hostname_resolves_public, _safe_url
 from ..templates_cfg import templates
-from ..utils import get_or_create_tag, refresh_link_fts, sidebar_data
+from ..utils import refresh_link_fts, sidebar_data
 
 logger = logging.getLogger("excerpta.freshrss")
 
@@ -231,7 +231,6 @@ async def sync_user(config: FreshRSSConfig, session: Session) -> int:
     if orphan_item_ids:
         await asyncio.gather(*(unstar_item(config, iid) for iid in orphan_item_ids))
 
-    freshrss_tag = get_or_create_tag(session, config.user_id, "freshrss")
     new_links: list[Link] = []
     for item in items:
         url = _extract_url(item)
@@ -271,10 +270,7 @@ async def sync_user(config: FreshRSSConfig, session: Session) -> int:
     if new_links:
         session.flush()  # un seul flush pour assigner tous les IDs
         for link in new_links:
-            session.add(LinkTagLink(link_id=link.id, tag_id=freshrss_tag.id))
-        session.flush()  # un seul flush pour les link_tags
-        for link in new_links:
-            refresh_link_fts(session, link, [freshrss_tag])
+            refresh_link_fts(session, link, [])
 
     config.last_sync = datetime.now(timezone.utc).replace(tzinfo=None)
     config.synced_count += len(new_links)
