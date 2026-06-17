@@ -179,20 +179,23 @@ function submitBulkDelete() {
   cards.forEach(function(c) { if (c) c.classList.add('link-deleting'); });
   clearBulkSelect();
   var existing = document.getElementById('undo-toast');
-  if (existing) { clearTimeout(existing._timer); existing.remove(); }
+  if (existing) {
+    clearTimeout(existing._timer);
+    if (existing._onConfirm) { existing._onConfirm(); existing._onConfirm = null; }
+    existing.remove();
+  }
   var toast = document.createElement('div');
   toast.id = 'undo-toast';
   toast.className = 'undo-toast';
   toast.innerHTML = n + ' lien' + (n > 1 ? 's' : '') + ' supprimé' + (n > 1 ? 's' : '') +
     ' <button class="undo-toast-btn" type="button">Annuler</button>';
   document.body.appendChild(toast);
-  var timer = setTimeout(function() {
-    toast.remove();
+  // Suppression optimiste AJAX : on retire les cartes sans recharger la page
+  function doBulkDelete() {
     var form = document.getElementById('bulk-delete-form');
     var csrf = form.querySelector('input[name="csrf_token"]');
     var fd = new FormData();
     ids.forEach(function(id) { fd.append('link_ids', id); });
-    // Suppression optimiste AJAX : on retire les cartes sans recharger la page
     fetch(form.action, {
       method: 'POST',
       headers: { 'X-CSRF-Token': csrf ? csrf.value : '' },
@@ -203,10 +206,14 @@ function submitBulkDelete() {
     }).catch(function() {
       cards.forEach(function(c) { if (c) c.classList.remove('link-deleting'); });
     });
+  }
+  toast._onConfirm = doBulkDelete;
+  var timer = setTimeout(function() {
+    toast._onConfirm = null; toast.remove(); doBulkDelete();
   }, 5000);
   toast._timer = timer;
   toast.querySelector('.undo-toast-btn').addEventListener('click', function() {
-    clearTimeout(timer); toast.remove();
+    clearTimeout(timer); toast._onConfirm = null; toast.remove();
     cards.forEach(function(c) { if (c) c.classList.remove('link-deleting'); });
     ids.forEach(function(id) { _selectedIds.add(id); });
     updateBulkBar();
