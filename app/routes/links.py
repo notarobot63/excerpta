@@ -591,6 +591,7 @@ async def edit_link(
 @router.post("/links/{link_id}/delete")
 async def delete_link(
     link_id: int,
+    request: Request,
     user: User = Depends(get_current_user),
     session: Session = Depends(get_session),
     unstar_freshrss: str = Form(""),
@@ -610,6 +611,10 @@ async def delete_link(
             asyncio.create_task(unstar_item(config, item_id))
     session.delete(link)
     session.commit()
+    # Appel AJAX (suppression optimiste depuis la liste) : pas de redirect,
+    # le client retire la carte du DOM lui-même → évite le rechargement complet.
+    if request.headers.get("x-csrf-token"):
+        return Response(status_code=204)
     redirect_url = return_to if return_to.startswith("/") else "/"
     return RedirectResponse(url=redirect_url, status_code=303)
 
@@ -630,6 +635,8 @@ async def bulk_delete_links(
         for lk in links:
             session.delete(lk)
         session.commit()
+    if request.headers.get("x-csrf-token"):
+        return Response(status_code=204)
     redirect_url = return_to if return_to.startswith("/") else "/"
     return RedirectResponse(url=redirect_url, status_code=303)
 
