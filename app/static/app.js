@@ -39,16 +39,26 @@ document.addEventListener('DOMContentLoaded', function () {
   // Undo toast — remplace les confirm() de suppression
   function _showUndoToast(msg, onConfirm, onUndo) {
     var existing = document.getElementById('undo-toast');
-    if (existing) { clearTimeout(existing._timer); existing.remove(); }
+    if (existing) {
+      // Un nouveau toast remplace l'ancien : on VALIDE l'action en attente
+      // (au lieu de l'annuler silencieusement) pour ne pas perdre des
+      // suppressions enchaînées rapidement. Seule la dernière reste annulable.
+      clearTimeout(existing._timer);
+      if (existing._onConfirm) { existing._onConfirm(); existing._onConfirm = null; }
+      existing.remove();
+    }
     var toast = document.createElement('div');
     toast.id = 'undo-toast';
     toast.className = 'undo-toast';
     toast.innerHTML = msg + ' <button class="undo-toast-btn" type="button">Annuler</button>';
     document.body.appendChild(toast);
-    var timer = setTimeout(function() { toast.remove(); onConfirm(); }, 5000);
+    toast._onConfirm = onConfirm;
+    var timer = setTimeout(function() {
+      toast._onConfirm = null; toast.remove(); onConfirm();
+    }, 5000);
     toast._timer = timer;
     toast.querySelector('.undo-toast-btn').addEventListener('click', function() {
-      clearTimeout(timer); toast.remove(); if (onUndo) onUndo();
+      clearTimeout(timer); toast._onConfirm = null; toast.remove(); if (onUndo) onUndo();
     });
   }
   window._showUndoToast = _showUndoToast; // réutilisable depuis les composants Alpine
