@@ -832,40 +832,6 @@ a:hover { text-decoration: underline; }
 }
 .sidebar-tag-btn:hover { color: var(--text); }
 
-/* ── Undo toast ── */
-.undo-toast {
-  position: fixed;
-  bottom: 1.5rem;
-  left: 50%;
-  transform: translateX(-50%);
-  background: var(--text);
-  color: var(--bg);
-  padding: 0.6rem 1.1rem;
-  border-radius: 0.5rem;
-  font-size: 0.875rem;
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  z-index: 9999;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.18);
-  animation: toast-in 0.2s var(--ease-out);
-}
-@keyframes toast-in {
-  from { opacity: 0; transform: translateX(-50%) translateY(8px); }
-  to   { opacity: 1; transform: translateX(-50%) translateY(0); }
-}
-.undo-toast-btn {
-  background: none;
-  border: 1px solid currentColor;
-  color: inherit;
-  border-radius: 0.25rem;
-  padding: 0.15rem 0.5rem;
-  font-size: 0.8rem;
-  cursor: pointer;
-  white-space: nowrap;
-}
-.undo-toast-btn:hover { opacity: 0.8; }
-
 /* ── Link deleting (optimistic hide) ── */
 .link-deleting {
   opacity: 0.3;

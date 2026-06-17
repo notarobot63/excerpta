@@ -285,25 +285,14 @@ function sidebarTag() {
     },
     cancel() { this.editName = this.currentName; this.editing = false; },
     del() {
-      var self = this, el = this.$el;
-      function doDelete() {
-        var csrf = document.querySelector('input[name="csrf_token"]');
-        fetch('/tags/' + self.id + '/delete', {
-          method: 'POST',
-          headers: { 'X-CSRF-Token': csrf ? csrf.value : '' },
-        }).then(function(r) { if (r.ok) el.remove(); else el.style.display = ''; });
-      }
-      // Optimistic delete + undo toast (cohérent avec le reste de l'app)
-      if (typeof window._showUndoToast === 'function') {
-        el.style.display = 'none';
-        window._showUndoToast(
-          'Tag #' + this.currentName + ' supprimé',
-          doDelete,
-          function() { el.style.display = ''; }
-        );
-      } else {
-        doDelete();
-      }
+      if (!window.confirm('Supprimer le tag #' + this.currentName + ' ?')) return;
+      var el = this.$el;
+      var csrf = document.querySelector('input[name="csrf_token"]');
+      el.style.display = 'none';
+      fetch('/tags/' + this.id + '/delete', {
+        method: 'POST',
+        headers: { 'X-CSRF-Token': csrf ? csrf.value : '' },
+      }).then(function(r) { if (r.ok) el.remove(); else el.style.display = ''; });
     },
   };
 }
