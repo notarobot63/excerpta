@@ -1,3 +1,4 @@
+import asyncio
 import ipaddress
 import logging
 from datetime import datetime, timezone
@@ -206,18 +207,29 @@ async def sync_user(config: FreshRSSConfig, session: Session) -> int:
         params[f"u{i}"] = u
     placeholders = ", ".join(f":u{i}" for i in range(len(candidate_urls)))
     existing_rows = session.execute(
-        text(f"SELECT id, url, freshrss_item_id FROM links WHERE user_id = :uid AND url IN ({placeholders})"),
+        text(f"SELECT id, url, freshrss_item_id, folder_id FROM links WHERE user_id = :uid AND url IN ({placeholders})"),
         params,
     ).fetchall()
     existing_urls = {row[1] for row in existing_rows}
     # Backfill : associer l'ID GReader aux liens déjà importés qui ne l'ont pas encore
     url_to_item_id = {_extract_url(i): i.get("id") for i in items if _extract_url(i) and i.get("id")}
-    for link_id, url, current_item_id in existing_rows:
+    # Self-healing : un lien encore étoilé mais sorti du dossier FreshRSS doit
+    # être désétoilé (rattrape les existants + les désétoilages au déplacement
+    # qui auraient échoué). Tous les existing_rows correspondent à des items
+    # actuellement étoilés (URLs issues de items).
+    orphan_item_ids: list[str] = []
+    for link_id, url, current_item_id, link_folder_id in existing_rows:
         if current_item_id is None and url in url_to_item_id:
             session.execute(
                 text("UPDATE links SET freshrss_item_id = :iid WHERE id = :lid"),
                 {"iid": url_to_item_id[url], "lid": link_id},
             )
+        if link_folder_id != folder.id:
+            iid = current_item_id or url_to_item_id.get(url)
+            if iid:
+                orphan_item_ids.append(iid)
+    if orphan_item_ids:
+        await asyncio.gather(*(unstar_item(config, iid) for iid in orphan_item_ids))
 
     freshrss_tag = get_or_create_tag(session, config.user_id, "freshrss")
     new_links: list[Link] = []
@@ -270,7 +282,6 @@ async def sync_user(config: FreshRSSConfig, session: Session) -> int:
     session.commit()
 
     if new_links:
-        import asyncio
         asyncio.create_task(_refresh_new_links_bg([l.id for l in new_links]))
 
     return len(new_links)
