@@ -555,13 +555,16 @@ async def edit_link(
     if not _safe_url(url):
         raise HTTPException(status_code=400, detail="URL invalide")
 
+    old_folder_id = link.folder_id
+    fr_item_id = link.freshrss_item_id
     url_changed = url != link.url
     link.url = url
     link.title = title or url
     link.description = description
     link.note = note
     link.is_public = is_public is not None
-    link.folder_id = _validate_folder_id(session, user.id, folder_id)
+    new_folder_id = _validate_folder_id(session, user.id, folder_id)
+    link.folder_id = new_folder_id
     link.updated_at = datetime.now(timezone.utc).replace(tzinfo=None)
     if url_changed:
         link.favicon_url = ""
@@ -579,6 +582,8 @@ async def edit_link(
     session.flush()
     refresh_link_fts(session, link, link_tags)
     session.commit()
+
+    _maybe_unstar_on_leave(session, user.id, fr_item_id, old_folder_id, new_folder_id)
 
     if url_changed:
         background_tasks.add_task(_fetch_and_update_meta, link.id, url)
@@ -641,6 +646,32 @@ async def bulk_delete_links(
     return RedirectResponse(url=redirect_url, status_code=303)
 
 
+def _maybe_unstar_on_leave(
+    session: Session, user_id: int, item_id: Optional[str],
+    old_folder_id: Optional[int], new_folder_id: Optional[int],
+) -> None:
+    """Désétoile le lien sur FreshRSS s'il quitte le dossier FreshRSS.
+
+    Conditions : le lien a un freshrss_item_id, il était dans le dossier
+    FreshRSS (nommé config.group_name) et il change de dossier.
+    Désétoilage fire-and-forget, cohérent avec la suppression.
+    """
+    from ..models import FreshRSSConfig
+    from .freshrss import unstar_item
+    if not item_id or old_folder_id is None or old_folder_id == new_folder_id:
+        return
+    config = session.exec(
+        select(FreshRSSConfig).where(FreshRSSConfig.user_id == user_id)
+    ).first()
+    if not (config and config.freshrss_url and config.group_name):
+        return
+    fr_folder = session.exec(
+        select(Folder).where(Folder.user_id == user_id, Folder.name == config.group_name)
+    ).first()
+    if fr_folder and old_folder_id == fr_folder.id:
+        asyncio.create_task(unstar_item(config, item_id))
+
+
 # ─── Move (drag & drop sidebar) ──────────────────────────────────────────────
 
 @router.post("/links/{link_id}/move")
@@ -655,10 +686,14 @@ async def move_link(
         raise HTTPException(status_code=404)
     body = await request.json()
     raw_fid = body.get("folder_id")
-    link.folder_id = _validate_folder_id(session, user.id, str(raw_fid)) if raw_fid else None
+    old_folder_id = link.folder_id
+    item_id = link.freshrss_item_id
+    new_folder_id = _validate_folder_id(session, user.id, str(raw_fid)) if raw_fid else None
+    link.folder_id = new_folder_id
     session.add(link)
     session.commit()
-    return {"ok": True, "folder_id": link.folder_id}
+    _maybe_unstar_on_leave(session, user.id, item_id, old_folder_id, new_folder_id)
+    return {"ok": True, "folder_id": new_folder_id}
 
 
 # ─── API metadata fetch ───────────────────────────────────────────────────────
