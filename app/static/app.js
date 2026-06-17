@@ -62,7 +62,19 @@ document.addEventListener('DOMContentLoaded', function () {
       if (card) card.classList.add('link-deleting');
       _showUndoToast(
         'Lien supprimé',
-        function() { fired = true; form.submit(); },
+        function() {
+          if (!card) { fired = true; form.submit(); return; } // page édition / check_links : redirect classique
+          // Suppression optimiste : DELETE AJAX, on retire la carte sans recharger la page
+          var csrf = form.querySelector('input[name="csrf_token"]');
+          fetch(form.action, {
+            method: 'POST',
+            headers: { 'X-CSRF-Token': csrf ? csrf.value : '' },
+            body: new FormData(form),
+          }).then(function(r) {
+            if (r.ok) card.remove();
+            else card.classList.remove('link-deleting');
+          }).catch(function() { card.classList.remove('link-deleting'); });
+        },
         function() { if (card) card.classList.remove('link-deleting'); }
       );
     });

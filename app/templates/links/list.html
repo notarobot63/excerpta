@@ -189,13 +189,20 @@ function submitBulkDelete() {
   var timer = setTimeout(function() {
     toast.remove();
     var form = document.getElementById('bulk-delete-form');
-    form.querySelectorAll('input[name="link_ids"]').forEach(function(i) { i.remove(); });
-    ids.forEach(function(id) {
-      var inp = document.createElement('input');
-      inp.type = 'hidden'; inp.name = 'link_ids'; inp.value = id;
-      form.appendChild(inp);
+    var csrf = form.querySelector('input[name="csrf_token"]');
+    var fd = new FormData();
+    ids.forEach(function(id) { fd.append('link_ids', id); });
+    // Suppression optimiste AJAX : on retire les cartes sans recharger la page
+    fetch(form.action, {
+      method: 'POST',
+      headers: { 'X-CSRF-Token': csrf ? csrf.value : '' },
+      body: fd,
+    }).then(function(r) {
+      if (r.ok) cards.forEach(function(c) { if (c) c.remove(); });
+      else cards.forEach(function(c) { if (c) c.classList.remove('link-deleting'); });
+    }).catch(function() {
+      cards.forEach(function(c) { if (c) c.classList.remove('link-deleting'); });
     });
-    form.submit();
   }, 5000);
   toast._timer = timer;
   toast.querySelector('.undo-toast-btn').addEventListener('click', function() {
