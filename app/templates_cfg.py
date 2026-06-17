@@ -37,3 +37,19 @@ templates.env.filters["domain_color"] = _domain_color
 templates.env.filters["domain_initial"] = _domain_initial
 templates.env.filters["proxy_img"] = _proxy_img
 templates.env.globals["csrf_input"] = csrf_input
+
+# Cache-busting des assets : version = mtime max des fichiers statiques.
+# Change uniquement quand un asset change → cache navigateur 1 an immuable
+# tout en garantissant la fraîcheur après un déploiement.
+def _compute_static_version() -> str:
+    static_dir = Path(__file__).parent / "static"
+    try:
+        latest = max(
+            (f.stat().st_mtime for f in static_dir.glob("*") if f.is_file()),
+            default=0.0,
+        )
+        return str(int(latest))
+    except OSError:
+        return "1"
+
+templates.env.globals["static_version"] = _compute_static_version()

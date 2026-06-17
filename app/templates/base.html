@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{% block title %}Excerpta{% endblock %}</title>
   <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="/static/style.css">
+  <link rel="stylesheet" href="/static/style.css?v={{ static_version }}">
   <script defer src="/static/alpine.min.js"></script>
   <script nonce="{{ request.state.nonce }}">
     (function() {
@@ -174,8 +174,8 @@
 
 {{ csrf_input(request) }}
 <script src="/static/sortable.min.js"></script>
-<script src="/static/theme.js"></script>
-<script src="/static/app.js"></script>
+<script src="/static/theme.js?v={{ static_version }}"></script>
+<script src="/static/app.js?v={{ static_version }}"></script>
 <script nonce="{{ request.state.nonce }}">
 (function() {
   function getCsrf() {

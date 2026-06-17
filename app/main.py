@@ -7,6 +7,7 @@ import httpx
 from fastapi import Depends, FastAPI, Request
 from fastapi.responses import RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
+from starlette.middleware.gzip import GZipMiddleware
 from starlette.middleware.sessions import SessionMiddleware
 
 from .auth import NotAuthenticated
@@ -80,6 +81,8 @@ app.add_middleware(
     max_age=86400 * 7,
     same_site="lax",
 )
+# Compression des réponses (HTML/CSS/JS/JSON) > 1 Ko
+app.add_middleware(GZipMiddleware, minimum_size=1024)
 app.mount("/static", StaticFiles(directory="/app/static"), name="static")
 
 
@@ -89,7 +92,11 @@ async def security_headers(request: Request, call_next):
     request.state.nonce = nonce
     response: Response = await call_next(request)
     if request.url.path.startswith("/static/"):
-        response.headers["Cache-Control"] = "public, max-age=3600"
+        # Asset versionné (?v=) → immuable 1 an ; sinon cache court (favicons, libs)
+        if request.query_params.get("v"):
+            response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
+        else:
+            response.headers["Cache-Control"] = "public, max-age=3600"
         return response
     csp = (
         "default-src 'self'; "

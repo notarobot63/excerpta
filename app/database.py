@@ -18,6 +18,13 @@ def _set_sqlite_pragmas(dbapi_conn, _record):
         cur = dbapi_conn.cursor()
         cur.execute("PRAGMA journal_mode=WAL")
         cur.execute("PRAGMA foreign_keys=ON")
+        # Perf : sûr sous WAL. synchronous=NORMAL réduit les fsync, busy_timeout
+        # évite les "database is locked", cache/mmap/temp accélèrent les lectures.
+        cur.execute("PRAGMA synchronous=NORMAL")
+        cur.execute("PRAGMA busy_timeout=5000")
+        cur.execute("PRAGMA cache_size=-16000")   # ~16 Mo de page cache
+        cur.execute("PRAGMA temp_store=MEMORY")
+        cur.execute("PRAGMA mmap_size=134217728")  # 128 Mo I/O mappé
         cur.close()
 
 
