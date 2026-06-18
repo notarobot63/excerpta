@@ -25,12 +25,13 @@
 ### Recherche et navigation
 - **Recherche temps réel** (search-as-you-type) : résultats filtrés à la frappe, sans rechargement de page
 - **Recherche full-text** (SQLite FTS5) sur titres, descriptions, notes, URLs et tags — insensible aux accents
+- **Pertinence bm25 pondérée** (titre > tags > description/note > URL) et surlignage des termes dans les titres
 - Filtrage par dossier, tag ou les deux combinés ; pagination en AJAX, URLs partageables (bouton retour pris en charge)
 
 ### Import / Export
 - **Import de favoris** Netscape HTML (Firefox, Chrome, Safari) — dossiers inclus
 - **Export** au format Netscape HTML avec groupes
-- **Vérificateur de liens cassés** (async, 10 vérifications en parallèle)
+- **Vérificateur de liens cassés** (async, 10 vérifications en parallèle) — les liens morts proposent la copie lecteur en cache et/ou l'archive Wayback
 - **Rafraîchissement de métadonnées** avec progression en temps réel
 
 ### Intégrations
