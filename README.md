@@ -16,14 +16,16 @@
 - **Métadonnées automatiques** : titre, description, thumbnail og:image et favicon extraits à la sauvegarde
 - **Notes Markdown** par lien (rendu complet)
 - **Tags** multiples par lien, avec renommage/suppression inline depuis la sidebar (fusion automatique si le nom cible existe déjà)
-- **Dossiers hiérarchiques** : arborescence imbriquée, filtrage récursif des sous-dossiers
+- **Dossiers hiérarchiques** : arborescence imbriquée, filtrage récursif des sous-dossiers, renommage inline depuis la sidebar et tri alphabétique (A→Z) en un clic
 - **Drag & drop** : déplacer un lien vers un autre dossier depuis la sidebar, réordonner et reparenter les dossiers
-- **Visibilité** : chaque lien peut être public ou privé
-- **Archivage** : sauvegarde sur Internet Archive avec stockage de l'URL archivée
+- **Vue lecteur** : version lisible et épurée de chaque article (extraction Readability + sanitisation anti-XSS), typographie soignée, taille de police réglable, thème clair/sombre, temps de lecture estimé — extraction à la demande puis mise en cache
+- **Visibilité** : chaque lien peut être public ou privé ; page publique par utilisateur (`/u/{slug}`) avec flux RSS (`/u/{slug}/feed.xml`)
+- **Archivage Wayback Machine** : archivage automatique de chaque nouveau lien en tâche de fond, statut visible par lien (en cours / archivé / échec), ré-archivage à la demande et archivage en masse des liens existants
 
 ### Recherche et navigation
-- **Recherche full-text** (SQLite FTS5) sur titres, descriptions, notes et URLs
-- Filtrage par dossier, tag ou les deux combinés
+- **Recherche temps réel** (search-as-you-type) : résultats filtrés à la frappe, sans rechargement de page
+- **Recherche full-text** (SQLite FTS5) sur titres, descriptions, notes, URLs et tags — insensible aux accents
+- Filtrage par dossier, tag ou les deux combinés ; pagination en AJAX, URLs partageables (bouton retour pris en charge)
 
 ### Import / Export
 - **Import de favoris** Netscape HTML (Firefox, Chrome, Safari) — dossiers inclus
@@ -74,6 +76,7 @@
 |-----------|-------------|
 | Backend | FastAPI + SQLModel |
 | Base de données | SQLite (mode WAL, FTS5, index optimisés) |
+| Extraction lecteur | readability-lxml (algo Mozilla Readability) + nh3 (sanitisation) |
 | Templates | Jinja2 + Alpine.js (servi localement, sans CDN) |
 | Auth | OIDC/PKCE |
 | Conteneur | Docker |
