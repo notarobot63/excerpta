@@ -405,26 +405,28 @@ async def list_links(
 
     sidebar = sidebar_data(session, user.id)
 
-    return templates.TemplateResponse(
-        "links/list.html",
-        {
-            "request": request,
-            "links": links,
-            "total": total,
-            "page": page,
-            "total_pages": total_pages,
-            "per_page": PER_PAGE,
-            "has_prev": page > 1,
-            "has_next": page < total_pages,
-            "prev_qs": _qs(page - 1) if page > 1 else "",
-            "next_qs": _qs(page + 1) if page < total_pages else "",
-            **sidebar,
-            "current_tag": tag,
-            "current_group": group_id,
-            "q": q or "",
-            "user": user,
-        },
-    )
+    context = {
+        "request": request,
+        "links": links,
+        "total": total,
+        "page": page,
+        "total_pages": total_pages,
+        "per_page": PER_PAGE,
+        "has_prev": page > 1,
+        "has_next": page < total_pages,
+        "prev_qs": _qs(page - 1) if page > 1 else "",
+        "next_qs": _qs(page + 1) if page < total_pages else "",
+        **sidebar,
+        "current_tag": tag,
+        "current_group": group_id,
+        "q": q or "",
+        "user": user,
+    }
+
+    # Recherche temps réel / pagination AJAX : fragment seul, sans le layout
+    is_partial = request.query_params.get("partial") or request.headers.get("X-Partial")
+    template = "links/_results.html" if is_partial else "links/list.html"
+    return templates.TemplateResponse(template, context)
 
 
 # ─── Add ─────────────────────────────────────────────────────────────────────
