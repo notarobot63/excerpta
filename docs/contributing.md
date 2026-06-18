@@ -9,6 +9,8 @@
 | Templates | Jinja2 |
 | JS | Alpine.js (v3, servi localement) |
 | CSS | Vanilla CSS, variables de thème |
+| Extraction lecteur | readability-lxml + nh3 (sanitisation HTML) |
+| Tests | pytest (`tests/`, voir `requirements-dev.txt`) |
 
 ## Environnement de développement
 
@@ -39,17 +41,30 @@ app/
 ├── ratelimit.py     — rate limiting par IP
 ├── utils.py         — fonctions partagées (sidebar_data, FTS, dossiers)
 ├── routes/
-│   ├── links.py     — CRUD liens, drag&drop, archivage, métadonnées
+│   ├── links.py     — CRUD liens, drag&drop, recherche live, vue lecteur, archivage Wayback, métadonnées
 │   ├── tags.py      — gestion tags (rename avec fusion, delete)
-│   ├── folders.py   — gestion dossiers hiérarchiques
+│   ├── folders.py   — dossiers hiérarchiques (rename inline, tri A→Z, reorder)
 │   ├── freshrss.py  — sync FreshRSS, unstar GReader
 │   ├── api.py       — API REST v1
-│   ├── settings.py  — paramètres, import/export, vérification liens
+│   ├── settings.py  — paramètres, import/export, vérification liens, archivage en masse
+│   ├── public.py    — page publique par utilisateur (/u/{slug}) + flux RSS
 │   ├── admin.py     — panel administrateur
 │   └── auth.py      — login OIDC/PKCE, logout
-├── templates/       — Jinja2 (base.html + une sous-structure par domaine)
+├── templates/       — Jinja2 (base.html + une sous-structure par domaine ;
+│                      links/_results.html = fragment réutilisé par la recherche AJAX)
 └── static/          — CSS, JS, SVG (servis localement, sans CDN)
+
+tests/               — pytest (DB SQLite temporaire + FTS, voir conftest.py)
 ```
+
+## Tests
+
+```bash
+pip install -r requirements-dev.txt
+pytest -q
+```
+
+La CI GitLab exécute `pytest` au stage `test`, qui bloque le build et le déploiement en cas d'échec.
 
 ## Migrations base de données
 

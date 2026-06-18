@@ -37,7 +37,7 @@ Liste les liens, paginés, avec recherche et filtres optionnels.
 
 | Paramètre | Type | Description |
 |---|---|---|
-| `q` | string | Recherche full-text (titre, description, note, URL) |
+| `q` | string | Recherche full-text (titre, description, note, URL, tags), insensible aux accents |
 | `tag` | string | Filtrer par tag |
 | `group_id` | int | Filtrer par dossier (inclut les sous-dossiers) |
 | `page` | int | Page (défaut : 1) |

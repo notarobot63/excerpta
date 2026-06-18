@@ -19,7 +19,9 @@ Le token GReader est chiffré (Fernet) avant stockage.
 
 ## Fonctionnement
 
-À chaque sync, Excerpta récupère tous les articles étoilés et importe ceux qui ne sont pas encore présents (déduplication par URL). Les articles importés reçoivent automatiquement le tag `freshrss`.
+À chaque sync, Excerpta récupère tous les articles étoilés et importe ceux qui ne sont pas encore présents (déduplication par URL). Les articles importés sont rangés dans le **dossier cible** configuré — c'est ce dossier, et non un tag, qui les identifie comme provenant de FreshRSS.
+
+> Les versions antérieures posaient un tag `freshrss` sur chaque article importé. Ce tag, redondant avec le dossier, a été supprimé : une migration idempotente le retire automatiquement des liens existants au démarrage.
 
 La sync s'exécute :
 - Automatiquement en arrière-plan selon l'intervalle configuré
@@ -34,6 +36,10 @@ Si tu décoches la case, le lien est supprimé uniquement dans Excerpta — l'é
 
 > Les liens importés avant la version qui introduit cette fonctionnalité récupèrent leur ID GReader automatiquement lors de la prochaine sync.
 
-## Changer de dossier
+## Déplacer un lien hors du dossier FreshRSS
 
-Déplacer un lien FreshRSS vers un autre dossier dans Excerpta (drag & drop ou édition) n'affecte pas FreshRSS. Seule la suppression peut déclencher un déséttoilage.
+Sortir un lien de son **dossier FreshRSS** (par drag & drop dans la sidebar ou via l'édition du lien) le **déséttoile automatiquement** dans FreshRSS : l'article quitte ta liste d'articles étoilés. C'est le pendant logique de la suppression.
+
+Déplacer un lien entre deux dossiers qui ne sont pas le dossier FreshRSS n'a aucun effet sur FreshRSS.
+
+> Auto-réparation : à chaque sync, tout article encore étoilé dans FreshRSS mais qui ne se trouve plus dans le dossier FreshRSS côté Excerpta est déséttoilé (rattrape les déplacements antérieurs et les échecs réseau).
