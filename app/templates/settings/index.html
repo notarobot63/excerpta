@@ -78,10 +78,18 @@
   <hr style="border:none;border-top:1px solid var(--border);margin:1.5rem 0">
 
   <h3 style="font-size:0.9rem;font-weight:600;margin:0 0 0.75rem;color:var(--text-muted)">Données</h3>
+  {% if archiving %}
+  <p style="color:var(--text-muted);font-size:0.85rem;margin:0 0 0.75rem;">Archivage de {{ archiving }} lien{% if archiving > 1 %}s{% endif %} lancé en arrière-plan (throttlé pour Wayback). L'état se met à jour au fil de l'eau.</p>
+  {% endif %}
   <div style="display:flex;gap:0.5rem;flex-wrap:wrap;align-items:center;">
     <a href="/settings/export" class="btn btn-ghost">Exporter (HTML)</a>
     <a href="/settings/import" class="btn btn-ghost">Importer</a>
     <a href="/settings/check-links" class="btn btn-ghost"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:middle"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg> Vérifier les liens</a>
+    <form action="/settings/archive-all" method="post"
+          data-confirm="Archiver sur Wayback Machine tous les liens pas encore archivés ? (lancé en arrière-plan, throttlé)">
+      {{ csrf_input(request) }}
+      <button type="submit" class="btn btn-ghost"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;margin-right:0.3rem;"><rect width="20" height="5" x="2" y="3" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"/><path d="M10 12h4"/></svg>Archiver les non-archivés</button>
+    </form>
     <form action="/settings/rebuild-fts" method="post"
           data-confirm="Reconstruire l’index de recherche pour {{ link_count }} liens ?">
       {{ csrf_input(request) }}
