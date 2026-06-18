@@ -2,6 +2,7 @@ import asyncio
 import logging
 import secrets
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 import httpx
 from fastapi import Depends, FastAPI, Request
@@ -84,7 +85,7 @@ app.add_middleware(
 )
 # Compression des réponses (HTML/CSS/JS/JSON) > 1 Ko
 app.add_middleware(GZipMiddleware, minimum_size=1024)
-app.mount("/static", StaticFiles(directory="/app/static"), name="static")
+app.mount("/static", StaticFiles(directory=str(Path(__file__).parent / "static")), name="static")
 
 
 @app.middleware("http")
