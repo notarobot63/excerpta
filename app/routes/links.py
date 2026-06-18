@@ -1,6 +1,7 @@
 import asyncio
 import hashlib
 import ipaddress
+import logging
 import re
 import socket
 import time
@@ -71,6 +72,8 @@ async def warm_img_cache() -> None:
 
 
 router = APIRouter()
+
+logger = logging.getLogger("excerpta.links")
 
 _http_client: httpx.AsyncClient | None = None
 
@@ -491,6 +494,7 @@ async def add_link(
         note=note,
         is_public=is_public is not None,
         folder_id=_validate_folder_id(session, user.id, folder_id),
+        archive_status="pending",
     )
     session.add(link)
     session.flush()
@@ -505,6 +509,7 @@ async def add_link(
     session.commit()
 
     background_tasks.add_task(_fetch_and_update_meta, link.id, url)
+    background_tasks.add_task(_wayback_archive, link.id)
 
     return RedirectResponse(url="/", status_code=303)
 
@@ -873,3 +878,76 @@ async def read_link(
             "source_host": urlparse(link.url).netloc,
         },
     )
+
+
+# ── Archivage Wayback Machine (robuste, non silencieux) ─────────────────────────
+
+async def _wayback_archive(link_id: int) -> None:
+    """Archive l'URL d'un lien sur Wayback Machine et trace l'issue.
+
+    Conçue pour tourner en tâche de fond (ouvre sa propre session). Met à jour
+    archive_status = ok|failed (jamais d'échec silencieux) + archived_url/at.
+    """
+    with Session(db_engine) as db:
+        link = db.get(Link, link_id)
+        if not link:
+            return
+        url = link.url
+
+    archived = None
+    status = "failed"
+    if _safe_url(url):
+        try:
+            resp = await _http_client.post(
+                f"https://web.archive.org/save/{url}",
+                headers={"User-Agent": "Excerpta/1.0 (+archivage personnel)"},
+                follow_redirects=False,
+                timeout=60,
+            )
+            if resp.status_code < 400:
+                location = resp.headers.get("location", "") or resp.headers.get("content-location", "")
+                if location:
+                    archived = location if location.startswith("http") else f"https://web.archive.org{location}"
+                else:
+                    # Pas de redirection immédiate : lien vers toutes les captures
+                    archived = f"https://web.archive.org/web/*/{url}"
+                status = "ok"
+            else:
+                logger.warning("Wayback save HTTP %s pour le lien %s", resp.status_code, link_id)
+        except Exception:
+            logger.warning("Échec archivage Wayback pour le lien %s", link_id, exc_info=True)
+
+    with Session(db_engine) as db:
+        link = db.get(Link, link_id)
+        if not link:
+            return
+        if status == "ok":
+            link.archived_url = archived
+            link.archived_at = datetime.now(timezone.utc).replace(tzinfo=None)
+        link.archive_status = status
+        db.add(link)
+        db.commit()
+
+
+@router.post("/links/{link_id}/archive", dependencies=[Depends(rate_limit(10, 60))])
+async def archive_link(
+    link_id: int,
+    background_tasks: BackgroundTasks,
+    user: User = Depends(get_current_user),
+    session: Session = Depends(get_session),
+):
+    link = session.get(Link, link_id)
+    if not link or link.user_id != user.id:
+        raise HTTPException(status_code=404)
+    link.archive_status = "pending"
+    session.add(link)
+    session.commit()
+    background_tasks.add_task(_wayback_archive, link.id)
+    return RedirectResponse(url=f"/links/{link_id}/edit", status_code=303)
+
+
+async def _archive_many(link_ids: list[int]) -> None:
+    """Archivage en masse throttlé (Wayback rate-limit l'archivage anonyme)."""
+    for lid in link_ids:
+        await _wayback_archive(lid)
+        await asyncio.sleep(6)

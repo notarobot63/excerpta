@@ -171,6 +171,8 @@ def init_db():
         con.execute("ALTER TABLE links ADD COLUMN reader_extracted_at TEXT")
     if "reader_failed" not in lcols:
         con.execute("ALTER TABLE links ADD COLUMN reader_failed INTEGER NOT NULL DEFAULT 0")
+    if "archive_status" not in lcols:
+        con.execute("ALTER TABLE links ADD COLUMN archive_status TEXT")
 
     # Chiffrement api_key + ajout api_key_hmac
     ucols = [r[1] for r in con.execute("PRAGMA table_info(users)").fetchall()]

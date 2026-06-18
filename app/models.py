@@ -73,6 +73,7 @@ class Link(SQLModel, table=True):
     is_public: bool = Field(default=False)
     archived_url: Optional[str] = Field(default=None)
     archived_at: Optional[datetime] = Field(default=None)
+    archive_status: Optional[str] = Field(default=None)  # None | pending | ok | failed
     folder_id: Optional[int] = Field(default=None, foreign_key="folders.id")
     freshrss_item_id: Optional[str] = Field(default=None)
     is_broken: Optional[bool] = Field(default=None)

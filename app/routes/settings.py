@@ -23,7 +23,7 @@ from ..models import Folder, Link, LinkTagLink, Tag, User
 from ..ratelimit import rate_limit
 from ..templates_cfg import templates
 from ..utils import get_or_create_tag, refresh_link_fts, sidebar_data, slugify
-from .links import _fetch_meta, _hostname_resolves_public
+from .links import _archive_many, _fetch_meta, _hostname_resolves_public
 
 router = APIRouter()
 
@@ -99,6 +99,7 @@ def _build_netscape(links: list[Link]) -> str:
 @router.get("/settings", response_class=HTMLResponse)
 async def settings_page(
     request: Request,
+    archiving: int = 0,
     user: User = Depends(get_current_user),
     session: Session = Depends(get_session),
 ):
@@ -119,6 +120,7 @@ async def settings_page(
             "api_key_plain": decrypt(user.api_key),
             "bookmarklet": bookmarklet,
             "link_count": link_count,
+            "archiving": archiving,
             **sidebar_data(session, user.id),
         },
     )
@@ -581,36 +583,24 @@ async def check_links_run(
     return RedirectResponse("/settings/check-links", status_code=303)
 
 
-# ── Archive Internet Archive ───────────────────────────────────────────────────
+# ── Archivage Wayback en masse ──────────────────────────────────────────────────
+# La route unitaire POST /links/{id}/archive vit désormais dans routes/links.py
+# (co-localisée avec _wayback_archive). Ici : archivage de tous les non-archivés.
 
-@router.post("/links/{link_id}/archive")
-async def archive_link(
-    link_id: int,
+@router.post("/settings/archive-all")
+async def archive_all(
+    background_tasks: BackgroundTasks,
     user: User = Depends(get_current_user),
     session: Session = Depends(get_session),
 ):
-    link = session.get(Link, link_id)
-    if not link or link.user_id != user.id:
-        from fastapi import HTTPException
-        raise HTTPException(status_code=404)
-
-    try:
-        resp = await _http_client.post(
-            f"https://web.archive.org/save/{link.url}",
-            headers={"User-Agent": "Excerpta/1.0"},
-            follow_redirects=False,
-            timeout=20,
-        )
-        location = resp.headers.get("location", "") or resp.headers.get("content-location", "")
-        if location:
-            archived = location if location.startswith("http") else f"https://web.archive.org{location}"
-        else:
-            archived = f"https://web.archive.org/web/*/{link.url}"
-        link.archived_url = archived
-        link.archived_at = datetime.now(timezone.utc).replace(tzinfo=None)
-        session.add(link)
-        session.commit()
-    except Exception:
-        pass
-
-    return RedirectResponse(url=f"/links/{link_id}/edit", status_code=303)
+    links = session.exec(
+        select(Link).where(Link.user_id == user.id, Link.archived_url.is_(None))
+    ).all()
+    ids = [lk.id for lk in links]
+    for lk in links:
+        lk.archive_status = "pending"
+        session.add(lk)
+    session.commit()
+    if ids:
+        background_tasks.add_task(_archive_many, ids)
+    return RedirectResponse(url=f"/settings?archiving={len(ids)}", status_code=303)
