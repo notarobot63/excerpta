@@ -120,8 +120,12 @@ document.addEventListener('DOMContentLoaded', function () {
       map[el.dataset.folderId] = { el: el, parentId: el.dataset.parentId || '', children: [] };
     });
 
+    // Itérer dans l'ordre du DOM (= ordre serveur par sort_order), PAS
+    // Object.values(map) qui réordonnerait par folderId (clés entières → tri
+    // numérique JS), ce qui écraserait le tri alpha / le drag&drop manuel.
     var roots = [];
-    Object.values(map).forEach(function (node) {
+    items.forEach(function (el) {
+      var node = map[el.dataset.folderId];
       if (node.parentId && map[node.parentId]) {
         map[node.parentId].children.push(node);
       } else {
