@@ -352,8 +352,13 @@ async def list_links(
     if q:
         escaped = _fts_escape(q)
         try:
+            # bm25 pondéré : un match dans le titre pèse plus que dans l'URL.
+            # Colonnes fts_links : title, description, note, url, tags.
             rows = session.execute(
-                text("SELECT rowid FROM fts_links WHERE fts_links MATCH :q ORDER BY rank"),
+                text(
+                    "SELECT rowid FROM fts_links WHERE fts_links MATCH :q "
+                    "ORDER BY bm25(fts_links, 10.0, 2.0, 2.0, 1.0, 4.0)"
+                ),
                 {"q": escaped},
             ).fetchall()
             fts_link_ids = [r[0] for r in rows]

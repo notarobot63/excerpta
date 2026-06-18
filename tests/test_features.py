@@ -116,6 +116,9 @@ def client(engine):
         s.commit()
         uid = u.id
         s.add(Link(user_id=uid, url="https://example.com/python", title="Python rocks"))
+        # match "python" dans l'URL uniquement (titre sans le terme) -> doit
+        # passer APRÈS le match dans le titre grâce au bm25 pondéré
+        s.add(Link(user_id=uid, url="https://python.example.org/guide", title="Guide debutant"))
         s.add(Link(
             user_id=uid, url="https://dead.example.com/gone", title="Article disparu",
             is_broken=True, archive_status="ok",
@@ -159,6 +162,14 @@ def test_partial_search_filters_out_non_matching(client):
     r = client.get("/?q=zzznomatch&partial=1")
     assert r.status_code == 200
     assert "Python rocks" not in r.text
+
+
+def test_bm25_title_ranks_before_url(client):
+    r = client.get("/?q=python&partial=1")
+    assert r.status_code == 200
+    assert "Python rocks" in r.text and "Guide debutant" in r.text
+    # titre (poids 10) avant URL seule (poids 1)
+    assert r.text.index("Python rocks") < r.text.index("Guide debutant")
 
 
 def test_broken_link_shows_recovery(client):

@@ -97,6 +97,37 @@
     if (pag) { e.preventDefault(); navigateTo(pag.getAttribute('href')); }
   });
 
+  // ── Surlignage des termes recherchés dans les titres (sûr : textContent) ──
+  function currentQuery() {
+    if (searchInput && searchInput.value) return searchInput.value.trim();
+    return (new URLSearchParams(location.search).get('q') || '').trim();
+  }
+  function highlightResults() {
+    var q = currentQuery();
+    if (!q) return;
+    var terms = q.split(/\s+/).filter(Boolean)
+      .map(function(t) { return t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); });
+    if (!terms.length) return;
+    var re = new RegExp('(' + terms.join('|') + ')', 'gi');
+    resultsEl.querySelectorAll('.link-title').forEach(function(a) {
+      var txt = a.textContent;
+      re.lastIndex = 0;
+      if (!re.test(txt)) return;
+      re.lastIndex = 0;
+      a.textContent = '';
+      var last = 0, m;
+      while ((m = re.exec(txt)) !== null) {
+        if (m.index > last) a.appendChild(document.createTextNode(txt.slice(last, m.index)));
+        var mk = document.createElement('mark');
+        mk.textContent = m[0];
+        a.appendChild(mk);
+        last = m.index + m[0].length;
+        if (m.index === re.lastIndex) re.lastIndex++;  // anti-boucle 0-longueur
+      }
+      if (last < txt.length) a.appendChild(document.createTextNode(txt.slice(last)));
+    });
+  }
+
   // ── Recherche temps réel + pagination AJAX ──────────────────────────────
   function swapResults(url) {
     var sep = url.indexOf('?') === -1 ? '?' : '&';
@@ -106,6 +137,7 @@
         resultsEl.innerHTML = html;
         _selectedIds.clear();
         updateBulkBar();
+        highlightResults();
         window.scrollTo({ top: 0, behavior: 'smooth' });
       });
   }
@@ -143,6 +175,8 @@
       searchInput.value = new URLSearchParams(location.search).get('q') || '';
     }
   });
+
+  highlightResults();  // surligne au chargement initial (page de recherche directe)
 })();
 </script>
 
