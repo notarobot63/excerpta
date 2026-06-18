@@ -134,6 +134,15 @@ document.addEventListener('DOMContentLoaded', function () {
       }
     });
 
+    // État plié/déplié persistant (ids de dossiers repliés)
+    var COLLAPSE_KEY = 'excerpta-folders-collapsed';
+    var collapsed;
+    try { collapsed = new Set(JSON.parse(localStorage.getItem(COLLAPSE_KEY) || '[]')); }
+    catch (e) { collapsed = new Set(); }
+    function saveCollapsed() {
+      localStorage.setItem(COLLAPSE_KEY, JSON.stringify(Array.from(collapsed)));
+    }
+
     function getCsrfToken() {
       var el = document.querySelector('input[name="csrf_token"]');
       return el ? el.value : '';
@@ -194,7 +203,27 @@ document.addEventListener('DOMContentLoaded', function () {
         var childContainer = document.createElement('div');
         childContainer.className = 'folder-children';
         childContainer.dataset.parentId = node.el.dataset.folderId;
-        if (node.children.length) buildDOM(node.children, childContainer);
+        if (node.children.length) {
+          buildDOM(node.children, childContainer);
+          // Chevron plier/déplier (uniquement sur les dossiers à enfants)
+          var fid = node.el.dataset.folderId;
+          var toggle = document.createElement('button');
+          toggle.type = 'button';
+          toggle.className = 'folder-toggle';
+          toggle.setAttribute('aria-label', 'Plier ou déplier');
+          toggle.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>';
+          if (collapsed.has(fid)) wrapper.classList.add('collapsed');
+          toggle.setAttribute('aria-expanded', collapsed.has(fid) ? 'false' : 'true');
+          toggle.addEventListener('click', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            var isCollapsed = wrapper.classList.toggle('collapsed');
+            if (isCollapsed) collapsed.add(fid); else collapsed.delete(fid);
+            toggle.setAttribute('aria-expanded', isCollapsed ? 'false' : 'true');
+            saveCollapsed();
+          });
+          node.el.insertBefore(toggle, node.el.firstChild);
+        }
         wrapper.appendChild(childContainer);
         container.appendChild(wrapper);
         Sortable.create(childContainer, opts);
