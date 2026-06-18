@@ -59,23 +59,50 @@
 
       <div class="sidebar-section" style="display:flex;align-items:center;justify-content:space-between;">
         <span>Dossiers</span>
-        <a href="/folders/add" title="Nouveau dossier"
-           style="color:var(--text-muted);font-size:1rem;line-height:1;padding:0 0.25rem;text-decoration:none;"
-           class="sidebar-add-btn">+</a>
+        <span style="display:flex;align-items:center;gap:0.15rem;">
+          {% if folder_tree %}
+          <button type="button" id="folder-sort-alpha" title="Trier A→Z"
+                  class="sidebar-add-btn"
+                  style="background:none;border:none;cursor:pointer;line-height:1;padding:0 0.2rem;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h6M3 12h9M3 18h12"/><path d="M17 8l3-3 3 3"/><path d="M20 5v14"/></svg>
+          </button>
+          {% endif %}
+          <a href="/folders/add" title="Nouveau dossier"
+             style="color:var(--text-muted);font-size:1rem;line-height:1;padding:0 0.25rem;text-decoration:none;"
+             class="sidebar-add-btn">+</a>
+        </span>
       </div>
       {% if folder_tree %}
       <div id="sidebar-folder-root">
       {% for folder, depth in folder_tree %}
-      <a href="/?group_id={{ folder.id }}"
-         class="sidebar-item {% if current_group == folder.id %}active{% endif %} sidebar-folder-drop sidebar-folder-item"
-         data-folder-id="{{ folder.id }}"
-         data-folder-name="{{ folder.name }}"
-         data-parent-id="{{ folder.parent_id or '' }}"
-         style="padding-left: {{ 0.875 + depth * 0.875 }}rem;">
+      <div class="sidebar-item {% if current_group == folder.id %}active{% endif %} sidebar-folder-drop sidebar-folder-item"
+           x-data="sidebarFolder()"
+           data-folder-id="{{ folder.id }}"
+           data-folder-name="{{ folder.name|e }}"
+           data-parent-id="{{ folder.parent_id or '' }}"
+           style="padding-left: {{ 0.875 + depth * 0.875 }}rem;"
+           @mouseenter="hovered = true"
+           @mouseleave="if (!editing) hovered = false">
         <span class="drag-handle" title="Réorganiser"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="9" cy="5" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="9" cy="19" r="1.6"/><circle cx="15" cy="5" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="15" cy="19" r="1.6"/></svg></span>
-        <span style="flex:1;min-width:0;display:flex;align-items:center;gap:0.35rem;">{% if depth > 0 %}<span style="color:var(--text-muted);">↳</span>{% else %}<svg class="folder-glyph" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink:0;opacity:0.85;"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>{% endif %}<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ folder.name }}</span></span>
-        <span class="sidebar-count" data-count-folder="{{ folder.id }}">{{ folder_counts.get(folder.id, 0) }}</span>
-      </a>
+        <template x-if="!editing">
+          <a :href="'/?group_id=' + fid"
+             style="flex:1;min-width:0;display:flex;align-items:center;gap:0.35rem;color:inherit;text-decoration:none;">{% if depth > 0 %}<span style="color:var(--text-muted);">↳</span>{% else %}<svg class="folder-glyph" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink:0;opacity:0.85;"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>{% endif %}<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" x-text="currentName"></span></a>
+        </template>
+        <template x-if="editing">
+          <input type="text" class="sidebar-tag-input" x-model="editName"
+                 x-init="$nextTick(() => $el.select())"
+                 @keydown.enter.prevent="save()"
+                 @keydown.escape.prevent="cancel()" />
+        </template>
+        <span class="sidebar-count" data-count-folder="{{ folder.id }}" x-show="!editing">{{ folder_counts.get(folder.id, 0) }}</span>
+        <span :style="(hovered && !editing) ? 'display:flex;gap:0.1rem' : 'display:none'">
+          <button class="sidebar-tag-btn" @click.prevent.stop="editing = true; editName = currentName" title="Renommer"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+        </span>
+        <span :style="editing ? 'display:flex;gap:0.1rem' : 'display:none'">
+          <button class="sidebar-tag-btn" @click.prevent.stop="save()" title="Valider"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></button>
+          <button class="sidebar-tag-btn" @click.prevent.stop="cancel()" title="Annuler"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+        </span>
+      </div>
       {% endfor %}
       </div>
       {% else %}
@@ -294,6 +321,34 @@ function sidebarTag() {
         headers: { 'X-CSRF-Token': csrf ? csrf.value : '' },
       }).then(function(r) { if (r.ok) el.remove(); else el.style.display = ''; });
     },
+  };
+}
+
+function sidebarFolder() {
+  return {
+    fid: 0, currentName: '', editName: '', editing: false, hovered: false,
+    init() {
+      this.fid = parseInt(this.$el.dataset.folderId);
+      this.currentName = this.$el.dataset.folderName;
+      this.editName = this.currentName;
+    },
+    async save() {
+      var name = this.editName.trim();
+      if (!name || name === this.currentName) { this.cancel(); return; }
+      var csrf = document.querySelector('input[name="csrf_token"]');
+      var r = await fetch('/folders/' + this.fid + '/rename', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf ? csrf.value : '' },
+        body: JSON.stringify({ name }),
+      });
+      if (r.ok) {
+        this.currentName = name;
+        this.$el.dataset.folderName = name;  // garde le drop de liens à jour
+        this.editing = false;
+        this.hovered = false;
+      }
+    },
+    cancel() { this.editName = this.currentName; this.editing = false; },
   };
 }
 </script>
