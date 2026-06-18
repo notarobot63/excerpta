@@ -116,6 +116,12 @@ def client(engine):
         s.commit()
         uid = u.id
         s.add(Link(user_id=uid, url="https://example.com/python", title="Python rocks"))
+        s.add(Link(
+            user_id=uid, url="https://dead.example.com/gone", title="Article disparu",
+            is_broken=True, archive_status="ok",
+            archived_url="https://web.archive.org/web/1/https://dead.example.com/gone",
+            reader_html="<p>copie locale</p>",
+        ))
         s.commit()
 
     def _get_session():
@@ -153,3 +159,10 @@ def test_partial_search_filters_out_non_matching(client):
     r = client.get("/?q=zzznomatch&partial=1")
     assert r.status_code == 200
     assert "Python rocks" not in r.text
+
+
+def test_broken_link_shows_recovery(client):
+    r = client.get("/")
+    assert "Lien cassé" in r.text
+    assert "lire la copie sauvegardée" in r.text  # copie lecteur en cache
+    assert "voir l'archive" in r.text              # archive Wayback
