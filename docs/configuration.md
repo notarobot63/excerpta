@@ -67,11 +67,15 @@ Si tu essaies d'ajouter une URL déjà présente dans ta collection (via le form
 
 `Paramètres → Vérifier les liens` lance une vérification asynchrone de tous les liens (10 en parallèle). Les liens cassés (4xx, 5xx, timeout) sont signalés avec leur statut HTTP.
 
+Quand un lien est cassé, sa carte propose directement une **récupération** : *lire la copie sauvegardée* (si le contenu lecteur a été mis en cache) et/ou *voir l'archive* (capture Wayback), au lieu d'un lien mort.
+
 ## Recherche
 
 La recherche est **en temps réel** : les résultats se filtrent à la frappe (sans rechargement), avec un court délai anti-rebond et un déclenchement dès 2 caractères. Vider le champ réaffiche tous les liens. La pagination s'effectue aussi en AJAX et l'URL reste partageable (le bouton précédent du navigateur fonctionne).
 
 L'index full-text (SQLite FTS5) couvre **titres, descriptions, notes, URLs et tags**, et est **insensible aux accents**. Sans JavaScript, le formulaire de recherche classique reste fonctionnel.
+
+Les résultats sont classés par pertinence (**bm25 pondéré**) : un terme trouvé dans le titre pèse davantage que dans les tags, la description ou l'URL. Les termes recherchés sont **surlignés** dans les titres affichés.
 
 ## Vue lecteur
 
