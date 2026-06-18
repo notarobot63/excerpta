@@ -431,6 +431,10 @@ async def list_links(
         "current_group": group_id,
         "q": q or "",
         "user": user,
+        # URL de la vue courante SANS partial=1 : sert de return_to aux formulaires
+        # (sinon une suppression depuis une page chargée en AJAX redirige vers le
+        #  fragment nu /?page=N&partial=1).
+        "current_url": "/?" + _qs(page),
     }
 
     # Recherche temps réel / pagination AJAX : fragment seul, sans le layout
