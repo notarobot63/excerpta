@@ -581,6 +581,11 @@ a:hover { text-decoration: underline; }
 
 /* ── Link card: broken state ── */
 .link-broken { border-left: 3px solid var(--btn-danger); }
+.link-recovery {
+  display: flex; align-items: center; gap: 0.3rem; flex-wrap: wrap;
+  margin: 0.25rem 0 0.4rem; font-size: 0.8rem; color: var(--btn-danger);
+}
+.link-recovery a { color: var(--primary, #4a90d9); text-decoration: underline; }
 
 /* ── Link select checkbox ── */
 .link-select-wrap {
