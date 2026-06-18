@@ -78,6 +78,10 @@ class Link(SQLModel, table=True):
     is_broken: Optional[bool] = Field(default=None)
     check_status: Optional[int] = Field(default=None)
     last_checked_at: Optional[datetime] = Field(default=None)
+    reader_html: Optional[str] = Field(default=None)
+    reader_title: Optional[str] = Field(default=None)
+    reader_extracted_at: Optional[datetime] = Field(default=None)
+    reader_failed: bool = Field(default=False)
     created_at: datetime = Field(default_factory=_utcnow)
     updated_at: datetime = Field(default_factory=_utcnow)
 

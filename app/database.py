@@ -163,6 +163,14 @@ def init_db():
         con.execute("ALTER TABLE links ADD COLUMN check_status INTEGER")
     if "last_checked_at" not in lcols:
         con.execute("ALTER TABLE links ADD COLUMN last_checked_at TEXT")
+    if "reader_html" not in lcols:
+        con.execute("ALTER TABLE links ADD COLUMN reader_html TEXT")
+    if "reader_title" not in lcols:
+        con.execute("ALTER TABLE links ADD COLUMN reader_title TEXT")
+    if "reader_extracted_at" not in lcols:
+        con.execute("ALTER TABLE links ADD COLUMN reader_extracted_at TEXT")
+    if "reader_failed" not in lcols:
+        con.execute("ALTER TABLE links ADD COLUMN reader_failed INTEGER NOT NULL DEFAULT 0")
 
     # Chiffrement api_key + ajout api_key_hmac
     ucols = [r[1] for r in con.execute("PRAGMA table_info(users)").fetchall()]
