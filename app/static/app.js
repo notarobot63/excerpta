@@ -90,6 +90,23 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
 
+  // Tri alphabétique ponctuel des dossiers
+  (function () {
+    var btn = document.getElementById('folder-sort-alpha');
+    if (!btn) return;
+    btn.addEventListener('click', function () {
+      var csrf = document.querySelector('input[name="csrf_token"]');
+      btn.disabled = true;
+      fetch('/folders/sort-alpha', {
+        method: 'POST',
+        headers: { 'X-CSRF-Token': csrf ? csrf.value : '' },
+      }).then(function (r) {
+        if (r.ok) location.reload();
+        else btn.disabled = false;
+      }).catch(function () { btn.disabled = false; });
+    });
+  })();
+
   // Drag & Drop réorganisation dossiers sidebar
   (function () {
     var root = document.getElementById('sidebar-folder-root');

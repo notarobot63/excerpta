@@ -1,7 +1,9 @@
+from collections import defaultdict
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
+from pydantic import BaseModel
 from sqlalchemy import text
 from sqlmodel import Session, select
 
@@ -9,9 +11,13 @@ from ..auth import get_current_user
 from ..database import get_session
 from ..models import Folder, User
 from ..templates_cfg import templates
-from ..utils import build_folder_tree, sidebar_data
+from ..utils import build_folder_tree, folder_alpha_key, sidebar_data
 
 router = APIRouter()
+
+
+class RenameFolderBody(BaseModel):
+    name: str
 
 
 def _validate_parent(session: Session, parent_id: Optional[int], user_id: int, exclude_id: Optional[int] = None) -> Optional[int]:
@@ -113,6 +119,44 @@ async def edit_folder(
     session.add(folder)
     session.commit()
     return RedirectResponse(url="/folders", status_code=303)
+
+
+@router.post("/folders/{folder_id}/rename")
+async def rename_folder(
+    folder_id: int,
+    body: RenameFolderBody,
+    user: User = Depends(get_current_user),
+    session: Session = Depends(get_session),
+):
+    folder = session.get(Folder, folder_id)
+    if not folder or folder.user_id != user.id:
+        raise HTTPException(status_code=404)
+    new_name = body.name.strip()
+    if not new_name:
+        raise HTTPException(status_code=422, detail="Nom vide")
+    folder.name = new_name
+    session.add(folder)
+    session.commit()
+    return JSONResponse({"ok": True, "new_name": new_name})
+
+
+@router.post("/folders/sort-alpha")
+async def sort_folders_alpha(
+    user: User = Depends(get_current_user),
+    session: Session = Depends(get_session),
+):
+    """Réordonne les dossiers A→Z par groupe de frères (action ponctuelle)."""
+    folders = list(session.exec(select(Folder).where(Folder.user_id == user.id)).all())
+    groups: dict = defaultdict(list)
+    for f in folders:
+        groups[f.parent_id].append(f)
+    for siblings in groups.values():
+        siblings.sort(key=lambda f: folder_alpha_key(f.name))
+        for i, f in enumerate(siblings):
+            f.sort_order = i
+            session.add(f)
+    session.commit()
+    return JSONResponse({"ok": True})
 
 
 @router.post("/folders/{folder_id}/delete")

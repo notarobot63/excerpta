@@ -73,6 +73,11 @@ def descendant_folder_ids(all_folders: list[Folder], root_id: int) -> list[int]:
     return result
 
 
+def folder_alpha_key(name: str) -> str:
+    """Clé de tri dossier : insensible à la casse et aux accents (FR)."""
+    return unicodedata.normalize("NFKD", name or "").encode("ascii", "ignore").decode().casefold()
+
+
 def build_folder_tree(folders: list[Folder]) -> list[tuple]:
     """Retourne [(folder, depth), ...] en ordre arborescent, trié par sort_order puis nom."""
     result = []
