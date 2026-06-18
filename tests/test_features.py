@@ -172,6 +172,14 @@ def test_bm25_title_ranks_before_url(client):
     assert r.text.index("Python rocks") < r.text.index("Guide debutant")
 
 
+def test_partial_fragment_return_to_excludes_partial(client):
+    # Regression : partial=1 ne doit pas fuiter dans return_to, sinon une
+    # suppression depuis une page chargee en AJAX redirige vers le fragment nu.
+    r = client.get("/?page=1&partial=1")
+    assert r.status_code == 200
+    assert "partial=1" not in r.text
+
+
 def test_broken_link_shows_recovery(client):
     r = client.get("/")
     assert "Lien cassé" in r.text

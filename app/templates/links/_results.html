@@ -18,7 +18,7 @@
 </div>
 <form id="bulk-delete-form" method="post" action="/links/bulk-delete">
   {{ csrf_input(request) }}
-  <input type="hidden" name="return_to" value="{{ request.url.path }}{% if request.url.query %}?{{ request.url.query }}{% endif %}">
+  <input type="hidden" name="return_to" value="{{ current_url }}">
 </form>
 <div class="links-list">
 {% for link in links %}
@@ -96,7 +96,7 @@
     <form action="/links/{{ link.id }}/delete" method="post"
           data-confirm="Supprimer ce lien ?">
       {{ csrf_input(request) }}
-      <input type="hidden" name="return_to" value="{{ request.url.path }}{% if request.url.query %}?{{ request.url.query }}{% endif %}">
+      <input type="hidden" name="return_to" value="{{ current_url }}">
       {% if link.freshrss_item_id %}<input type="hidden" name="unstar_freshrss" value="1">{% endif %}
       <button type="submit" class="btn btn-ghost btn-sm" title="Supprimer"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg></button>
     </form>
