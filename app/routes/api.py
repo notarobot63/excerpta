@@ -145,6 +145,11 @@ async def api_list_links(
                 "thumbnail_url": lnk.thumbnail_url,
                 "note": lnk.note,
                 "is_public": lnk.is_public,
+                "archived_url": lnk.archived_url,
+                "archive_status": lnk.archive_status,
+                "is_broken": lnk.is_broken,
+                "check_status": lnk.check_status,
+                "has_reader": bool(lnk.reader_html) and not lnk.reader_failed,
                 "created_at": lnk.created_at.isoformat(),
                 "tags": [t.name for t in lnk.tags],
             }
@@ -245,6 +250,29 @@ async def api_patch_link(
     session.add(link)
     session.commit()
     return {"id": link.id, "is_public": link.is_public}
+
+
+@router.get("/links/{link_id}/reader")
+async def api_link_reader(
+    link_id: int = Path(..., ge=1),
+    user: User = Depends(_get_api_user),
+    session: Session = Depends(get_session),
+):
+    link = session.exec(
+        select(Link).where(Link.id == link_id, Link.user_id == user.id)
+    ).first()
+    if not link:
+        raise HTTPException(status_code=404, detail="Lien introuvable")
+    if not link.reader_html or link.reader_failed:
+        raise HTTPException(status_code=404, detail="Vue lecteur indisponible")
+    return {
+        "id": link.id,
+        "reader_title": link.reader_title or link.title,
+        "reader_html": link.reader_html,
+        "reader_extracted_at": link.reader_extracted_at.isoformat()
+        if link.reader_extracted_at
+        else None,
+    }
 
 
 @router.delete("/links/{link_id}", status_code=204)
