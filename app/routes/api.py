@@ -2,6 +2,7 @@ from fastapi import APIRouter, Body, Depends, Header, HTTPException, Path, Query
 from pydantic import BaseModel, Field
 from sqlalchemy import func, text
 from sqlmodel import Session, select
+from datetime import datetime, timezone
 from typing import List, Optional
 
 from ..crypto import hmac_key
@@ -9,7 +10,7 @@ from ..database import get_session
 from ..models import Folder, Link, LinkTagLink, Tag, User
 from ..ratelimit import rate_limit
 from ..utils import descendant_folder_ids, get_or_create_tag, refresh_link_fts
-from .links import MAX_TAGS_PER_LINK, _fts_escape, _safe_url
+from .links import MAX_TAGS_PER_LINK, _extract_reader, _fts_escape, _safe_url
 
 router = APIRouter(prefix="/api/v1")
 
@@ -263,7 +264,22 @@ async def api_link_reader(
     ).first()
     if not link:
         raise HTTPException(status_code=404, detail="Lien introuvable")
-    if not link.reader_html or link.reader_failed:
+    # Extraction paresseuse : si le reader n'a jamais été généré (lien ajouté
+    # avant la feature, ou jamais ouvert côté web), on l'extrait à la volée —
+    # même comportement que la vue lecteur web (links.read_link).
+    if not link.reader_html:
+        data = await _extract_reader(link.url)
+        if data and data["html"]:
+            link.reader_title = (data["title"] or link.title or "")[:500]
+            link.reader_html = data["html"]
+            link.reader_failed = False
+        else:
+            link.reader_failed = True
+        link.reader_extracted_at = datetime.now(timezone.utc).replace(tzinfo=None)
+        session.add(link)
+        session.commit()
+        session.refresh(link)
+    if not link.reader_html:
         raise HTTPException(status_code=404, detail="Vue lecteur indisponible")
     return {
         "id": link.id,
