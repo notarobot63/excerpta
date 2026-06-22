@@ -294,7 +294,7 @@ a { color: var(--text-link); text-decoration: none; }
 a:hover { text-decoration: underline; }
 
 /* ── Layout ── */
-.layout { display: flex; height: 100vh; overflow: hidden; }
+.layout { display: flex; height: 100dvh; overflow: hidden; }
 
 .sidebar {
   width: 260px;
@@ -532,7 +532,7 @@ a:hover { text-decoration: underline; }
   font-size: 0.9rem;
   color: var(--text);
   line-height: 1.75;
-  border-left: 3px solid var(--sidebar-active-text, #1A7A35);
+  border-left: 3px solid var(--sidebar-active-text);
   padding: 0.35rem 0.875rem;
   background: var(--bg-alt);
   border-radius: 0 4px 4px 0;
@@ -568,7 +568,7 @@ a:hover { text-decoration: underline; }
   flex-direction: column;
   gap: 0.2rem;
   flex-shrink: 0;
-  opacity: 0.2;
+  opacity: 0.45;
   transition: opacity 0.15s var(--ease-out);
 }
 
@@ -581,7 +581,7 @@ a:hover { text-decoration: underline; }
 
 /* ── Surlignage des résultats de recherche ── */
 .link-title mark {
-  background: var(--primary, #4a90d9);
+  background: var(--btn-primary);
   color: #fff;
   border-radius: 2px;
   padding: 0 1px;
@@ -593,7 +593,7 @@ a:hover { text-decoration: underline; }
   display: flex; align-items: center; gap: 0.3rem; flex-wrap: wrap;
   margin: 0.25rem 0 0.4rem; font-size: 0.8rem; color: var(--btn-danger);
 }
-.link-recovery a { color: var(--primary, #4a90d9); text-decoration: underline; }
+.link-recovery a { color: var(--btn-primary); text-decoration: underline; }
 
 /* ── Link select checkbox ── */
 .link-select-wrap {
@@ -753,6 +753,14 @@ a:hover { text-decoration: underline; }
   .pagination { gap: 0.5rem; flex-wrap: wrap; }
   .pagination-info { width: 100%; text-align: center; order: -1; }
 }
+/* Pointeurs grossiers (tactile) : pas de hover → actions et sélection toujours visibles */
+@media (hover: none) {
+  .link-actions,
+  .link-select-wrap,
+  .view-grid .link-actions { opacity: 1; }
+  .sidebar-folder-item .drag-handle { opacity: 0.6; }
+}
+
 /* Drag & Drop dossiers sidebar */
 .drag-handle {
   opacity: 0;
@@ -847,7 +855,7 @@ a:hover { text-decoration: underline; }
 /* ── Sidebar tag actions ── */
 .sidebar-tag-input {
   flex: 1; min-width: 0; font-size: 0.875rem;
-  border: 1px solid var(--primary, #4a90d9); border-radius: 3px;
+  border: 1px solid var(--btn-primary); border-radius: 3px;
   padding: 0 0.25rem; background: var(--bg); color: var(--text); outline: none;
 }
 .sidebar-tag-btn {
