@@ -53,6 +53,7 @@ document.addEventListener('DOMContentLoaded', function () {
       method: 'POST',
       headers: { 'X-CSRF-Token': csrf ? csrf.value : '' },
       body: new FormData(form),
+      priority: 'high',
     }).then(function(r) {
       if (r.ok) card.remove();
       else card.classList.remove('link-deleting');

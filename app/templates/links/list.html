@@ -131,6 +131,8 @@
   // ── Recherche temps réel + pagination AJAX ──────────────────────────────
   function swapResults(url) {
     var sep = url.indexOf('?') === -1 ? '?' : '&';
+    // Annuler les requêtes proxy/img en cours avant de swapper (libère les connexions HTTP)
+    resultsEl.querySelectorAll('img[src]').forEach(function(img) { img.src = ''; });
     return fetch(url + sep + 'partial=1', { headers: { 'X-Partial': '1' } })
       .then(function(r) { return r.text(); })
       .then(function(html) {

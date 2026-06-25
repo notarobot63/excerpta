@@ -32,6 +32,7 @@
     <img src="{{ link.thumbnail_url | proxy_img }}"
          loading="lazy"
          decoding="async"
+         fetchpriority="low"
          data-hide-on-error="parent"
          alt="">
   </a>
@@ -47,6 +48,7 @@
            src="{{ link.favicon_url | proxy_img }}"
            loading="lazy"
            decoding="async"
+           fetchpriority="low"
            data-hide-on-error="self"
            alt="">
       {% endif %}
