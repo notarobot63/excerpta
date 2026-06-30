@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Body, Depends, Header, HTTPException, Path, Query, Request
+from fastapi import APIRouter, BackgroundTasks, Body, Depends, Header, HTTPException, Path, Query, Request
 from pydantic import BaseModel, Field
 from sqlalchemy import func, text
 from sqlmodel import Session, select
@@ -9,8 +9,8 @@ from ..crypto import hmac_key
 from ..database import get_session
 from ..models import Folder, Link, LinkTagLink, Tag, User
 from ..ratelimit import rate_limit
-from ..utils import descendant_folder_ids, get_or_create_tag, refresh_link_fts
-from .links import MAX_TAGS_PER_LINK, _extract_reader, _fts_escape, _safe_url
+from ..utils import descendant_folder_ids
+from .links import MAX_TAGS_PER_LINK, _extract_reader, _fts_escape, _safe_url, create_link
 
 router = APIRouter(prefix="/api/v1")
 
@@ -49,6 +49,7 @@ class LinkIn(BaseModel):
 @router.post("/links", status_code=201)
 async def api_add_link(
     body: LinkIn,
+    background_tasks: BackgroundTasks,
     user: User = Depends(_get_api_user),
     session: Session = Depends(get_session),
 ):
@@ -62,27 +63,17 @@ async def api_add_link(
         ).first()
         validated_folder_id = body.folder_id if folder else None
 
-    link = Link(
+    link, _ = create_link(
+        session,
+        background_tasks,
         user_id=user.id,
         url=body.url,
-        title=body.title or body.url,
+        title=body.title,
         note=body.note,
-        description="",
-        favicon_url="",
         is_public=body.is_public,
         folder_id=validated_folder_id,
+        tag_names=body.tags,
     )
-    session.add(link)
-    session.flush()
-
-    tag_names = [t.strip().lower() for t in body.tags if t.strip()][:MAX_TAGS_PER_LINK]
-    link_tags = [get_or_create_tag(session, user.id, n) for n in tag_names]
-    for t in link_tags:
-        session.add(LinkTagLink(link_id=link.id, tag_id=t.id))
-
-    session.flush()
-    refresh_link_fts(session, link, link_tags)
-    session.commit()
 
     return {"id": link.id, "url": link.url, "title": link.title}
 

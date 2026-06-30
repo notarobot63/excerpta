@@ -470,6 +470,63 @@ async def add_form(
     )
 
 
+def create_link(
+    session: Session,
+    background_tasks: BackgroundTasks,
+    *,
+    user_id: int,
+    url: str,
+    title: str = "",
+    description: str = "",
+    note: str = "",
+    is_public: bool = False,
+    folder_id: Optional[int] = None,
+    tag_names: Optional[List[str]] = None,
+) -> tuple[Link, bool]:
+    """Crée un lien et planifie son enrichissement (métadonnées + archivage Wayback).
+
+    Chemin de création unique partagé par l'UI web et l'API mobile, pour garantir
+    qu'un lien ajouté par n'importe quelle source reçoive titre/extrait/favicon et
+    archivage de façon identique.
+
+    Retourne (link, created). Si un lien avec la même URL existe déjà pour cet
+    utilisateur, renvoie l'existant avec created=False sans rien planifier.
+    Le caller doit avoir validé `_safe_url(url)` et résolu `folder_id`.
+    """
+    existing = session.exec(
+        select(Link).where(Link.user_id == user_id, Link.url == url)
+    ).first()
+    if existing:
+        return existing, False
+
+    link = Link(
+        user_id=user_id,
+        url=url,
+        title=title or url,
+        description=description,
+        favicon_url="",
+        thumbnail_url="",
+        note=note,
+        is_public=is_public,
+        folder_id=folder_id,
+        archive_status="pending",
+    )
+    session.add(link)
+    session.flush()
+
+    link_tags = _get_or_create_tags(session, user_id, (tag_names or [])[:MAX_TAGS_PER_LINK])
+    for t in link_tags:
+        session.add(LinkTagLink(link_id=link.id, tag_id=t.id))
+
+    session.flush()
+    refresh_link_fts(session, link, link_tags)
+    session.commit()
+
+    background_tasks.add_task(_fetch_and_update_meta, link.id, url)
+    background_tasks.add_task(_wayback_archive, link.id)
+    return link, True
+
+
 @router.post("/links/add")
 async def add_link(
     request: Request,
@@ -487,38 +544,21 @@ async def add_link(
     if not _safe_url(url):
         raise HTTPException(status_code=400, detail="URL invalide")
 
-    existing = session.exec(
-        select(Link).where(Link.user_id == user.id, Link.url == url)
-    ).first()
-    if existing:
-        return RedirectResponse(url=f"/links/{existing.id}/edit?duplicate=1", status_code=303)
-
-    link = Link(
+    tag_names = [t.strip() for t in tags.split(",") if t.strip()]
+    link, created = create_link(
+        session,
+        background_tasks,
         user_id=user.id,
         url=url,
-        title=title or url,
+        title=title,
         description=description,
-        favicon_url="",
-        thumbnail_url="",
         note=note,
         is_public=is_public is not None,
         folder_id=_validate_folder_id(session, user.id, folder_id),
-        archive_status="pending",
+        tag_names=tag_names,
     )
-    session.add(link)
-    session.flush()
-
-    tag_names = [t.strip() for t in tags.split(",") if t.strip()][:MAX_TAGS_PER_LINK]
-    link_tags = _get_or_create_tags(session, user.id, tag_names)
-    for t in link_tags:
-        session.add(LinkTagLink(link_id=link.id, tag_id=t.id))
-
-    session.flush()
-    refresh_link_fts(session, link, link_tags)
-    session.commit()
-
-    background_tasks.add_task(_fetch_and_update_meta, link.id, url)
-    background_tasks.add_task(_wayback_archive, link.id)
+    if not created:
+        return RedirectResponse(url=f"/links/{link.id}/edit?duplicate=1", status_code=303)
 
     return RedirectResponse(url="/", status_code=303)
 
