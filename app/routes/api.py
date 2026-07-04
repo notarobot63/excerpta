@@ -10,7 +10,7 @@ from ..database import get_session
 from ..models import Folder, Link, LinkTagLink, Tag, User
 from ..ratelimit import rate_limit
 from ..utils import descendant_folder_ids
-from .links import MAX_TAGS_PER_LINK, _extract_reader, _fts_escape, _safe_url, create_link
+from .links import MAX_DESC_LEN, MAX_TAGS_PER_LINK, _extract_reader, _fetch_meta, _fts_escape, _safe_url, create_link
 
 router = APIRouter(prefix="/api/v1")
 
@@ -40,6 +40,7 @@ async def api_me(user: User = Depends(_get_api_user)):
 class LinkIn(BaseModel):
     url: str
     title: str = Field("", max_length=500)
+    description: str = Field("", max_length=MAX_DESC_LEN)
     note: str = Field("", max_length=50_000)
     tags: List[str] = []
     folder_id: Optional[int] = None
@@ -69,6 +70,7 @@ async def api_add_link(
         user_id=user.id,
         url=body.url,
         title=body.title,
+        description=body.description,
         note=body.note,
         is_public=body.is_public,
         folder_id=validated_folder_id,
@@ -76,6 +78,12 @@ async def api_add_link(
     )
 
     return {"id": link.id, "url": link.url, "title": link.title}
+
+
+@router.get("/fetch-meta", dependencies=[Depends(rate_limit(30, 60))])
+async def api_fetch_meta(url: str, user: User = Depends(_get_api_user)):
+    """Équivalent mobile (auth X-API-Key) de /api/fetch-meta (auth session web)."""
+    return await _fetch_meta(url)
 
 
 @router.get("/links")
