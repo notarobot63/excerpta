@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import re
 import secrets
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -9,9 +10,10 @@ import httpx
 from fastapi import Depends, FastAPI, Request
 from fastapi.responses import JSONResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
+from starlette.datastructures import Headers
 from starlette.middleware.gzip import GZipMiddleware
 from starlette.middleware.sessions import SessionMiddleware
-from starlette.middleware.trustedhost import TrustedHostMiddleware
+from starlette.responses import PlainTextResponse
 
 from .auth import NotAuthenticated
 from .config import settings
@@ -34,6 +36,32 @@ from .routes.links import warm_img_cache, set_http_client as links_set_client
 from .routes.settings import set_http_client as settings_set_client
 
 logger = logging.getLogger("excerpta")
+
+_HOST_HEADER_RE = re.compile(r"^(?P<host>[A-Za-z0-9.-]+)(:(?P<port>\d{1,5}))?$")
+
+
+class StrictHostMiddleware:
+    # Valide le header Host au format `hostname[:port numérique]`. Contrairement
+    # à TrustedHostMiddleware (qui ne fait qu'un split(":")[0] et ignore tout ce
+    # qui suit, donc laisse passer "host:evil.attacker.example" ou
+    # "host:99999999999999999"), on vérifie aussi la partie port : ces valeurs
+    # font crasher la reconstruction de request.url plus loin dans la pile
+    # Starlette (CVE-2026-48710 "BadHost").
+    def __init__(self, app, allowed_hosts):
+        self.app = app
+        self.allowed_hosts = set(allowed_hosts)
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] not in ("http", "websocket"):
+            await self.app(scope, receive, send)
+            return
+        host_header = Headers(scope=scope).get("host", "")
+        match = _HOST_HEADER_RE.match(host_header)
+        if not match or match.group("host") not in self.allowed_hosts:
+            response = PlainTextResponse("Invalid host header", status_code=400)
+            await response(scope, receive, send)
+            return
+        await self.app(scope, receive, send)
 
 
 async def _freshrss_loop():
@@ -79,11 +107,9 @@ app = FastAPI(
     redoc_url=None,
     openapi_url=None,
 )
-# Rejette les Host: malformés/inconnus avant qu'ils n'atteignent le routeur
-# (évite un crash 500 sur un header Host invalide - cf. CVE-2026-48710 "BadHost").
 # "testserver" = host par défaut du TestClient Starlette utilisé dans les tests.
 _allowed_host = urlparse(settings.base_url).hostname or "localhost"
-app.add_middleware(TrustedHostMiddleware, allowed_hosts=[_allowed_host, "testserver"])
+app.add_middleware(StrictHostMiddleware, allowed_hosts=[_allowed_host, "testserver"])
 app.add_middleware(
     SessionMiddleware,
     secret_key=settings.secret_key,
