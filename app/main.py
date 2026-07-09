@@ -3,13 +3,15 @@ import logging
 import secrets
 from contextlib import asynccontextmanager
 from pathlib import Path
+from urllib.parse import urlparse
 
 import httpx
 from fastapi import Depends, FastAPI, Request
-from fastapi.responses import RedirectResponse, Response
+from fastapi.responses import JSONResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.gzip import GZipMiddleware
 from starlette.middleware.sessions import SessionMiddleware
+from starlette.middleware.trustedhost import TrustedHostMiddleware
 
 from .auth import NotAuthenticated
 from .config import settings
@@ -77,6 +79,11 @@ app = FastAPI(
     redoc_url=None,
     openapi_url=None,
 )
+# Rejette les Host: malformés/inconnus avant qu'ils n'atteignent le routeur
+# (évite un crash 500 sur un header Host invalide - cf. CVE-2026-48710 "BadHost").
+# "testserver" = host par défaut du TestClient Starlette utilisé dans les tests.
+_allowed_host = urlparse(settings.base_url).hostname or "localhost"
+app.add_middleware(TrustedHostMiddleware, allowed_hosts=[_allowed_host, "testserver"])
 app.add_middleware(
     SessionMiddleware,
     secret_key=settings.secret_key,
@@ -86,6 +93,18 @@ app.add_middleware(
 # Compression des réponses (HTML/CSS/JS/JSON) > 1 Ko
 app.add_middleware(GZipMiddleware, minimum_size=1024)
 app.mount("/static", StaticFiles(directory=str(Path(__file__).parent / "static")), name="static")
+
+
+@app.middleware("http")
+async def block_unauthenticated_api_options(request: Request, call_next):
+    # Starlette répond aux OPTIONS non enregistrées par un 405 + en-tête
+    # Allow avant même que la dépendance d'auth (X-API-Key) ne s'exécute,
+    # ce qui permet de cartographier les verbes de /api/v1/* sans credentials.
+    # Comme l'API n'a pas besoin d'un vrai preflight CORS (aucun CORSMiddleware
+    # n'est configuré), on renvoie directement un 401 générique, sans Allow.
+    if request.method == "OPTIONS" and request.url.path.startswith("/api/v1/"):
+        return JSONResponse(status_code=401, content={"detail": "Authentification requise"})
+    return await call_next(request)
 
 
 @app.middleware("http")
@@ -142,5 +161,6 @@ app.include_router(freshrss_api_router)  # JSON API FreshRSS - pas de CSRF
 
 @app.get("/health")
 def health():
-    import os
-    return {"status": "ok", "version": os.getenv("APP_VERSION", "unknown")}
+    # Pas de version/commit hash ici : endpoint public non-authentifié,
+    # réservé aux sondes de liveness (Docker healthcheck, UptimeKuma).
+    return {"status": "ok"}
