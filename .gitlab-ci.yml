@@ -43,7 +43,7 @@ deploy:
         REGISTRY_IMAGE=$CI_REGISTRY_IMAGE:latest docker compose -f $DEPLOY_PATH/docker-compose.prod.yml pull &&
         REGISTRY_IMAGE=$CI_REGISTRY_IMAGE:latest docker compose -f $DEPLOY_PATH/docker-compose.prod.yml up -d"
     - sleep 5
-    - curl -sf "http://$DEPLOY_HOST:$DEPLOY_PORT/"
+    - curl -sf -H "Host: APP_HOST" "http://$DEPLOY_HOST:$DEPLOY_PORT/"
   after_script:
     - |
       if [ "$CI_JOB_STATUS" = "success" ]; then
