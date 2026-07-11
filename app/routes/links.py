@@ -757,12 +757,25 @@ async def move_link(
 # ─── API metadata fetch ───────────────────────────────────────────────────────
 
 @router.get("/api/fetch-meta", dependencies=[Depends(rate_limit(30, 60))])
-async def api_fetch_meta(url: str, user: User = Depends(get_current_user)):
+async def api_fetch_meta(
+    url: str, user: User = Depends(get_current_user), session: Session = Depends(get_session)
+):
+    # Libère la connexion DB avant l'appel HTTP externe (lent) : sinon une rafale
+    # de requêtes sature le pool SQLAlchemy (5+10) et affame les autres routes.
+    session.close()
     return await _fetch_meta(url)
 
 
 @router.get("/proxy/img", dependencies=[Depends(rate_limit(120, 60))])
-async def proxy_image(request: Request, url: str, user: User = Depends(get_current_user)):
+async def proxy_image(
+    request: Request,
+    url: str,
+    user: User = Depends(get_current_user),
+    session: Session = Depends(get_session),
+):
+    # Idem : pas besoin de la DB au-delà de l'auth, et cette route est appelée
+    # en rafale (une par vignette de lien) au chargement d'une page.
+    session.close()
     if not _safe_url(url):
         raise HTTPException(status_code=400)
     etag = hashlib.md5(url.encode()).hexdigest()
