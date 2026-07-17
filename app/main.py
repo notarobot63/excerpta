@@ -109,7 +109,8 @@ app = FastAPI(
 )
 # "testserver" = host par défaut du TestClient Starlette utilisé dans les tests.
 _allowed_host = urlparse(settings.base_url).hostname or "localhost"
-app.add_middleware(StrictHostMiddleware, allowed_hosts=[_allowed_host, "testserver"])
+_extra_hosts = [h.strip() for h in settings.extra_allowed_hosts.split(",") if h.strip()]
+app.add_middleware(StrictHostMiddleware, allowed_hosts=[_allowed_host, "testserver", *_extra_hosts])
 app.add_middleware(
     SessionMiddleware,
     secret_key=settings.secret_key,
