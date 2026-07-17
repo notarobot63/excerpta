@@ -13,6 +13,7 @@ class Settings(BaseSettings):
     database_url: str = "sqlite:////app/data/excerpta.db"
     secret_key: str = ""
     base_url: str = "http://localhost:8000"
+    extra_allowed_hosts: str = ""  # hostnames additionnels autorisés (CSV), ex: domaine miroir de la page publique
     oidc_client_id: str = ""
     oidc_client_secret: str = ""
     oidc_issuer: str = ""
