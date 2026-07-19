@@ -4,6 +4,8 @@
 
 # Excerpta
 
+> **Développement assisté par IA** — ce projet est écrit et maintenu avec l'assistance de modèles Claude (Anthropic). Relis le code avant de l'utiliser en production, en particulier les parties sécurité (auth, chiffrement, SSRF).
+
 **Gestionnaire de liens self-hosted** — collecte, annote et retrouve tes liens depuis n'importe quel appareil.
 
 > collect • annotate • remember
