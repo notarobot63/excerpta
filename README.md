@@ -16,6 +16,15 @@
 
 ---
 
+## Screenshots
+
+<p align="center">
+  <img src="docs/screenshots/links-light.png" alt="Excerpta - links view, light theme" width="49%">
+  <img src="docs/screenshots/links-dark.png" alt="Excerpta - links view, dark theme" width="49%">
+</p>
+
+---
+
 ## Features
 
 ### Link management
