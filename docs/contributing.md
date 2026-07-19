@@ -15,7 +15,7 @@
 ## Environnement de développement
 
 ```bash
-git clone https://GIT_HOST/Thomas/excerpta.git
+git clone https://github.com/notarobot63/excerpta.git
 cd excerpta
 python3 -m venv .venv
 source .venv/bin/activate

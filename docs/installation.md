@@ -10,18 +10,18 @@
 ### Option A — image pré-buildée
 
 ```bash
-curl -O https://GIT_HOST/Thomas/excerpta/-/raw/main/docker-compose.prod.yml
-curl -O https://GIT_HOST/Thomas/excerpta/-/raw/main/.env.example
+curl -O https://raw.githubusercontent.com/notarobot63/excerpta/main/docker-compose.prod.yml
+curl -O https://raw.githubusercontent.com/notarobot63/excerpta/main/.env.example
 cp .env.example .env
 # Éditer .env
-REGISTRY_IMAGE=REGISTRY_HOST/thomas/excerpta:latest \
+REGISTRY_IMAGE=ghcr.io/notarobot63/excerpta:latest \
   docker compose -f docker-compose.prod.yml up -d
 ```
 
 ### Option B — build local
 
 ```bash
-git clone https://GIT_HOST/Thomas/excerpta.git
+git clone https://github.com/notarobot63/excerpta.git
 cd excerpta
 cp .env.example .env
 # Éditer .env
@@ -71,7 +71,7 @@ server {
 
 ```bash
 # Image pré-buildée
-REGISTRY_IMAGE=REGISTRY_HOST/thomas/excerpta:latest \
+REGISTRY_IMAGE=ghcr.io/notarobot63/excerpta:latest \
   docker compose -f docker-compose.prod.yml pull && \
   docker compose -f docker-compose.prod.yml up -d
 
