@@ -4,7 +4,11 @@
 
 # Excerpta
 
-> **Développement assisté par IA** — ce projet est écrit et maintenu avec l'assistance de modèles Claude (Anthropic). Relis le code avant de l'utiliser en production, en particulier les parties sécurité (auth, chiffrement, SSRF).
+> **🤖 Vibe Coded with Claude**
+> This project was built through an AI-assisted development session with [Claude](https://claude.ai) (Anthropic).
+> It is shared as-is, without warranty of any kind. Test thoroughly before relying on it for anything critical.
+>
+> Remember: if you don't like projects coded with AI help don't use them ;-)
 
 **Gestionnaire de liens self-hosted** — collecte, annote et retrouve tes liens depuis n'importe quel appareil.
 
