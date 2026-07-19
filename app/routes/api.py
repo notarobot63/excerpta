@@ -264,7 +264,7 @@ async def api_link_reader(
     if not link:
         raise HTTPException(status_code=404, detail="Lien introuvable")
     # Extraction paresseuse : si le reader n'a jamais été généré (lien ajouté
-    # avant la feature, ou jamais ouvert côté web), on l'extrait à la volée —
+    # avant la feature, ou jamais ouvert côté web), on l'extrait à la volée -
     # même comportement que la vue lecteur web (links.read_link).
     if not link.reader_html:
         data = await _extract_reader(link.url)

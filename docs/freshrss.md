@@ -1,45 +1,45 @@
-# Intégration FreshRSS
+# FreshRSS integration
 
-Excerpta peut synchroniser automatiquement les articles étoilés de FreshRSS via l'API GReader.
+Excerpta can automatically sync starred articles from FreshRSS via the GReader API.
 
 ## Configuration
 
-1. Dans FreshRSS, activer l'API GReader : **Paramètres → Authentification → Accès API**
-2. Dans Excerpta : **Paramètres → FreshRSS**
+1. In FreshRSS, enable the GReader API: **Settings → Authentication → API access**
+2. In Excerpta: **Settings → FreshRSS**
 
-| Champ | Description |
+| Field | Description |
 |---|---|
-| URL FreshRSS | URL de l'instance (ex. `https://rss.example.com`) |
-| Identifiant | Identifiant de connexion FreshRSS |
-| Mot de passe API | Mot de passe API GReader (peut différer du mot de passe principal) |
-| Dossier cible | Dossier Excerpta dans lequel ranger les articles importés |
-| Intervalle | Fréquence de sync en minutes (défaut : 30) |
+| FreshRSS URL | Instance URL (e.g. `https://rss.example.com`) |
+| Username | FreshRSS login username |
+| API password | GReader API password (can differ from the main password) |
+| Target folder | Excerpta folder where imported articles are filed |
+| Interval | Sync frequency in minutes (default: 30) |
 
-Le token GReader est chiffré (Fernet) avant stockage.
+The GReader token is encrypted (Fernet) before storage.
 
-## Fonctionnement
+## How it works
 
-À chaque sync, Excerpta récupère tous les articles étoilés et importe ceux qui ne sont pas encore présents (déduplication par URL). Les articles importés sont rangés dans le **dossier cible** configuré — c'est ce dossier, et non un tag, qui les identifie comme provenant de FreshRSS.
+On every sync, Excerpta fetches all starred articles and imports the ones not already present (deduplicated by URL). Imported articles are filed into the configured **target folder** - it's this folder, not a tag, that identifies them as coming from FreshRSS.
 
-> Les versions antérieures posaient un tag `freshrss` sur chaque article importé. Ce tag, redondant avec le dossier, a été supprimé : une migration idempotente le retire automatiquement des liens existants au démarrage.
+> Earlier versions added a `freshrss` tag to every imported article. This tag, redundant with the folder, has been removed: an idempotent migration automatically strips it from existing links at startup.
 
-La sync s'exécute :
-- Automatiquement en arrière-plan selon l'intervalle configuré
-- Manuellement via le bouton **Synchroniser maintenant** dans les paramètres
-- Via l'API REST : `POST /api/v1/freshrss/sync` (authentification par clé API)
+Sync runs:
+- Automatically in the background at the configured interval
+- Manually via the **Sync now** button in settings
+- Via the REST API: `POST /api/v1/freshrss/sync` (authenticated by API key)
 
-## Déséttoilage automatique
+## Automatic unstarring
 
-Lorsque tu supprimes un lien importé depuis FreshRSS, Excerpta propose de **déséttoiler l'article dans FreshRSS** en même temps via une checkbox (cochée par défaut).
+When you delete a link imported from FreshRSS, Excerpta offers to **unstar the article in FreshRSS** at the same time via a checkbox (checked by default).
 
-Si tu décoches la case, le lien est supprimé uniquement dans Excerpta — l'étoile dans FreshRSS est conservée.
+If you uncheck the box, the link is deleted only in Excerpta - the star in FreshRSS is kept.
 
-> Les liens importés avant la version qui introduit cette fonctionnalité récupèrent leur ID GReader automatiquement lors de la prochaine sync.
+> Links imported before the version that introduced this feature automatically get their GReader ID back on the next sync.
 
-## Déplacer un lien hors du dossier FreshRSS
+## Moving a link out of the FreshRSS folder
 
-Sortir un lien de son **dossier FreshRSS** (par drag & drop dans la sidebar ou via l'édition du lien) le **déséttoile automatiquement** dans FreshRSS : l'article quitte ta liste d'articles étoilés. C'est le pendant logique de la suppression.
+Moving a link out of its **FreshRSS folder** (via drag & drop in the sidebar or by editing the link) **automatically unstars** it in FreshRSS: the article leaves your starred articles list. This is the logical counterpart of deletion.
 
-Déplacer un lien entre deux dossiers qui ne sont pas le dossier FreshRSS n'a aucun effet sur FreshRSS.
+Moving a link between two folders that are not the FreshRSS folder has no effect on FreshRSS.
 
-> Auto-réparation : à chaque sync, tout article encore étoilé dans FreshRSS mais qui ne se trouve plus dans le dossier FreshRSS côté Excerpta est déséttoilé (rattrape les déplacements antérieurs et les échecs réseau).
+> Self-healing: on every sync, any article still starred in FreshRSS but no longer in the FreshRSS folder on the Excerpta side gets unstarred (catches up on earlier moves and network failures).

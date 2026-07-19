@@ -841,7 +841,7 @@ a:hover { text-decoration: underline; }
 .sortable-chosen > .sidebar-folder-item,
 .sortable-chosen > a { background: var(--card-hover); }
 
-/* Logo sidebar — suit la couleur d'accentuation du thème */
+/* Logo sidebar - suit la couleur d'accentuation du thème */
 .sidebar-logo { color: var(--sidebar-active-text); font-family: var(--font-display); }
 
 /* Fix CSP: hover sidebar add button */

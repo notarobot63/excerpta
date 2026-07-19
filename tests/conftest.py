@@ -11,7 +11,7 @@ from sqlalchemy import event
 from sqlalchemy.engine import Engine
 from sqlmodel import Session, SQLModel, create_engine
 
-from app import models  # noqa: F401 — enregistre les tables sur SQLModel.metadata
+from app import models  # noqa: F401 - enregistre les tables sur SQLModel.metadata
 
 # Schéma FTS5 + triggers, identique à app.database._FTS_SETUP. Dupliqué ici
 # pour découpler les tests de la cascade d'imports lourds de app.database

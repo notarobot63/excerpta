@@ -1,7 +1,7 @@
 """Tests dossiers : clé de tri alphabétique et réordonnancement par frères.
 
 On teste la logique métier directement (clé de tri + build_folder_tree),
-sans monter FastAPI — cf. conftest.
+sans monter FastAPI - cf. conftest.
 """
 from collections import defaultdict
 

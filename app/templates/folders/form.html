@@ -36,7 +36,7 @@
                style="padding:0.4rem 0.75rem; cursor:pointer;"
                :style="selected === null ? 'background:var(--primary-light, #e8f0fe);font-weight:600;' : ''"
                class="folder-option">
-            — Aucun (dossier racine) —
+            - Aucun (dossier racine) -
           </div>
           {% for f, depth in folder_tree %}
             {% if not folder or f.id != folder.id %}
@@ -71,7 +71,7 @@
 
 <script nonce="{{ request.state.nonce }}">
 function folderPicker(initialId) {
-  var labels = { null: '— Aucun (dossier racine) —' };
+  var labels = { null: '- Aucun (dossier racine) -' };
   document.querySelectorAll('.folder-option[data-id]').forEach(function(el) {
     labels[parseInt(el.dataset.id)] = el.dataset.label;
   });
@@ -79,7 +79,7 @@ function folderPicker(initialId) {
     selected: initialId,
     open: false,
     select: function(id) { this.selected = id; this.open = false; },
-    selectedLabel: function() { return labels[this.selected] || '— Aucun (dossier racine) —'; },
+    selectedLabel: function() { return labels[this.selected] || '- Aucun (dossier racine) -'; },
   };
 }
 </script>

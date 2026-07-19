@@ -141,7 +141,7 @@
         } else {
           bar.max = d.total || 1;
           bar.value = d.current;
-          txt.textContent = d.current + ' / ' + d.total + '  —  ' + d.updated + ' mis à jour';
+          txt.textContent = d.current + ' / ' + d.total + '  -  ' + d.updated + ' mis à jour';
         }
       }
     }
@@ -200,7 +200,7 @@
   <p style="font-size:0.82rem;color:var(--color-success);margin:0.4rem 0 0;">Page publique mise à jour.</p>
   {% endif %}
   {% if request.query_params.get('slug_error') == 'taken' %}
-  <p style="font-size:0.82rem;color:var(--color-danger,#c0392b);margin:0.4rem 0 0;">Cette adresse est déjà prise — choisissez-en une autre.</p>
+  <p style="font-size:0.82rem;color:var(--color-danger,#c0392b);margin:0.4rem 0 0;">Cette adresse est déjà prise - choisissez-en une autre.</p>
   {% elif request.query_params.get('slug_error') == 'empty' %}
   <p style="font-size:0.82rem;color:var(--color-danger,#c0392b);margin:0.4rem 0 0;">L'adresse ne peut pas être vide.</p>
   {% endif %}
