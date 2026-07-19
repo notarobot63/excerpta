@@ -6,7 +6,7 @@
 <div class="form-card">
   {% if request.query_params.get('duplicate') %}
   <div style="background:var(--warning-bg,#fff8e1);border:1px solid var(--warning-border,#ffe082);border-radius:6px;padding:0.6rem 0.9rem;margin-bottom:1rem;font-size:0.875rem;color:var(--text);">
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;margin-right:0.3rem;"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>Ce lien existe déjà dans ta collection — tu peux le modifier ci-dessous.
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;margin-right:0.3rem;"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>Ce lien existe déjà dans ta collection - tu peux le modifier ci-dessous.
   </div>
   {% endif %}
   <h2 style="font-size: 1.1rem; font-weight: 600; margin: 0 0 1.25rem;">
@@ -79,7 +79,7 @@
           <div @click="select(null)"
                :style="selected === null ? 'background:var(--primary-light,#e8f0fe);font-weight:600;' : ''"
                style="padding:0.4rem 0.75rem; cursor:pointer;" class="folder-opt">
-            — Aucun dossier —
+            - Aucun dossier -
           </div>
           {% for f, depth in folder_tree %}
           <div @click="select({{ f.id }})"
@@ -140,7 +140,7 @@
 
 <script nonce="{{ request.state.nonce }}">
 function folderPicker(initialId) {
-  var labels = { null: '— Aucun dossier —' };
+  var labels = { null: '- Aucun dossier -' };
   document.querySelectorAll('.folder-opt[data-id]').forEach(function(el) {
     labels[parseInt(el.dataset.id)] = el.dataset.label;
   });
@@ -149,8 +149,8 @@ function folderPicker(initialId) {
     open: false,
     select: function(id) { this.selected = id; this.open = false; },
     selectedLabel: function() {
-      if (this.selected === null) return '— Aucun dossier —';
-      return labels[this.selected] || '— Aucun dossier —';
+      if (this.selected === null) return '- Aucun dossier -';
+      return labels[this.selected] || '- Aucun dossier -';
     },
   };
 }

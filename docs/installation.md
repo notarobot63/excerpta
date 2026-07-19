@@ -1,60 +1,60 @@
 # Installation
 
-## Prérequis
+## Requirements
 
-- Docker et Docker Compose
-- Un fournisseur OIDC (PocketID, Authentik, Keycloak, etc.)
+- Docker and Docker Compose
+- An OIDC provider (PocketID, Authentik, Keycloak, etc.)
 
-## Démarrage rapide
+## Quick start
 
-### Option A — image pré-buildée
+### Option A - pre-built image
 
 ```bash
 curl -O https://raw.githubusercontent.com/notarobot63/excerpta/main/docker-compose.prod.yml
 curl -O https://raw.githubusercontent.com/notarobot63/excerpta/main/.env.example
 cp .env.example .env
-# Éditer .env
+# Edit .env
 REGISTRY_IMAGE=ghcr.io/notarobot63/excerpta:latest \
   docker compose -f docker-compose.prod.yml up -d
 ```
 
-### Option B — build local
+### Option B - build locally
 
 ```bash
 git clone https://github.com/notarobot63/excerpta.git
 cd excerpta
 cp .env.example .env
-# Éditer .env
+# Edit .env
 docker compose up --build -d
 ```
 
-## Variables d'environnement
+## Environment variables
 
-| Variable | Obligatoire | Description |
+| Variable | Required | Description |
 |---|---|---|
-| `SECRET_KEY` | Oui | Clé secrète sessions — `python3 -c "import secrets; print(secrets.token_hex(32))"` |
-| `BASE_URL` | Oui | URL publique complète (ex. `https://liens.example.com`) |
-| `OIDC_CLIENT_ID` | Oui | Client ID de l'application OIDC |
-| `OIDC_CLIENT_SECRET` | Oui | Client secret de l'application OIDC |
-| `OIDC_ISSUER` | Oui | URL de l'issuer OIDC (ex. `https://auth.example.com`) |
-| `FRESHRSS_SYNC_INTERVAL` | Non | Intervalle de sync FreshRSS en minutes (défaut : 30) |
+| `SECRET_KEY` | Yes | Session secret key - `python3 -c "import secrets; print(secrets.token_hex(32))"` |
+| `BASE_URL` | Yes | Full public URL (e.g. `https://links.example.com`) |
+| `OIDC_CLIENT_ID` | Yes | OIDC application client ID |
+| `OIDC_CLIENT_SECRET` | Yes | OIDC application client secret |
+| `OIDC_ISSUER` | Yes | OIDC issuer URL (e.g. `https://auth.example.com`) |
+| `FRESHRSS_SYNC_INTERVAL` | No | FreshRSS sync interval in minutes (default: 30) |
 
 ## Reverse proxy
 
-Excerpta écoute sur le port `8070` (configurable dans le compose). Exemple de configuration Caddy :
+Excerpta listens on port `8070` (configurable in the compose file). Caddy example:
 
 ```
-liens.example.com {
+links.example.com {
     reverse_proxy localhost:8070
 }
 ```
 
-Exemple Nginx :
+Nginx example:
 
 ```nginx
 server {
     listen 443 ssl;
-    server_name liens.example.com;
+    server_name links.example.com;
 
     location / {
         proxy_pass http://localhost:8070;
@@ -65,23 +65,23 @@ server {
 }
 ```
 
-> Le header `X-Forwarded-For` est nécessaire pour que le rate limiting fonctionne correctement par IP client.
+> The `X-Forwarded-For` header is required for rate limiting to work correctly per client IP.
 
-## Mise à jour
+## Updating
 
 ```bash
-# Image pré-buildée
+# Pre-built image
 REGISTRY_IMAGE=ghcr.io/notarobot63/excerpta:latest \
   docker compose -f docker-compose.prod.yml pull && \
   docker compose -f docker-compose.prod.yml up -d
 
-# Build local
+# Local build
 git pull && docker compose up --build -d
 ```
 
-## Données persistantes
+## Persistent data
 
-Les données (base SQLite) sont stockées dans un volume Docker nommé `excerpta_data`. Pour sauvegarder :
+Data (SQLite database) is stored in a named Docker volume, `excerpta_data`. To back it up:
 
 ```bash
 docker run --rm \

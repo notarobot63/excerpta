@@ -1,31 +1,31 @@
 # Configuration
 
-## OIDC / Authentification
+## OIDC / Authentication
 
-Excerpta utilise OIDC avec le flux PKCE. Tout fournisseur compatible est supporté.
+Excerpta uses OIDC with the PKCE flow. Any compatible provider is supported.
 
 ### PocketID
 
-1. Créer une application OIDC dans PocketID
-2. Callback URL : `https://votre-instance.example.com/auth/oidc/callback`
-3. Renseigner `OIDC_CLIENT_ID`, `OIDC_CLIENT_SECRET` et `OIDC_ISSUER` dans `.env`
+1. Create an OIDC application in PocketID
+2. Callback URL: `https://your-instance.example.com/auth/oidc/callback`
+3. Set `OIDC_CLIENT_ID`, `OIDC_CLIENT_SECRET` and `OIDC_ISSUER` in `.env`
 
 ### Authentik
 
-1. Créer un Provider OAuth2/OIDC (type : Authorization Code + PKCE)
-2. Callback URL : `https://votre-instance.example.com/auth/oidc/callback`
+1. Create an OAuth2/OIDC Provider (type: Authorization Code + PKCE)
+2. Callback URL: `https://your-instance.example.com/auth/oidc/callback`
 3. `OIDC_ISSUER` = `https://auth.example.com/application/o/<slug>/`
 
 ### Keycloak
 
-1. Créer un client Keycloak avec Access Type `public` et PKCE activé
+1. Create a Keycloak client with Access Type `public` and PKCE enabled
 2. `OIDC_ISSUER` = `https://keycloak.example.com/realms/<realm>`
 
-## Thèmes
+## Themes
 
-9 palettes disponibles, chacune en variante claire et sombre. Le toggle clair/sombre est accessible depuis la barre latérale. Le choix est mémorisé dans le navigateur.
+9 palettes available, each with a light and dark variant. The light/dark toggle is accessible from the sidebar. The choice is remembered in the browser.
 
-| Palette | Clair | Sombre |
+| Palette | Light | Dark |
 |---|---|---|
 | Default | Light | Dark |
 | Nord | Nord | Nord Dark |
@@ -35,79 +35,79 @@ Excerpta utilise OIDC avec le flux PKCE. Tout fournisseur compatible est support
 | Solarized | Solarized | Solarized Dark |
 | Rosé Pine | Dawn | Moon |
 
-Le sélecteur complet est dans **Paramètres → Apparence**.
+The full selector is in **Settings → Appearance**.
 
-## Clé API
+## API key
 
-La clé API REST est générée automatiquement à la création du compte. Elle est visible et régénérable dans **Paramètres → Compte**. Elle est stockée sous forme de HMAC — la valeur en clair n'est jamais conservée côté serveur.
+The REST API key is generated automatically when the account is created. It is visible and can be regenerated in **Settings → Account**. It is stored as an HMAC - the plaintext value is never kept server-side.
 
 ## Bookmarklet
 
-Le bookmarklet est disponible dans **Paramètres → Bookmarklet**. Le glisser dans la barre de favoris du navigateur permet d'enregistrer la page courante en un clic.
+The bookmarklet is available in **Settings → Bookmarklet**. Dragging it to the browser's bookmarks bar lets you save the current page in one click.
 
 ## Import / Export
 
-- **Import** : favoris au format Netscape HTML (Firefox, Chrome, Safari) — les dossiers sont recréés automatiquement
-- **Export** : `Paramètres → Export` — génère un fichier Netscape HTML avec dossiers et tags
+- **Import**: bookmarks in Netscape HTML format (Firefox, Chrome, Safari) - folders are recreated automatically
+- **Export**: `Settings → Export` - generates a Netscape HTML file with folders and tags
 
-## Raccourcis clavier
+## Keyboard shortcuts
 
-| Touche | Action |
+| Key | Action |
 |---|---|
-| `n` | Nouveau lien |
-| `/` | Focus sur la recherche |
+| `n` | New link |
+| `/` | Focus search |
 
-Les raccourcis sont désactivés quand le focus est dans un champ de saisie.
+Shortcuts are disabled while focus is in an input field.
 
-## Détection de doublons
+## Duplicate detection
 
-Si tu essaies d'ajouter une URL déjà présente dans ta collection (via le formulaire ou le bookmarklet), Excerpta redirige automatiquement vers la page d'édition du lien existant avec un avertissement.
+If you try to add a URL that's already in your collection (via the form or the bookmarklet), Excerpta automatically redirects to the existing link's edit page with a warning.
 
-## Vérification des liens
+## Link checking
 
-`Paramètres → Vérifier les liens` lance une vérification asynchrone de tous les liens (10 en parallèle). Les liens cassés (4xx, 5xx, timeout) sont signalés avec leur statut HTTP.
+`Settings → Check links` runs an asynchronous check of all links (10 in parallel). Broken links (4xx, 5xx, timeout) are flagged with their HTTP status.
 
-Quand un lien est cassé, sa carte propose directement une **récupération** : *lire la copie sauvegardée* (si le contenu lecteur a été mis en cache) et/ou *voir l'archive* (capture Wayback), au lieu d'un lien mort.
+When a link is broken, its card directly offers a **recovery** option: *read the cached copy* (if the reader content has been cached) and/or *view the archive* (Wayback capture), instead of a dead link.
 
-## Recherche
+## Search
 
-La recherche est **en temps réel** : les résultats se filtrent à la frappe (sans rechargement), avec un court délai anti-rebond et un déclenchement dès 2 caractères. Vider le champ réaffiche tous les liens. La pagination s'effectue aussi en AJAX et l'URL reste partageable (le bouton précédent du navigateur fonctionne).
+Search is **real-time**: results are filtered as you type (no reload), with a short debounce delay and a 2-character trigger threshold. Clearing the field shows all links again. Pagination also happens via AJAX and the URL stays shareable (the browser's back button works).
 
-L'index full-text (SQLite FTS5) couvre **titres, descriptions, notes, URLs et tags**, et est **insensible aux accents**. Sans JavaScript, le formulaire de recherche classique reste fonctionnel.
+The full-text index (SQLite FTS5) covers **titles, descriptions, notes, URLs and tags**, and is **accent-insensitive**. Without JavaScript, the classic search form still works.
 
-Les résultats sont classés par pertinence (**bm25 pondéré**) : un terme trouvé dans le titre pèse davantage que dans les tags, la description ou l'URL. Les termes recherchés sont **surlignés** dans les titres affichés.
+Results are ranked by relevance (**weighted bm25**): a term found in the title carries more weight than in tags, description, or URL. Searched terms are **highlighted** in displayed titles.
 
-## Vue lecteur
+## Reader view
 
-Chaque lien dispose d'une icône **lecteur** qui ouvre une version lisible et épurée de l'article :
+Every link has a **reader** icon that opens a clean, readable version of the article:
 
-- Extraction du contenu principal via Readability (le même algorithme que le mode lecture de Firefox), puis sanitisation du HTML (anti-XSS).
-- Présentation focalisée : colonne de lecture étroite, typographie soignée, images conservées, temps de lecture estimé.
-- Taille de police réglable (mémorisée) et thème clair/sombre hérité de l'application.
-- L'extraction se fait à la première ouverture puis est **mise en cache** ; les ouvertures suivantes sont instantanées. Ajouter `?refresh=1` à l'URL force une nouvelle extraction.
-- Les pages non extractibles (paywall, contenu purement JavaScript) affichent un état d'échec avec un lien vers l'original.
+- Main content extraction via Readability (the same algorithm as Firefox's reading mode), followed by HTML sanitization (anti-XSS).
+- Focused presentation: narrow reading column, refined typography, images preserved, estimated reading time.
+- Adjustable font size (remembered) and light/dark theme inherited from the app.
+- Extraction happens on first open and is then **cached**; subsequent opens are instant. Adding `?refresh=1` to the URL forces a new extraction.
+- Pages that can't be extracted (paywall, purely JavaScript content) show a failure state with a link to the original.
 
-## Archivage (Wayback Machine)
+## Archiving (Wayback Machine)
 
-Excerpta archive les liens sur la Wayback Machine de l'Internet Archive.
+Excerpta archives links on the Internet Archive's Wayback Machine.
 
-- **Automatique à l'ajout** : chaque nouveau lien est archivé en tâche de fond (capturé tant que la page est vivante). La sync FreshRSS n'archive pas automatiquement, pour ne pas saturer les quotas de Wayback.
-- **Statut visible** par lien sur sa carte : en cours, archivé (l'icône pointe vers la capture Wayback) ou échec (bouton pour réessayer).
-- **Archivage en masse** : `Paramètres → Archiver les non-archivés` lance un traitement de fond throttlé sur tous les liens pas encore archivés.
+- **Automatic on add**: every new link is archived in the background (captured while the page is still alive). FreshRSS sync does not archive automatically, to avoid saturating Wayback's quotas.
+- **Visible status** per link on its card: in progress, archived (the icon points to the Wayback capture), or failed (button to retry).
+- **Bulk archiving**: `Settings → Archive unarchived` runs a throttled background job over all links not yet archived.
 
-> Wayback limite fortement l'archivage anonyme : sur un gros lot, certains liens peuvent échouer (HTTP 429). Relancer ne re-cible que les liens non archivés.
+> Wayback strongly limits anonymous archiving: on a large batch, some links may fail (HTTP 429). Retrying only targets the links that are still not archived.
 
-## Page publique
+## Public page
 
-Chaque utilisateur dispose d'une page publique listant ses liens publics :
+Every user has a public page listing their public links:
 
-- URL : `/u/{slug}` — le `slug` est personnalisable dans **Paramètres → Page publique**.
-- Flux RSS associé : `/u/{slug}/feed.xml`.
-- Seuls les liens marqués publics y apparaissent ; le titre de la page est personnalisable.
+- URL: `/u/{slug}` - the `slug` is customizable in **Settings → Public page**.
+- Associated RSS feed: `/u/{slug}/feed.xml`.
+- Only links marked public appear there; the page title is customizable.
 
 ## Administration
 
-Le panel admin (`/admin/`) est accessible uniquement aux comptes marqués `is_admin = true` en base. Il permet de :
-- Lister et désactiver des utilisateurs
-- Consulter les statistiques globales
-- Régénérer les clés API
+The admin panel (`/admin/`) is only accessible to accounts flagged `is_admin = true` in the database. It lets you:
+- List and disable users
+- View global statistics
+- Regenerate API keys

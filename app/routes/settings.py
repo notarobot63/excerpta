@@ -446,7 +446,7 @@ _CHECKER_HEADERS = {
 }
 _check_jobs: dict[int, dict] = {}  # user_id → {total, done, running}
 
-# Codes ambigus (protection anti-bot probable) — ne pas marquer comme cassé
+# Codes ambigus (protection anti-bot probable) - ne pas marquer comme cassé
 _AMBIGUOUS_CODES = {401, 403, 405, 406, 429}
 _MAX_REDIRECTS = 5
 

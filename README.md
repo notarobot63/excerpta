@@ -10,57 +10,57 @@
 >
 > Remember: if you don't like projects coded with AI help don't use them ;-)
 
-**Gestionnaire de liens self-hosted** — collecte, annote et retrouve tes liens depuis n'importe quel appareil.
+**Self-hosted link manager** - collect, annotate and find your links again from any device.
 
 > collect • annotate • remember
 
 ---
 
-## Fonctionnalités
+## Features
 
-### Gestion des liens
-- **Métadonnées automatiques** : titre, description, thumbnail og:image et favicon extraits à la sauvegarde
-- **Notes Markdown** par lien (rendu complet)
-- **Tags** multiples par lien, avec renommage/suppression inline depuis la sidebar (fusion automatique si le nom cible existe déjà)
-- **Dossiers hiérarchiques** : arborescence imbriquée pliable/dépliable (état mémorisé), filtrage récursif des sous-dossiers, renommage inline depuis la sidebar et tri alphabétique (A→Z) en un clic
-- **Drag & drop** : déplacer un lien vers un autre dossier depuis la sidebar, réordonner et reparenter les dossiers
-- **Vue lecteur** : version lisible et épurée de chaque article (extraction Readability + sanitisation anti-XSS), typographie soignée, taille de police réglable, thème clair/sombre, temps de lecture estimé — extraction à la demande puis mise en cache
-- **Visibilité** : chaque lien peut être public ou privé ; page publique par utilisateur (`/u/{slug}`) avec flux RSS (`/u/{slug}/feed.xml`)
-- **Archivage Wayback Machine** : archivage automatique de chaque nouveau lien en tâche de fond, statut visible par lien (en cours / archivé / échec), ré-archivage à la demande et archivage en masse des liens existants
+### Link management
+- **Automatic metadata**: title, description, og:image thumbnail and favicon extracted on save
+- **Markdown notes** per link (full rendering)
+- **Multiple tags** per link, with inline rename/delete from the sidebar (automatic merge if the target name already exists)
+- **Hierarchical folders**: collapsible/expandable nested tree (state remembered), recursive subfolder filtering, inline rename from the sidebar and one-click alphabetical (A→Z) sort
+- **Drag & drop**: move a link to another folder from the sidebar, reorder and reparent folders
+- **Reader view**: clean, readable version of each article (Readability extraction + anti-XSS sanitization), refined typography, adjustable font size, light/dark theme, estimated reading time - extracted on demand then cached
+- **Visibility**: each link can be public or private; a per-user public page (`/u/{slug}`) with an RSS feed (`/u/{slug}/feed.xml`)
+- **Wayback Machine archiving**: automatic background archiving of every new link, per-link status visible (in progress / archived / failed), on-demand re-archiving and bulk archiving of existing links
 
-### Recherche et navigation
-- **Recherche temps réel** (search-as-you-type) : résultats filtrés à la frappe, sans rechargement de page
-- **Recherche full-text** (SQLite FTS5) sur titres, descriptions, notes, URLs et tags — insensible aux accents
-- **Pertinence bm25 pondérée** (titre > tags > description/note > URL) et surlignage des termes dans les titres
-- Filtrage par dossier, tag ou les deux combinés ; pagination en AJAX, URLs partageables (bouton retour pris en charge)
+### Search and navigation
+- **Real-time search** (search-as-you-type): results filtered as you type, no page reload
+- **Full-text search** (SQLite FTS5) across titles, descriptions, notes, URLs and tags - accent-insensitive
+- **Weighted bm25 relevance** (title > tags > description/note > URL) and term highlighting in titles
+- Filter by folder, tag, or both combined; AJAX pagination, shareable URLs (back button supported)
 
 ### Import / Export
-- **Import de favoris** Netscape HTML (Firefox, Chrome, Safari) — dossiers inclus
-- **Export** au format Netscape HTML avec groupes
-- **Vérificateur de liens cassés** (async, 10 vérifications en parallèle) — les liens morts proposent la copie lecteur en cache et/ou l'archive Wayback
-- **Rafraîchissement de métadonnées** avec progression en temps réel
+- **Bookmark import** in Netscape HTML format (Firefox, Chrome, Safari) - folders included
+- **Export** to Netscape HTML format with groups
+- **Broken link checker** (async, 10 checks in parallel) - dead links offer the cached reader copy and/or the Wayback archive
+- **Metadata refresh** with real-time progress
 
-### Intégrations
-- **Synchronisation FreshRSS** : import automatique des articles étoilés toutes les N minutes (configurable)
-- **Bookmarklet** navigateur pour ajout rapide depuis n'importe quelle page
-- **Application Android** (excerpta-android) : QR code de configuration intégré (`GET /settings/android-qr.png`)
+### Integrations
+- **FreshRSS sync**: automatic import of starred articles every N minutes (configurable)
+- **Browser bookmarklet** for quick add from any page
+- **Android app** (excerpta-android): built-in configuration QR code (`GET /settings/android-qr.png`)
 
 ### Interface
-- **9 thèmes CSS** : light, dark, dracula, nord, nord-dark, catppuccin, gruvbox, solarized, rosepine — toggle light/dark en un clic
-- Thumbnails og:image avec proxy côté serveur (contourne les restrictions CORP/ORB de Firefox)
-- Placeholder visuel coloré pour les liens sans thumbnail
-- Responsive — adapté mobile et desktop
+- **9 CSS themes**: light, dark, dracula, nord, nord-dark, catppuccin, gruvbox, solarized, rosepine - one-click light/dark toggle
+- og:image thumbnails with server-side proxy (bypasses Firefox's CORP/ORB restrictions)
+- Colorful visual placeholder for links without a thumbnail
+- Responsive - works on mobile and desktop
 
-### Authentification et sécurité
-- **OIDC/PKCE** (PocketID, Keycloak, Authentik, tout fournisseur compatible)
-- CSRF, rate limiting par IP réelle (derrière reverse proxy), SSRF blacklist avec pré-résolution DNS
-- Content Security Policy avec nonce, headers de sécurité
-- Chiffrement API key et tokens FreshRSS (Fernet + HMAC)
+### Authentication and security
+- **OIDC/PKCE** (PocketID, Keycloak, Authentik, any compatible provider)
+- CSRF protection, rate limiting by real IP (behind reverse proxy), SSRF blacklist with DNS pre-resolution
+- Content Security Policy with nonce, security headers
+- Encrypted API key and FreshRSS tokens (Fernet + HMAC)
 
 ### Administration
-- **Panel admin** : gestion des utilisateurs, statistiques, régénération des clés API
-- **API REST v1** complète (Bearer API Key) : `GET /me`, `GET/POST /links`, `PATCH/DELETE /links/{id}`, `GET /tags`, `GET /folders`
-- Version de l'application injectée au build (hash git)
+- **Admin panel**: user management, statistics, API key regeneration
+- **Full REST API v1** (Bearer API Key): `GET /me`, `GET/POST /links`, `PATCH/DELETE /links/{id}`, `GET /tags`, `GET /folders`
+- Application version injected at build time (git hash)
 
 ---
 
@@ -68,128 +68,128 @@
 
 | | |
 |---|---|
-| [Installation](docs/installation.md) | Docker, variables d'env, reverse proxy, sauvegarde |
-| [Configuration](docs/configuration.md) | OIDC, thèmes, clé API, import/export |
-| [FreshRSS](docs/freshrss.md) | Sync articles étoilés, déséttoilage automatique |
-| [API REST](docs/api.md) | Référence complète avec exemples curl |
-| [Android](docs/android.md) | Application compagnon, QR code |
-| [Contribuer](docs/contributing.md) | Stack, structure, migrations, sécurité |
+| [Installation](docs/installation.md) | Docker, environment variables, reverse proxy, backup |
+| [Configuration](docs/configuration.md) | OIDC, themes, API key, import/export |
+| [FreshRSS](docs/freshrss.md) | Starred article sync, automatic unstarring |
+| [REST API](docs/api.md) | Full reference with curl examples |
+| [Android](docs/android.md) | Companion app, QR code |
+| [Contributing](docs/contributing.md) | Stack, structure, migrations, security |
 
 ---
 
 ## Stack
 
-| Composant | Technologie |
+| Component | Technology |
 |-----------|-------------|
 | Backend | FastAPI + SQLModel |
-| Base de données | SQLite (mode WAL, FTS5, index optimisés) |
-| Extraction lecteur | readability-lxml (algo Mozilla Readability) + nh3 (sanitisation) |
-| Templates | Jinja2 + Alpine.js (servi localement, sans CDN) |
+| Database | SQLite (WAL mode, FTS5, optimized indexes) |
+| Reader extraction | readability-lxml (Mozilla Readability algorithm) + nh3 (sanitization) |
+| Templates | Jinja2 + Alpine.js (served locally, no CDN) |
 | Auth | OIDC/PKCE |
-| Conteneur | Docker |
+| Container | Docker |
 
 ---
 
-## Déploiement
+## Deployment
 
-### Prérequis
-- Docker et Docker Compose
+### Requirements
+- Docker and Docker Compose
 
-### Démarrage rapide
+### Quick start
 
-**Option A — image pré-buildée (recommandé)**
+**Option A - pre-built image (recommended)**
 
 ```bash
 cp .env.example .env
-# Éditer .env avec tes valeurs
+# Edit .env with your values
 
 curl -O https://raw.githubusercontent.com/notarobot63/excerpta/main/docker-compose.prod.yml
 REGISTRY_IMAGE=ghcr.io/notarobot63/excerpta:latest docker compose -f docker-compose.prod.yml up -d
 ```
 
-**Option B — build local**
+**Option B - build locally**
 
 ```bash
 git clone https://github.com/notarobot63/excerpta.git
 cd excerpta
 cp .env.example .env
-# Éditer .env avec tes valeurs
+# Edit .env with your values
 docker compose up --build -d
 ```
 
-### Variables d'environnement
+### Environment variables
 
-| Variable | Obligatoire | Description |
+| Variable | Required | Description |
 |---|---|---|
-| `SECRET_KEY` | Oui | Clé secrète — `python3 -c "import secrets; print(secrets.token_hex(32))"` |
-| `BASE_URL` | Oui | URL publique de l'instance (ex. `https://liens.example.com`) |
-| `OIDC_CLIENT_ID` | Oui | Client ID de l'application OIDC |
-| `OIDC_CLIENT_SECRET` | Oui | Client secret de l'application OIDC |
-| `OIDC_ISSUER` | Oui | URL de l'issuer OIDC (ex. `https://auth.example.com`) |
-| `FRESHRSS_SYNC_INTERVAL` | Non | Intervalle de sync FreshRSS en minutes (défaut : 30) |
+| `SECRET_KEY` | Yes | Secret key - `python3 -c "import secrets; print(secrets.token_hex(32))"` |
+| `BASE_URL` | Yes | Public URL of the instance (e.g. `https://links.example.com`) |
+| `OIDC_CLIENT_ID` | Yes | OIDC application client ID |
+| `OIDC_CLIENT_SECRET` | Yes | OIDC application client secret |
+| `OIDC_ISSUER` | Yes | OIDC issuer URL (e.g. `https://auth.example.com`) |
+| `FRESHRSS_SYNC_INTERVAL` | No | FreshRSS sync interval in minutes (default: 30) |
 
-### Image Docker publique
+### Public Docker image
 
-Chaque push sur `main` (GitHub Actions, `.github/workflows/docker-publish.yml`) publie l'image sur GitHub Container Registry :
+Every push to `main` (GitHub Actions, `.github/workflows/docker-publish.yml`) publishes the image to GitHub Container Registry:
 
 ```
 ghcr.io/notarobot63/excerpta:latest
-ghcr.io/notarobot63/excerpta:<sha-du-commit>
+ghcr.io/notarobot63/excerpta:<commit-sha>
 ```
 
-### CI/CD (pipeline de déploiement interne, GitLab)
+### CI/CD (internal deployment pipeline, GitLab)
 
-Le pipeline `.gitlab-ci.yml` fourni (spécifique au déploiement de l'instance de démo) effectue :
-1. **Build** : construit et pousse l'image Docker sur le registry
-2. **Deploy** : pull la nouvelle image sur le serveur cible et relance le container
+The provided `.gitlab-ci.yml` pipeline (specific to the demo instance deployment) performs:
+1. **Build**: builds and pushes the Docker image to the registry
+2. **Deploy**: pulls the new image on the target server and restarts the container
 
-Variables requises dans GitLab CI/CD :
+Required GitLab CI/CD variables:
 
 | Variable | Type | Description |
 |---|---|---|
-| `CI_REGISTRY` | Variable | URL du registry Docker |
-| `CI_REGISTRY_USER` | Variable | Login registry |
-| `CI_REGISTRY_PASSWORD` | Secret | Mot de passe registry |
-| `DEPLOY_HOST` | Variable | Hôte de déploiement |
-| `DEPLOY_PATH` | Variable | Chemin du docker-compose sur le serveur |
-| `DEPLOY_PORT` | Variable | Port de l'application (pour le healthcheck) |
-| `DEPLOY_SSH_KEY` | Secret (fichier) | Clé SSH privée pour le déploiement |
-| `NTFY_URL` | Variable | URL de notification NTFY |
-| `NTFY_TOKEN` | Secret | Token NTFY |
+| `CI_REGISTRY` | Variable | Docker registry URL |
+| `CI_REGISTRY_USER` | Variable | Registry login |
+| `CI_REGISTRY_PASSWORD` | Secret | Registry password |
+| `DEPLOY_HOST` | Variable | Deployment host |
+| `DEPLOY_PATH` | Variable | Path to the docker-compose file on the server |
+| `DEPLOY_PORT` | Variable | Application port (for the healthcheck) |
+| `DEPLOY_SSH_KEY` | Secret (file) | Private SSH key for deployment |
+| `NTFY_URL` | Variable | NTFY notification URL |
+| `NTFY_TOKEN` | Secret | NTFY token |
 
 ---
 
-## API REST
+## REST API
 
-Authentification via clé API (visible dans Paramètres → Compte) :
+Authentication via API key (visible in Settings → Account):
 
 ```http
 GET /api/v1/links
 X-API-Key: <api_key>
 ```
 
-Endpoints :
+Endpoints:
 
-| Méthode | Endpoint | Description |
+| Method | Endpoint | Description |
 |---|---|---|
-| `GET` | `/api/v1/me` | Profil utilisateur |
-| `GET` | `/api/v1/links` | Liste paginée, filtre `?q=`, `?tag=`, `?folder_id=` |
-| `POST` | `/api/v1/links` | Créer un lien |
-| `PATCH` | `/api/v1/links/{id}` | Modifier un lien |
-| `DELETE` | `/api/v1/links/{id}` | Supprimer un lien |
-| `GET` | `/api/v1/tags` | Liste des tags avec compteurs |
-| `GET` | `/api/v1/folders` | Arborescence des dossiers |
+| `GET` | `/api/v1/me` | User profile |
+| `GET` | `/api/v1/links` | Paginated list, filter by `?q=`, `?tag=`, `?folder_id=` |
+| `POST` | `/api/v1/links` | Create a link |
+| `PATCH` | `/api/v1/links/{id}` | Update a link |
+| `DELETE` | `/api/v1/links/{id}` | Delete a link |
+| `GET` | `/api/v1/tags` | List tags with counts |
+| `GET` | `/api/v1/folders` | Folder tree |
 
 ---
 
-## Application Android
+## Android app
 
-L'application compagnon **excerpta-android** permet l'ajout rapide de liens depuis le partage système Android. Elle se configure en scannant le QR code disponible dans **Paramètres → Compte**.
+The **excerpta-android** companion app lets you quickly add links from the Android system share menu. It is configured by scanning the QR code available in **Settings → Account**.
 
-> Le dépôt excerpta-android n'est pas encore publié.
+> Available at [notarobot63/excerpta-android](https://github.com/notarobot63/excerpta-android).
 
 ---
 
-## Licence
+## License
 
-[GNU Affero General Public License v3.0](LICENSE) — fork libre, copyleft fort, attribution obligatoire.
+[GNU Affero General Public License v3.0](LICENSE) - free to fork, strong copyleft, attribution required.

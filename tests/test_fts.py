@@ -52,7 +52,7 @@ def test_delete_link_removes_from_fts(session):
 
 def test_delete_tag_preserves_link_fts(session):
     """Régression : supprimer un tag ne doit PAS détruire le FTS des liens
-    qui le portaient — ils existent toujours."""
+    qui le portaient - ils existent toujours."""
     user = _make_user(session)
     link = _add_link(session, user, "https://ex.com/y", "Article important", ["obsolete"])
     tag_id = session.execute(

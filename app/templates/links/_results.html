@@ -59,7 +59,7 @@
     {% if link.is_broken %}
     <div class="link-recovery">
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-      Lien cassé —
+      Lien cassé -
       {% if link.reader_html %}<a href="/links/{{ link.id }}/read">lire la copie sauvegardée</a>{% endif %}
       {% if link.reader_html and link.archived_url %} · {% endif %}
       {% if link.archived_url %}<a href="{{ link.archived_url }}" target="_blank" rel="noopener">voir l'archive</a>{% endif %}
@@ -88,7 +88,7 @@
     {% elif link.archive_status == 'pending' %}
     <span class="btn btn-ghost btn-sm" title="Archivage en cours…" style="opacity:0.45;cursor:default;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span>
     {% elif link.archive_status == 'failed' %}
-    <form action="/links/{{ link.id }}/archive" method="post" style="display:inline;" title="Échec archivage — réessayer">
+    <form action="/links/{{ link.id }}/archive" method="post" style="display:inline;" title="Échec archivage - réessayer">
       {{ csrf_input(request) }}
       <button type="submit" class="btn btn-ghost btn-sm" style="color:var(--btn-danger,#d9534f);"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="20" height="5" x="2" y="3" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"/><line x1="9.5" y1="13" x2="14.5" y2="13"/></svg></button>
     </form>

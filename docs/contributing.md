@@ -1,18 +1,18 @@
-# Contribuer
+# Contributing
 
 ## Stack
 
-| Couche | Technologie |
+| Layer | Technology |
 |---|---|
 | Backend | Python 3.11+, FastAPI, SQLModel |
-| Base de données | SQLite (WAL + FTS5) |
+| Database | SQLite (WAL + FTS5) |
 | Templates | Jinja2 |
-| JS | Alpine.js (v3, servi localement) |
-| CSS | Vanilla CSS, variables de thème |
-| Extraction lecteur | readability-lxml + nh3 (sanitisation HTML) |
-| Tests | pytest (`tests/`, voir `requirements-dev.txt`) |
+| JS | Alpine.js (v3, served locally) |
+| CSS | Vanilla CSS, theme variables |
+| Reader extraction | readability-lxml + nh3 (HTML sanitization) |
+| Tests | pytest (`tests/`, see `requirements-dev.txt`) |
 
-## Environnement de développement
+## Development environment
 
 ```bash
 git clone https://github.com/notarobot63/excerpta.git
@@ -21,40 +21,40 @@ python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 cp .env.example .env
-# Éditer .env
+# Edit .env
 uvicorn app.main:app --reload
 ```
 
-L'application est disponible sur `http://localhost:8000`.
+The app is available at `http://localhost:8000`.
 
 ## Structure
 
 ```
 app/
-├── main.py          — point d'entrée FastAPI, lifespan, middlewares
-├── models.py        — modèles SQLModel (Link, Tag, Folder, User, FreshRSSConfig)
-├── database.py      — initialisation SQLite, migrations idempotentes, FTS
-├── auth.py          — dépendance get_current_user
-├── config.py        — variables d'environnement (pydantic Settings)
-├── crypto.py        — chiffrement Fernet + HMAC pour tokens/clés API
-├── csrf.py          — protection CSRF (header + form token)
-├── ratelimit.py     — rate limiting par IP
-├── utils.py         — fonctions partagées (sidebar_data, FTS, dossiers)
+├── main.py          - FastAPI entry point, lifespan, middlewares
+├── models.py        - SQLModel models (Link, Tag, Folder, User, FreshRSSConfig)
+├── database.py      - SQLite init, idempotent migrations, FTS
+├── auth.py          - get_current_user dependency
+├── config.py        - environment variables (pydantic Settings)
+├── crypto.py        - Fernet + HMAC encryption for tokens/API keys
+├── csrf.py          - CSRF protection (header + form token)
+├── ratelimit.py     - per-IP rate limiting
+├── utils.py         - shared helpers (sidebar_data, FTS, folders)
 ├── routes/
-│   ├── links.py     — CRUD liens, drag&drop, recherche live, vue lecteur, archivage Wayback, métadonnées
-│   ├── tags.py      — gestion tags (rename avec fusion, delete)
-│   ├── folders.py   — dossiers hiérarchiques (rename inline, tri A→Z, reorder)
-│   ├── freshrss.py  — sync FreshRSS, unstar GReader
-│   ├── api.py       — API REST v1
-│   ├── settings.py  — paramètres, import/export, vérification liens, archivage en masse
-│   ├── public.py    — page publique par utilisateur (/u/{slug}) + flux RSS
-│   ├── admin.py     — panel administrateur
-│   └── auth.py      — login OIDC/PKCE, logout
-├── templates/       — Jinja2 (base.html + une sous-structure par domaine ;
-│                      links/_results.html = fragment réutilisé par la recherche AJAX)
-└── static/          — CSS, JS, SVG (servis localement, sans CDN)
+│   ├── links.py     - link CRUD, drag&drop, live search, reader view, Wayback archiving, metadata
+│   ├── tags.py      - tag management (rename with merge, delete)
+│   ├── folders.py   - hierarchical folders (inline rename, A→Z sort, reorder)
+│   ├── freshrss.py  - FreshRSS sync, GReader unstar
+│   ├── api.py       - REST API v1
+│   ├── settings.py  - settings, import/export, link checking, bulk archiving
+│   ├── public.py    - per-user public page (/u/{slug}) + RSS feed
+│   ├── admin.py     - admin panel
+│   └── auth.py      - OIDC/PKCE login, logout
+├── templates/       - Jinja2 (base.html + a sub-structure per domain;
+│                      links/_results.html = fragment reused by AJAX search)
+└── static/          - CSS, JS, SVG (served locally, no CDN)
 
-tests/               — pytest (DB SQLite temporaire + FTS, voir conftest.py)
+tests/               - pytest (temporary SQLite DB + FTS, see conftest.py)
 ```
 
 ## Tests
@@ -64,28 +64,28 @@ pip install -r requirements-dev.txt
 pytest -q
 ```
 
-La CI GitLab exécute `pytest` au stage `test`, qui bloque le build et le déploiement en cas d'échec.
+The GitLab CI runs `pytest` at the `test` stage, which blocks the build and deployment on failure.
 
-## Migrations base de données
+## Database migrations
 
-Les migrations sont idempotentes et s'exécutent dans `database.py:init_db()` au démarrage. Pour ajouter une colonne :
+Migrations are idempotent and run in `database.py:init_db()` at startup. To add a column:
 
 ```python
-cols = {r[1] for r in con.execute("PRAGMA table_info(ma_table)").fetchall()}
-if "nouvelle_colonne" not in cols:
-    con.execute("ALTER TABLE ma_table ADD COLUMN nouvelle_colonne TEXT")
+cols = {r[1] for r in con.execute("PRAGMA table_info(my_table)").fetchall()}
+if "new_column" not in cols:
+    con.execute("ALTER TABLE my_table ADD COLUMN new_column TEXT")
 ```
 
-## Sécurité
+## Security
 
-Avant de soumettre une contribution :
+Before submitting a contribution:
 
-- Pas de secret en clair dans le code ou les templates
-- Les URL externes passent par `_safe_url()` (blacklist SSRF)
-- Les formulaires POST incluent le token CSRF (`{{ csrf_input(request) }}`)
-- Les requêtes JSON utilisent le header `X-CSRF-Token`
-- Toute nouvelle route authentifiée utilise `Depends(get_current_user)`
+- No secrets in plaintext in code or templates
+- External URLs go through `_safe_url()` (SSRF blacklist)
+- POST forms include the CSRF token (`{{ csrf_input(request) }}`)
+- JSON requests use the `X-CSRF-Token` header
+- Any new authenticated route uses `Depends(get_current_user)`
 
-## Signaler un problème
+## Reporting an issue
 
-Ouvrir une issue sur le dépôt avec une description précise du comportement observé et des étapes pour le reproduire.
+Open an issue on the repository with a precise description of the observed behavior and steps to reproduce it.

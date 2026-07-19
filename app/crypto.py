@@ -31,7 +31,7 @@ def decrypt(value: str) -> str:
     if not value:
         return value
     if not value.startswith("gAAAAA"):
-        _log.warning("decrypt: valeur non chiffrée reçue — vérifiez ENCRYPTION_KEY")
+        _log.warning("decrypt: valeur non chiffrée reçue - vérifiez ENCRYPTION_KEY")
         return value
     try:
         return _fernet().decrypt(value.encode()).decode()

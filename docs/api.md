@@ -1,26 +1,26 @@
-# API REST v1
+# REST API v1
 
-## Authentification
+## Authentication
 
-Toutes les requêtes API requièrent une clé API dans le header :
+All API requests require an API key in the header:
 
 ```
-X-API-Key: <votre-clé-api>
+X-API-Key: <your-api-key>
 ```
 
-La clé est disponible dans **Paramètres → Compte**.
+The key is available in **Settings → Account**.
 
-**Rate limit :** 60 requêtes / minute par clé.
+**Rate limit:** 60 requests / minute per key.
 
 ## Endpoints
 
 ### GET /api/v1/me
 
-Retourne le profil de l'utilisateur authentifié.
+Returns the authenticated user's profile.
 
 ```bash
-curl https://votre-instance.example.com/api/v1/me \
-  -H "X-API-Key: <clé>"
+curl https://your-instance.example.com/api/v1/me \
+  -H "X-API-Key: <key>"
 ```
 
 ```json
@@ -31,21 +31,21 @@ curl https://votre-instance.example.com/api/v1/me \
 
 ### GET /api/v1/links
 
-Liste les liens, paginés, avec recherche et filtres optionnels.
+Lists links, paginated, with optional search and filters.
 
-**Paramètres query**
+**Query parameters**
 
-| Paramètre | Type | Description |
+| Parameter | Type | Description |
 |---|---|---|
-| `q` | string | Recherche full-text (titre, description, note, URL, tags), insensible aux accents |
-| `tag` | string | Filtrer par tag |
-| `group_id` | int | Filtrer par dossier (inclut les sous-dossiers) |
-| `page` | int | Page (défaut : 1) |
-| `per_page` | int | Résultats par page (défaut : 30, max : 100) |
+| `q` | string | Full-text search (title, description, note, URL, tags), accent-insensitive |
+| `tag` | string | Filter by tag |
+| `group_id` | int | Filter by folder (includes subfolders) |
+| `page` | int | Page (default: 1) |
+| `per_page` | int | Results per page (default: 30, max: 100) |
 
 ```bash
-curl "https://votre-instance.example.com/api/v1/links?q=python&tag=dev&page=1" \
-  -H "X-API-Key: <clé>"
+curl "https://your-instance.example.com/api/v1/links?q=python&tag=dev&page=1" \
+  -H "X-API-Key: <key>"
 ```
 
 ```json
@@ -54,11 +54,11 @@ curl "https://votre-instance.example.com/api/v1/links?q=python&tag=dev&page=1" \
     {
       "id": 42,
       "url": "https://example.com/article",
-      "title": "Titre de l'article",
-      "description": "Description courte",
+      "title": "Article title",
+      "description": "Short description",
       "favicon_url": "https://...",
       "thumbnail_url": "https://...",
-      "note": "Ma note en **Markdown**",
+      "note": "My note in **Markdown**",
       "is_public": false,
       "created_at": "2026-01-15T10:30:00",
       "tags": ["python", "dev"]
@@ -75,69 +75,69 @@ curl "https://votre-instance.example.com/api/v1/links?q=python&tag=dev&page=1" \
 
 ### POST /api/v1/links
 
-Crée un nouveau lien.
+Creates a new link.
 
 ```bash
-curl -X POST https://votre-instance.example.com/api/v1/links \
-  -H "X-API-Key: <clé>" \
+curl -X POST https://your-instance.example.com/api/v1/links \
+  -H "X-API-Key: <key>" \
   -H "Content-Type: application/json" \
-  -d '{"url": "https://example.com", "title": "Exemple", "tags": ["dev", "tool"]}'
+  -d '{"url": "https://example.com", "title": "Example", "tags": ["dev", "tool"]}'
 ```
 
-**Corps**
+**Body**
 
-| Champ | Type | Description |
+| Field | Type | Description |
 |---|---|---|
-| `url` | string | URL du lien (obligatoire) |
-| `title` | string | Titre (défaut : URL) |
-| `note` | string | Note Markdown |
-| `tags` | array | Liste de tags |
-| `folder_id` | int | ID du dossier (optionnel, ignoré si invalide) |
-| `is_public` | bool | Rendre le lien public dès la création (défaut : false) |
+| `url` | string | Link URL (required) |
+| `title` | string | Title (default: URL) |
+| `note` | string | Markdown note |
+| `tags` | array | List of tags |
+| `folder_id` | int | Folder ID (optional, ignored if invalid) |
+| `is_public` | bool | Make the link public right away (default: false) |
 
 ```json
-{ "id": 43, "url": "https://example.com", "title": "Exemple" }
+{ "id": 43, "url": "https://example.com", "title": "Example" }
 ```
 
 ---
 
 ### PATCH /api/v1/links/{id}
 
-Modifie un lien existant.
+Updates an existing link.
 
 ```bash
-curl -X PATCH https://votre-instance.example.com/api/v1/links/42 \
-  -H "X-API-Key: <clé>" \
+curl -X PATCH https://your-instance.example.com/api/v1/links/42 \
+  -H "X-API-Key: <key>" \
   -H "Content-Type: application/json" \
   -d '{"is_public": true}'
 ```
 
-**Corps**
+**Body**
 
-| Champ | Type | Description |
+| Field | Type | Description |
 |---|---|---|
-| `is_public` | bool | Rendre le lien public ou privé |
+| `is_public` | bool | Make the link public or private |
 
 ---
 
 ### DELETE /api/v1/links/{id}
 
-Supprime un lien. Retourne `204 No Content`.
+Deletes a link. Returns `204 No Content`.
 
 ```bash
-curl -X DELETE https://votre-instance.example.com/api/v1/links/42 \
-  -H "X-API-Key: <clé>"
+curl -X DELETE https://your-instance.example.com/api/v1/links/42 \
+  -H "X-API-Key: <key>"
 ```
 
 ---
 
 ### GET /api/v1/tags
 
-Liste tous les tags avec leur nombre de liens associés.
+Lists all tags with their associated link count.
 
 ```bash
-curl https://votre-instance.example.com/api/v1/tags \
-  -H "X-API-Key: <clé>"
+curl https://your-instance.example.com/api/v1/tags \
+  -H "X-API-Key: <key>"
 ```
 
 ```json
@@ -153,11 +153,11 @@ curl https://votre-instance.example.com/api/v1/tags \
 
 ### GET /api/v1/folders
 
-Retourne l'arborescence des dossiers avec leur nombre de liens.
+Returns the folder tree with their link counts.
 
 ```bash
-curl https://votre-instance.example.com/api/v1/folders \
-  -H "X-API-Key: <clé>"
+curl https://your-instance.example.com/api/v1/folders \
+  -H "X-API-Key: <key>"
 ```
 
 ```json
@@ -173,11 +173,11 @@ curl https://votre-instance.example.com/api/v1/folders \
 
 ### POST /api/v1/freshrss/sync
 
-Déclenche une sync FreshRSS manuelle. Utile pour un cron externe.
+Triggers a manual FreshRSS sync. Useful for an external cron.
 
 ```bash
-curl -X POST https://votre-instance.example.com/api/v1/freshrss/sync \
-  -H "X-API-Key: <clé>"
+curl -X POST https://your-instance.example.com/api/v1/freshrss/sync \
+  -H "X-API-Key: <key>"
 ```
 
 ```json
@@ -188,19 +188,19 @@ curl -X POST https://votre-instance.example.com/api/v1/freshrss/sync \
 
 ### GET /public/feed.xml
 
-Flux RSS public, sans authentification. Retourne les 100 derniers liens publics au format RSS 2.0.
+Public RSS feed, no authentication required. Returns the 100 most recent public links in RSS 2.0 format.
 
 ```bash
-curl https://votre-instance.example.com/public/feed.xml
+curl https://your-instance.example.com/public/feed.xml
 ```
 
-Disponible aussi via la balise `<link rel="alternate">` dans la page publique (détection automatique par les lecteurs RSS).
+Also available via the `<link rel="alternate">` tag on the public page (auto-detected by RSS readers).
 
-## Codes d'erreur
+## Error codes
 
-| Code | Signification |
+| Code | Meaning |
 |---|---|
-| 401 | Clé API manquante ou invalide |
-| 404 | Ressource introuvable |
-| 422 | Données invalides |
-| 429 | Rate limit atteint |
+| 401 | Missing or invalid API key |
+| 404 | Resource not found |
+| 422 | Invalid data |
+| 429 | Rate limit reached |

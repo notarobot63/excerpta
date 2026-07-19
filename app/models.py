@@ -3,7 +3,7 @@ from typing import Optional, List
 import secrets
 
 from sqlmodel import SQLModel, Field, Relationship
-# LinkGroupLink supprimé — remplacé par folder_id FK directe sur Link
+# LinkGroupLink supprimé - remplacé par folder_id FK directe sur Link
 
 
 def _utcnow() -> datetime:
