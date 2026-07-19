@@ -97,14 +97,14 @@
 cp .env.example .env
 # Éditer .env avec tes valeurs
 
-curl -O https://GIT_HOST/Thomas/excerpta/-/raw/main/docker-compose.prod.yml
-REGISTRY_IMAGE=REGISTRY_HOST/thomas/excerpta:latest docker compose -f docker-compose.prod.yml up -d
+curl -O https://raw.githubusercontent.com/notarobot63/excerpta/main/docker-compose.prod.yml
+REGISTRY_IMAGE=ghcr.io/notarobot63/excerpta:latest docker compose -f docker-compose.prod.yml up -d
 ```
 
 **Option B — build local**
 
 ```bash
-git clone https://GIT_HOST/Thomas/excerpta.git
+git clone https://github.com/notarobot63/excerpta.git
 cd excerpta
 cp .env.example .env
 # Éditer .env avec tes valeurs
@@ -122,9 +122,18 @@ docker compose up --build -d
 | `OIDC_ISSUER` | Oui | URL de l'issuer OIDC (ex. `https://auth.example.com`) |
 | `FRESHRSS_SYNC_INTERVAL` | Non | Intervalle de sync FreshRSS en minutes (défaut : 30) |
 
-### CI/CD (GitLab)
+### Image Docker publique
 
-Le pipeline `.gitlab-ci.yml` fourni effectue :
+Chaque push sur `main` (GitHub Actions, `.github/workflows/docker-publish.yml`) publie l'image sur GitHub Container Registry :
+
+```
+ghcr.io/notarobot63/excerpta:latest
+ghcr.io/notarobot63/excerpta:<sha-du-commit>
+```
+
+### CI/CD (pipeline de déploiement interne, GitLab)
+
+Le pipeline `.gitlab-ci.yml` fourni (spécifique au déploiement de l'instance de démo) effectue :
 1. **Build** : construit et pousse l'image Docker sur le registry
 2. **Deploy** : pull la nouvelle image sur le serveur cible et relance le container
 
