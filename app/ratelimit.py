@@ -23,10 +23,16 @@ def _client_ip(request: Request) -> str:
     if connecting:
         try:
             if ipaddress.ip_address(connecting).is_private:
-                ip = (
-                    request.headers.get("X-Real-IP")
-                    or request.headers.get("X-Forwarded-For", "").split(",")[0].strip()
-                )
+                # X-Forwarded-For est une liste que le proxy *complète* : le
+                # client contrôle les premiers éléments. Le seul saut de
+                # confiance est le DERNIER, ajouté par notre propre proxy.
+                # Prendre [0] laissait un client forger une IP arbitraire et
+                # obtenir un compteur neuf à chaque requête.
+                ip = request.headers.get("X-Real-IP", "").strip()
+                if not ip:
+                    forwarded = request.headers.get("X-Forwarded-For", "")
+                    parts = [p.strip() for p in forwarded.split(",") if p.strip()]
+                    ip = parts[-1] if parts else ""
                 if ip:
                     return ip
         except ValueError:
@@ -57,7 +63,15 @@ def rate_limit(calls: int, period_seconds: int):
                 _cleanup_counter = 0
                 do_cleanup = True
         if do_cleanup:
-            dead_keys = [k for k, v in _calls.items() if not v]
-            for k in dead_keys:
-                del _calls[k]
+            # Une entrée n'est purgée que si sa fenêtre est vide, or elle n'est
+            # recalculée qu'à la requête suivante de la même clé : sans balayage
+            # actif, les clés inactives n'étaient jamais libérées et le dict
+            # croissait indéfiniment (une entrée par couple IP × endpoint).
+            async with _lock:
+                stale = [
+                    k for k, v in _calls.items()
+                    if not v or now - max(v) >= period_seconds
+                ]
+                for k in stale:
+                    del _calls[k]
     return dependency

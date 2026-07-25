@@ -1,6 +1,5 @@
 import asyncio
 import io
-import ipaddress
 import json
 from datetime import datetime, timezone
 from typing import Optional
@@ -23,7 +22,7 @@ from ..models import Folder, Link, LinkTagLink, Tag, User
 from ..ratelimit import rate_limit
 from ..templates_cfg import templates
 from ..utils import get_or_create_tag, refresh_link_fts, sidebar_data, slugify
-from .links import _archive_many, _fetch_meta, _hostname_resolves_public
+from .links import _archive_many, _assert_public_url, _fetch_meta
 
 router = APIRouter()
 
@@ -452,15 +451,8 @@ _MAX_REDIRECTS = 5
 
 
 async def _check_url_safe(url: str) -> bool:
-    """Anti-SSRF : URL bien formée + le hostname ne résout pas vers une IP privée."""
-    if not _safe_url(url):
-        return False
-    host = urlparse(url).hostname or ""
-    try:
-        ipaddress.ip_address(host)  # IP littérale déjà filtrée par _safe_url
-        return True
-    except ValueError:
-        return await _hostname_resolves_public(host)
+    """Anti-SSRF : délègue à la garde unique de links.py (_assert_public_url)."""
+    return await _assert_public_url(url)
 
 
 async def _request_no_private_redirect(client: httpx.AsyncClient, method: str, url: str):

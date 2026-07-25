@@ -3,14 +3,19 @@ from xml.sax.saxutils import escape as xml_escape
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import HTMLResponse, Response
+from sqlalchemy import or_
 from sqlmodel import Session, select
 
 from ..config import settings
 from ..database import get_session
 from ..models import Link, User
+from ..ratelimit import rate_limit
 from ..templates_cfg import templates
 
 router = APIRouter()
+
+# Plafond de liens rendus sur une page publique (anti-DoS sur route anonyme).
+_PUBLIC_MAX_LINKS = 500
 
 
 def _get_public_owner(session: Session, slug: str) -> User:
@@ -22,7 +27,7 @@ def _get_public_owner(session: Session, slug: str) -> User:
     return owner
 
 
-@router.get("/u/{slug}/feed.xml")
+@router.get("/u/{slug}/feed.xml", dependencies=[Depends(rate_limit(60, 60))])
 async def public_feed(
     slug: str,
     request: Request,
@@ -65,7 +70,8 @@ async def public_feed(
     return Response(content=xml, media_type="application/rss+xml")
 
 
-@router.get("/u/{slug}", response_class=HTMLResponse)
+@router.get("/u/{slug}", response_class=HTMLResponse,
+            dependencies=[Depends(rate_limit(60, 60))])
 async def public_links(
     slug: str,
     request: Request,
@@ -76,23 +82,25 @@ async def public_links(
     owner = _get_public_owner(session, slug)
     page_title = owner.public_page_title or "Liens publics"
 
+    # Filtrage en base plutôt qu'en Python : cette route est la seule surface
+    # non authentifiée, charger toute la collection à chaque requête en faisait
+    # un levier de déni de service.
+    stmt = select(Link).where(Link.user_id == owner.id, Link.is_public == True)
+    if q:
+        pattern = f"%{q.strip()}%"
+        stmt = stmt.where(
+            or_(
+                Link.title.ilike(pattern),
+                Link.description.ilike(pattern),
+                Link.note.ilike(pattern),
+                Link.url.ilike(pattern),
+            )
+        )
     links = list(
         session.exec(
-            select(Link)
-            .where(Link.user_id == owner.id, Link.is_public == True)
-            .order_by(Link.created_at.desc())
+            stmt.order_by(Link.created_at.desc()).limit(_PUBLIC_MAX_LINKS)
         ).all()
     )
-
-    if q:
-        q_lower = q.lower()
-        links = [
-            lk for lk in links
-            if q_lower in (lk.title or "").lower()
-            or q_lower in (lk.description or "").lower()
-            or q_lower in (lk.note or "").lower()
-            or q_lower in lk.url.lower()
-        ]
 
     if tag:
         links = [lk for lk in links if any(t.name == tag for t in lk.tags)]

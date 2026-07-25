@@ -1,9 +1,7 @@
 import asyncio
-import ipaddress
 import logging
 from datetime import datetime, timezone
 from typing import Optional
-from urllib.parse import urlparse
 
 import httpx
 from bs4 import BeautifulSoup
@@ -17,7 +15,7 @@ from ..crypto import decrypt, encrypt, hmac_key
 from ..database import engine, get_session
 from ..models import Folder, FreshRSSConfig, Link, User
 from ..ratelimit import rate_limit
-from .links import _fetch_meta, _hostname_resolves_public, _safe_url
+from .links import _assert_public_url, _fetch_meta, _safe_url
 from ..templates_cfg import templates
 from ..utils import refresh_link_fts, sidebar_data
 
@@ -168,14 +166,8 @@ async def _refresh_new_links_bg(link_ids: list[int]) -> None:
 
 
 async def _assert_safe_freshrss_url(url: str) -> None:
-    if not _safe_url(url):
-        raise ValueError("URL FreshRSS invalide")
-    _h = urlparse(url).hostname or ""
-    try:
-        ipaddress.ip_address(_h)
-    except ValueError:
-        if not await _hostname_resolves_public(_h):
-            raise ValueError("URL FreshRSS pointe vers une adresse privée")
+    if not await _assert_public_url(url):
+        raise ValueError("URL FreshRSS invalide ou pointant vers une adresse privée")
 
 
 async def sync_user(config: FreshRSSConfig, session: Session) -> int:

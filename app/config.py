@@ -19,22 +19,27 @@ class Settings(BaseSettings):
     oidc_issuer: str = ""
     app_name: str = "Excerpta"
     admin_email: str = ""
+    require_verified_email: bool = True  # n'accorde l'admin qu'à un email vérifié par l'IdP
     freshrss_sync_interval: int = 30  # minutes entre chaque sync automatique
     encryption_key: str = ""  # Clé Fernet dédiée (indépendante de secret_key)
+    session_cookie_secure: bool = True  # flag Secure sur le cookie de session
+    testing: bool = False  # autorise le host "testserver" (TestClient Starlette)
 
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
 
     @model_validator(mode="after")
     def validate_secret_key(self) -> "Settings":
         if self.secret_key in _WEAK_KEYS or len(self.secret_key) < 32:
-            generated = secrets.token_hex(32)
+            # La clé générée n'est jamais journalisée : les logs sont
+            # centralisés, l'y écrire en clair reviendrait à publier le secret
+            # qui signe les sessions.
             logger.warning(
-                "⚠️  SECRET_KEY absente ou non sécurisée. "
-                "Clé temporaire générée - les sessions expireront au prochain redémarrage. "
-                "Définissez SECRET_KEY=%s dans docker-compose.yml",
-                generated,
+                "SECRET_KEY absente ou non sécurisée. Clé temporaire générée : "
+                "les sessions expireront au prochain redémarrage. Définissez une "
+                "SECRET_KEY persistante (python3 -c 'import secrets; "
+                "print(secrets.token_hex(32))') dans votre .env."
             )
-            self.secret_key = generated
+            self.secret_key = secrets.token_hex(32)
         return self
 
 
