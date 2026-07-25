@@ -210,5 +210,9 @@
   <h3 style="font-size:0.9rem;font-weight:600;margin:0 0 0.75rem;color:var(--text-muted)">Compte</h3>
   <p><strong>{{ user.name|e }}</strong> - {{ user.email|e }}</p>
   <p><a href="/auth/logout" class="btn btn-ghost btn-sm">Se déconnecter</a></p>
+
+  <p style="font-size:0.78rem;color:var(--text-muted);margin:1.25rem 0 0;">
+    Excerpta {{ app_version }}
+  </p>
 </div>
 {% endblock %}

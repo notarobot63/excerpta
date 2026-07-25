@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 from urllib.parse import urlparse, urlencode
 from fastapi.templating import Jinja2Templates
@@ -37,6 +38,10 @@ templates.env.filters["domain_color"] = _domain_color
 templates.env.filters["domain_initial"] = _domain_initial
 templates.env.filters["proxy_img"] = _proxy_img
 templates.env.globals["csrf_input"] = csrf_input
+# Version affichée dans l'UI : le tag SemVer quand l'image est construite depuis
+# un tag (v1.2.0 -> "1.2.0"), sinon le SHA court du commit. Renseignée par le
+# build-arg APP_VERSION du Dockerfile.
+templates.env.globals["app_version"] = os.getenv("APP_VERSION", "dev")
 
 # Cache-busting des assets : version = mtime max des fichiers statiques.
 # Change uniquement quand un asset change → cache navigateur 1 an immuable
