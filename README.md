@@ -139,12 +139,17 @@ docker compose up --build -d
 
 ### Public Docker image
 
-Every push to `main` (GitHub Actions, `.github/workflows/docker-publish.yml`) publishes the image to GitHub Container Registry:
+GitHub Actions (`.github/workflows/docker-publish.yml`) publishes the image to
+GitHub Container Registry:
 
 ```
-ghcr.io/notarobot63/excerpta:latest
-ghcr.io/notarobot63/excerpta:<commit-sha>
+ghcr.io/notarobot63/excerpta:latest      # every push to main
+ghcr.io/notarobot63/excerpta:sha-abc1234 # every push to main
+ghcr.io/notarobot63/excerpta:1.2.0       # tagged releases only
+ghcr.io/notarobot63/excerpta:1.2         # tagged releases only
 ```
+
+Pin a version tag for production; `latest` tracks `main`.
 
 ### CI/CD (internal deployment pipeline, GitLab)
 
@@ -196,6 +201,27 @@ Endpoints:
 The **excerpta-android** companion app lets you quickly add links from the Android system share menu. It is configured by scanning the QR code available in **Settings → Account**.
 
 > Available at [notarobot63/excerpta-android](https://github.com/notarobot63/excerpta-android).
+
+---
+
+## Versioning
+
+Releases follow [SemVer](https://semver.org) and are published by git tag:
+
+```bash
+git tag v1.2.0
+git push origin v1.2.0
+```
+
+The tag builds the image, publishes it to `ghcr.io` as `1.2.0`, `1.2` and
+`latest`, then creates the GitHub release. A push to `main` without a tag only
+publishes a `sha-xxxxxxx` image and creates no release.
+
+The running version is shown in **Settings → Account**: the SemVer number for an
+image built from a tag, the short commit SHA otherwise.
+
+The Android app follows its own release cycle: the contract between the two is
+carried by the `/api/v1/` prefix, not by a shared version number.
 
 ---
 
