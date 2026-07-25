@@ -4,6 +4,14 @@ On ne monte pas FastAPI (l'auth OIDC rendrait les tests fragiles) : on teste
 la logique métier directement sur une session SQLModel, ce qui suffit à couvrir
 les non-régressions FTS / multi-tenant.
 """
+import os
+
+# Doit précéder tout import de `app.*` : Settings est instancié à l'import de
+# app.config, et c'est ce flag qui autorise le host "testserver" du TestClient
+# (retiré des hôtes acceptés en production).
+os.environ.setdefault("TESTING", "1")
+os.environ.setdefault("SECRET_KEY", "test" * 16)
+
 import sqlite3
 
 import pytest

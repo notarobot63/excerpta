@@ -107,15 +107,21 @@ app = FastAPI(
     redoc_url=None,
     openapi_url=None,
 )
-# "testserver" = host par défaut du TestClient Starlette utilisé dans les tests.
 _allowed_host = urlparse(settings.base_url).hostname or "localhost"
 _extra_hosts = [h.strip() for h in settings.extra_allowed_hosts.split(",") if h.strip()]
-app.add_middleware(StrictHostMiddleware, allowed_hosts=[_allowed_host, "testserver", *_extra_hosts])
+# "testserver" = host par défaut du TestClient Starlette. Autorisé uniquement
+# sous TESTING=1 : en production c'était un contournement du contrôle de Host.
+if settings.testing:
+    _extra_hosts.append("testserver")
+app.add_middleware(StrictHostMiddleware, allowed_hosts=[_allowed_host, *_extra_hosts])
 app.add_middleware(
     SessionMiddleware,
     secret_key=settings.secret_key,
     max_age=86400 * 7,
     same_site="lax",
+    # Cookie de session jamais transmis en clair. Désactivable pour un accès
+    # LAN en HTTP pur, où le flag Secure empêcherait toute connexion.
+    https_only=settings.session_cookie_secure,
 )
 # Compression des réponses (HTML/CSS/JS/JSON) > 1 Ko
 app.add_middleware(GZipMiddleware, minimum_size=1024)

@@ -34,9 +34,15 @@ def _get_client() -> OAuth:
     return _oauth
 
 
-def _maybe_promote_admin(session: Session, user: User, is_new: bool) -> None:
+def _maybe_promote_admin(
+    session: Session, user: User, is_new: bool, email_verified: bool = False
+) -> None:
     if settings.admin_email:
-        # admin_email configured: promote only if email matches exactly
+        # admin_email configured: promote only if email matches exactly.
+        # Sans preuve de vérification par l'IdP, n'importe qui pouvant se
+        # déclarer cet email obtiendrait l'admin.
+        if not email_verified and settings.require_verified_email:
+            return
         if user.email and user.email == settings.admin_email and not user.is_admin:
             user.is_admin = True
     elif is_new:
@@ -67,6 +73,10 @@ async def oidc_callback(request: Request, session: Session = Depends(get_session
             return RedirectResponse(url="/auth/login?error=1", status_code=303)
 
     sub = userinfo.get("sub")
+    # OIDC core : email_verified est un booléen, mais certains IdP le
+    # sérialisent en chaîne. On n'accepte que le vrai booléen ou "true".
+    _ev = userinfo.get("email_verified")
+    email_verified = _ev is True or (isinstance(_ev, str) and _ev.lower() == "true")
     if not sub:
         return RedirectResponse(url="/auth/login?error=1", status_code=303)
 
@@ -93,7 +103,7 @@ async def oidc_callback(request: Request, session: Session = Depends(get_session
                 session.add(user)
                 session.flush()
                 user.public_slug = unique_public_slug(session, user.name, user.id)
-                _maybe_promote_admin(session, user, is_new=True)
+                _maybe_promote_admin(session, user, is_new=True, email_verified=email_verified)
                 session.commit()
                 session.refresh(user)
     else:
@@ -102,7 +112,7 @@ async def oidc_callback(request: Request, session: Session = Depends(get_session
     if not is_new:
         user.email = userinfo.get("email", user.email)
         user.name = userinfo.get("name", "") or userinfo.get("preferred_username", "") or user.name
-        _maybe_promote_admin(session, user, is_new=False)
+        _maybe_promote_admin(session, user, is_new=False, email_verified=email_verified)
         session.add(user)
         session.commit()
         session.refresh(user)
@@ -110,6 +120,10 @@ async def oidc_callback(request: Request, session: Session = Depends(get_session
     if not user.is_active:
         return RedirectResponse(url="/auth/login?error=inactive", status_code=303)
 
+    # Rotation de session : tout ce qui précédait l'authentification (dont le
+    # csrf_token) est jeté, sinon un cookie de session fourni par un tiers
+    # resterait valide et son CSRF token connu après le login.
+    request.session.clear()
     request.session["user_id"] = user.id
     request.session["session_version"] = user.session_version
     return RedirectResponse(url="/", status_code=303)
