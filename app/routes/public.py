@@ -1,3 +1,5 @@
+from datetime import timezone
+from email.utils import format_datetime
 from typing import Optional
 from xml.sax.saxutils import escape as xml_escape
 
@@ -47,7 +49,9 @@ async def public_feed(
     feed_link = f"{base}/u/{owner.public_slug}"
     parts = []
     for lk in links:
-        pub = lk.created_at.strftime("%a, %d %b %Y %H:%M:%S +0000")
+        # %a/%b suivent la locale du processus : sous une locale fr_FR le flux
+        # sortirait « sam., 26 juil. » et ne serait plus du RFC-822 valide.
+        pub = format_datetime(lk.created_at.replace(tzinfo=timezone.utc))
         parts.append(
             f"<item>"
             f"<title>{xml_escape(lk.title or lk.url)}</title>"
