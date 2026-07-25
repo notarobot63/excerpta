@@ -56,6 +56,10 @@ def init_db():
     SQLModel.metadata.create_all(engine)
     db_path = settings.database_url.removeprefix("sqlite:///")
     con = sqlite3.connect(db_path)
+    # Connexion distincte de l'engine : les PRAGMA de _set_sqlite_pragmas ne s'y
+    # appliquent pas. Sans busy_timeout, deux démarrages concurrents (workers,
+    # redéploiement recouvrant) échouent sur "database is locked".
+    con.execute("PRAGMA busy_timeout=5000")
     # Migration FTS : si l'ancienne table contentless (link_id UNINDEXED, content='')
     # est présente, la supprimer pour la recréer correctement avec rowid.
     fts_sql = con.execute(
@@ -236,13 +240,17 @@ def cleanup_freshrss_tag() -> None:
         if not tags:
             return
         tag_ids = [t.id for t in tags]
-        ph = ",".join(str(i) for i in tag_ids)
+        # Paramètres liés plutôt qu'une interpolation en f-string : les ids sont
+        # des entiers issus de la base, donc inoffensifs ici, mais le motif
+        # n'a pas à exister dans le code.
+        params = {f"t{i}": tid for i, tid in enumerate(tag_ids)}
+        ph = ", ".join(f":{k}" for k in params)
         affected_ids = [
             r[0] for r in session.execute(
-                _text(f"SELECT DISTINCT link_id FROM link_tags WHERE tag_id IN ({ph})")
+                _text(f"SELECT DISTINCT link_id FROM link_tags WHERE tag_id IN ({ph})"), params
             ).fetchall()
         ]
-        session.execute(_text(f"DELETE FROM link_tags WHERE tag_id IN ({ph})"))
+        session.execute(_text(f"DELETE FROM link_tags WHERE tag_id IN ({ph})"), params)
         for t in tags:
             session.delete(t)
         session.flush()

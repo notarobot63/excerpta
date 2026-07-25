@@ -113,7 +113,10 @@ _extra_hosts = [h.strip() for h in settings.extra_allowed_hosts.split(",") if h.
 # sous TESTING=1 : en production c'était un contournement du contrôle de Host.
 if settings.testing:
     _extra_hosts.append("testserver")
-app.add_middleware(StrictHostMiddleware, allowed_hosts=[_allowed_host, *_extra_hosts])
+# ATTENTION à l'ordre : Starlette insère chaque add_middleware en tête de pile,
+# donc le DERNIER ajouté s'exécute en PREMIER. StrictHostMiddleware doit rester
+# le dernier appel de ce bloc pour rejeter un Host invalide avant que la session
+# ne soit déchiffrée et que la réponse ne soit compressée.
 app.add_middleware(
     SessionMiddleware,
     secret_key=settings.secret_key,
@@ -125,6 +128,7 @@ app.add_middleware(
 )
 # Compression des réponses (HTML/CSS/JS/JSON) > 1 Ko
 app.add_middleware(GZipMiddleware, minimum_size=1024)
+app.add_middleware(StrictHostMiddleware, allowed_hosts=[_allowed_host, *_extra_hosts])
 app.mount("/static", StaticFiles(directory=str(Path(__file__).parent / "static")), name="static")
 
 
