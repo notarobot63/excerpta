@@ -113,7 +113,7 @@ cp .env.example .env
 # Edit .env with your values
 
 curl -O https://raw.githubusercontent.com/notarobot63/excerpta/main/docker-compose.prod.yml
-REGISTRY_IMAGE=ghcr.io/notarobot63/excerpta:latest docker compose -f docker-compose.prod.yml up -d
+docker compose -f docker-compose.prod.yml up -d
 ```
 
 **Option B - build locally**

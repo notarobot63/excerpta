@@ -14,8 +14,7 @@ curl -O https://raw.githubusercontent.com/notarobot63/excerpta/main/docker-compo
 curl -O https://raw.githubusercontent.com/notarobot63/excerpta/main/.env.example
 cp .env.example .env
 # Edit .env
-REGISTRY_IMAGE=ghcr.io/notarobot63/excerpta:latest \
-  docker compose -f docker-compose.prod.yml up -d
+docker compose -f docker-compose.prod.yml up -d
 ```
 
 ### Option B - build locally
@@ -71,8 +70,7 @@ server {
 
 ```bash
 # Pre-built image
-REGISTRY_IMAGE=ghcr.io/notarobot63/excerpta:latest \
-  docker compose -f docker-compose.prod.yml pull && \
+docker compose -f docker-compose.prod.yml pull && \
   docker compose -f docker-compose.prod.yml up -d
 
 # Local build
