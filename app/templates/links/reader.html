@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="fr" data-theme="light">
+<html lang="{{ current_locale() }}" data-theme="light">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{{ link.reader_title or link.title or 'Lecture' }} - Excerpta</title>
+  <title>{{ link.reader_title or link.title or _("Reader") }} - Excerpta</title>
   <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/static/style.css?v={{ static_version }}">
   <script nonce="{{ request.state.nonce }}">
@@ -63,19 +63,19 @@
 </head>
 <body>
   <div class="reader-topbar">
-    <a href="/" id="reader-back" class="reader-btn" title="Retour">
+    <a href="/" id="reader-back" class="reader-btn" title="{{ _("Back") }}">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
-      Retour
+      {{ _("Back") }}
     </a>
     <div class="spacer"></div>
-    <button type="button" id="font-dec" class="reader-btn" title="Réduire la police">A−</button>
-    <button type="button" id="font-inc" class="reader-btn" title="Agrandir la police">A+</button>
-    <button type="button" id="theme-toggle" class="reader-btn" title="Clair / sombre">
+    <button type="button" id="font-dec" class="reader-btn" title="{{ _("Decrease font size") }}">A−</button>
+    <button type="button" id="font-inc" class="reader-btn" title="{{ _("Increase font size") }}">A+</button>
+    <button type="button" id="theme-toggle" class="reader-btn" title="{{ _("Light / dark") }}">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
     </button>
-    <a href="{{ link.url }}" target="_blank" rel="noopener" class="reader-btn" title="Voir l'original">
+    <a href="{{ link.url }}" target="_blank" rel="noopener" class="reader-btn" title="{{ _("View the original") }}">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>
-      Source
+      {{ _("Source") }}
     </a>
   </div>
 
@@ -84,17 +84,17 @@
     <h1 class="reader-title">{{ link.reader_title or link.title or link.url }}</h1>
     <div class="reader-meta">
       <span>{{ source_host }}</span>
-      {% if reading_minutes %}<span>{{ reading_minutes }} min de lecture</span>{% endif %}
+      {% if reading_minutes %}<span>{{ ngettext("%(num)d min read", "%(num)d min read", reading_minutes) }}</span>{% endif %}
     </div>
     <div class="reader-content">
       {{ link.reader_html | safe }}
     </div>
     {% else %}
     <div class="reader-empty">
-      <p>Impossible d'extraire une version lisible de cette page.</p>
+      <p>{{ _("Could not extract a readable version of this page.") }}</p>
       <p>
-        <a href="{{ link.url }}" target="_blank" rel="noopener" class="reader-btn">Ouvrir l'original</a>
-        <a href="/links/{{ link.id }}/read?refresh=1" class="reader-btn">Réessayer</a>
+        <a href="{{ link.url }}" target="_blank" rel="noopener" class="reader-btn">{{ _("Open the original") }}</a>
+        <a href="/links/{{ link.id }}/read?refresh=1" class="reader-btn">{{ _("Try again") }}</a>
       </p>
     </div>
     {% endif %}

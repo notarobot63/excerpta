@@ -7,10 +7,12 @@ utilisant gettext.install() ou un catalogue figé sur l'environnement Jinja le
 ferait échouer.
 """
 import asyncio
+from pathlib import Path
 
 import pytest
 from babel.messages.catalog import Catalog
 from babel.messages.mofile import write_mo
+from babel.messages.pofile import read_po
 from starlette.requests import Request
 
 from app import i18n
@@ -231,3 +233,78 @@ def test_unavailable_stored_preference_does_not_block_negotiation(catalogs):
 
 def test_no_signal_at_all_gives_default(catalogs):
     assert i18n.resolve_locale(_request()) == i18n.DEFAULT_LOCALE
+
+
+# --------------------------------------------------------------------------
+# Intégrité des catalogues livrés
+#
+# Ces tests portent sur les vrais fichiers du dépôt, pas sur les fixtures :
+# ils gardent les contributions de traduction. Une variable *renommée* à la
+# traduction (`%(nb)d` pour `%(num)d`) lève une KeyError au rendu et casse la
+# page entière. L'*omission* d'une variable, elle, est légitime en gettext
+# (« Supprimer ce dossier ET son lien ? » n'a pas besoin du compteur) et
+# n'est donc pas signalée.
+# --------------------------------------------------------------------------
+
+def _shipped_catalogs():
+    for po in sorted(i18n.TRANSLATIONS_DIR.glob(f"*/LC_MESSAGES/{i18n.DOMAIN}.po")):
+        yield po.parent.parent.name, po
+
+
+def test_at_least_one_catalog_is_shipped():
+    assert list(_shipped_catalogs()), "aucun catalogue trouvé"
+
+
+@pytest.mark.parametrize("locale,po_path", list(_shipped_catalogs()))
+def test_catalog_placeholders_survive_translation(locale, po_path):
+    """Aucune traduction n'introduit de variable inconnue ni ne perd `{n}`.
+
+    Deux familles de variables, deux risques distincts : `%(name)s` côté
+    Python/Jinja, où Babel signale les noms inconnus ; et `{n}` côté
+    JavaScript, que Babel ignore et qu'on vérifie donc à la main. Un `{n}`
+    perdu ne plante rien, mais affiche « liens sélectionnés » sans le nombre.
+    """
+    with open(po_path, encoding="utf-8") as fh:
+        catalog = read_po(fh, locale=locale)
+
+    problems = []
+    for message in catalog:
+        if not message.id or not message.string:
+            continue
+        for error in message.check(catalog):
+            problems.append(f"{message.id!r} : {error}")
+
+        ids = message.id if isinstance(message.id, (list, tuple)) else [message.id]
+        strings = (
+            message.string
+            if isinstance(message.string, (list, tuple))
+            else [message.string]
+        )
+        # `{n}` est substitué côté client : s'il disparaît, l'utilisateur voit
+        # le jeton brut au lieu du nombre.
+        if any("{n}" in i for i in ids):
+            for translated in strings:
+                if translated and "{n}" not in translated:
+                    problems.append(f"{message.id!r} : « {translated} » perd {{n}}")
+
+    assert not problems, "\n".join(problems)
+
+
+def test_french_catalog_is_complete():
+    """Le français est la langue d'origine de l'interface : il reste complet.
+
+    Si ce test tombe après l'ajout d'une chaîne, c'est le rappel de reporter
+    la traduction dans fr.po, pas une invitation à supprimer l'assertion.
+    """
+    po_path = i18n.TRANSLATIONS_DIR / "fr" / "LC_MESSAGES" / f"{i18n.DOMAIN}.po"
+    with open(po_path, encoding="utf-8") as fh:
+        catalog = read_po(fh, locale="fr")
+
+    untranslated = [
+        message.id for message in catalog
+        if message.id and not (
+            all(message.string) if isinstance(message.string, (list, tuple))
+            else message.string
+        )
+    ]
+    assert not untranslated, f"non traduit en français : {untranslated}"

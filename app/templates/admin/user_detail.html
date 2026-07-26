@@ -1,52 +1,52 @@
 {% extends "base.html" %}
-{% block title %}{{ target.name }} - Admin - Excerpta{% endblock %}
+{% block title %}{{ target.name }} - {{ _("Administration") }} - Excerpta{% endblock %}
 {% block content %}
 <div style="max-width:700px;">
   <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1.5rem;flex-wrap:wrap;">
     <h2 style="font-size:1.1rem;font-weight:600;margin:0;">{{ target.name }}</h2>
-    {% if target.is_admin %}<span class="tag">admin</span>{% endif %}
-    {% if not target.is_active %}<span style="background:var(--btn-danger);color:#fff;border-radius:4px;padding:0.1rem 0.45rem;font-size:0.7rem;font-weight:600;">désactivé</span>{% endif %}
-    <a href="/admin/users" class="btn btn-ghost btn-sm" style="margin-left:auto;">← Utilisateurs</a>
+    {% if target.is_admin %}<span class="tag">{{ _("admin") }}</span>{% endif %}
+    {% if not target.is_active %}<span style="background:var(--btn-danger);color:#fff;border-radius:4px;padding:0.1rem 0.45rem;font-size:0.7rem;font-weight:600;">{{ _("disabled") }}</span>{% endif %}
+    <a href="/admin/users" class="btn btn-ghost btn-sm" style="margin-left:auto;">← {{ _("Users") }}</a>
   </div>
 
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.5rem;">
     <div style="background:var(--bg-alt);border:1px solid var(--border);border-radius:0.5rem;padding:1rem;">
-      <div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:0.5rem;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;">Infos</div>
-      <div style="font-size:0.85rem;"><strong>Email</strong> : {{ target.email }}</div>
-      <div style="font-size:0.85rem;margin-top:0.25rem;"><strong>Inscrit</strong> : {{ target.created_at.strftime('%d/%m/%Y') }}</div>
+      <div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:0.5rem;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;">{{ _("Info") }}</div>
+      <div style="font-size:0.85rem;"><strong>{{ _("Email") }}</strong> : {{ target.email }}</div>
+      <div style="font-size:0.85rem;margin-top:0.25rem;"><strong>{{ _("Signed up") }}</strong> : {{ target.created_at|localedate }}</div>
       <div style="font-size:0.85rem;margin-top:0.25rem;"><strong>OIDC sub</strong> : <code style="font-size:0.75em;">{{ target.oidc_sub[:24] }}…</code></div>
     </div>
     <div style="background:var(--bg-alt);border:1px solid var(--border);border-radius:0.5rem;padding:1rem;">
-      <div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:0.5rem;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;">Données</div>
-      <div style="font-size:0.85rem;"><strong>Liens</strong> : {{ stats.links }}</div>
-      <div style="font-size:0.85rem;margin-top:0.25rem;"><strong>Tags</strong> : {{ stats.tags }}</div>
-      <div style="font-size:0.85rem;margin-top:0.25rem;"><strong>Dossiers</strong> : {{ stats.folders }}</div>
+      <div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:0.5rem;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;">{{ _("Data") }}</div>
+      <div style="font-size:0.85rem;"><strong>{{ _("Links") }}</strong> : {{ stats.links }}</div>
+      <div style="font-size:0.85rem;margin-top:0.25rem;"><strong>{{ _("Tags") }}</strong> : {{ stats.tags }}</div>
+      <div style="font-size:0.85rem;margin-top:0.25rem;"><strong>{{ _("Folders") }}</strong> : {{ stats.folders }}</div>
     </div>
   </div>
 
   <hr style="border:none;border-top:1px solid var(--border);margin:1.5rem 0;">
 
   <h3 style="font-size:0.9rem;font-weight:600;color:var(--text-muted);margin:0 0 0.75rem;">Bookmarklet</h3>
-  <a href="{{ bookmarklet|e }}" class="btn btn-primary btn-sm" style="margin-bottom:0.5rem;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;margin-right:0.3rem;"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>Ajouter à Excerpta</a>
-  <p style="font-size:0.78rem;color:var(--text-muted);margin:0.25rem 0 0;">À glisser dans la barre de favoris du navigateur.</p>
+  <a href="{{ bookmarklet|e }}" class="btn btn-primary btn-sm" style="margin-bottom:0.5rem;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;margin-right:0.3rem;"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>{{ _("Add to Excerpta") }}</a>
+  <p style="font-size:0.78rem;color:var(--text-muted);margin:0.25rem 0 0;">{{ _("Drag this to your browser's bookmarks bar.") }}</p>
 
   <hr style="border:none;border-top:1px solid var(--border);margin:1.5rem 0;">
 
-  <h3 style="font-size:0.9rem;font-weight:600;color:var(--text-muted);margin:0 0 0.75rem;">Clé API</h3>
+  <h3 style="font-size:0.9rem;font-weight:600;color:var(--text-muted);margin:0 0 0.75rem;">{{ _("API key") }}</h3>
   <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;">
     <code id="apikey-display" style="font-size:0.78rem;background:var(--bg-alt);border:1px solid var(--border);padding:0.3rem 0.5rem;border-radius:4px;word-break:break-all;">{{ target.api_key[:8] }}…</code>
-    <button class="btn btn-ghost btn-sm" id="reveal-apikey-btn" data-reveal="apikey-display" data-value="{{ target.api_key }}">Révéler</button>
-    <button class="btn btn-ghost btn-sm" id="copy-apikey-btn" data-value="{{ target.api_key }}">Copier</button>
+    <button class="btn btn-ghost btn-sm" id="reveal-apikey-btn" data-reveal="apikey-display" data-value="{{ target.api_key }}">{{ _("Reveal") }}</button>
+    <button class="btn btn-ghost btn-sm" id="copy-apikey-btn" data-value="{{ target.api_key }}">{{ _("Copy") }}</button>
   </div>
   <form action="/admin/users/{{ target.id }}/regen-key" method="post" style="margin-top:0.5rem;"
-        data-confirm="Régénérer la clé API ? L’ancienne sera invalidée.">
+        data-confirm="{{ _("Regenerate the API key? The current one will stop working.") }}">
     {{ csrf_input(request) }}
-    <button type="submit" class="btn btn-ghost btn-sm"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;margin-right:0.3rem;"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M3 21v-5h5"/></svg>Régénérer</button>
+    <button type="submit" class="btn btn-ghost btn-sm"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;margin-right:0.3rem;"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M3 21v-5h5"/></svg>{{ _("Regenerate") }}</button>
   </form>
 
   {% if recent_links %}
   <hr style="border:none;border-top:1px solid var(--border);margin:1.5rem 0;">
-  <h3 style="font-size:0.9rem;font-weight:600;color:var(--text-muted);margin:0 0 0.75rem;">5 derniers liens</h3>
+  <h3 style="font-size:0.9rem;font-weight:600;color:var(--text-muted);margin:0 0 0.75rem;">{{ _("Last 5 links") }}</h3>
   <div class="links-list" style="border-top:1px solid var(--border);">
     {% for title, url, created_at in recent_links %}
     <div class="link-card">
@@ -62,35 +62,35 @@
   {% endif %}
 
   <hr style="border:none;border-top:1px solid var(--border);margin:1.5rem 0;">
-  <h3 style="font-size:0.9rem;font-weight:600;color:var(--text-muted);margin:0 0 0.75rem;">Actions</h3>
+  <h3 style="font-size:0.9rem;font-weight:600;color:var(--text-muted);margin:0 0 0.75rem;">{{ _("Actions") }}</h3>
   <div style="display:flex;gap:0.75rem;flex-wrap:wrap;align-items:center;">
 
     {% if target.id != user.id %}
     <form action="/admin/users/{{ target.id }}/toggle-active" method="post"
-          data-confirm="{% if target.is_active %}Désactiver{% else %}Réactiver{% endif %} cet utilisateur ?">
+          data-confirm="{% if target.is_active %}{{ _("Disable this user?") }}{% else %}{{ _("Enable this user?") }}{% endif %}">
       {{ csrf_input(request) }}
       <button type="submit" class="btn btn-ghost btn-sm">
-        {% if target.is_active %}<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;margin-right:0.3rem;"><rect x="14" y="4" width="4" height="16" rx="1"/><rect x="6" y="4" width="4" height="16" rx="1"/></svg>Désactiver{% else %}<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;margin-right:0.3rem;" fill="currentColor" stroke="none"><polygon points="6 3 20 12 6 21 6 3"/></svg>Réactiver{% endif %}
+        {% if target.is_active %}<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;margin-right:0.3rem;"><rect x="14" y="4" width="4" height="16" rx="1"/><rect x="6" y="4" width="4" height="16" rx="1"/></svg>{{ _("Disable") }}{% else %}<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;margin-right:0.3rem;" fill="currentColor" stroke="none"><polygon points="6 3 20 12 6 21 6 3"/></svg>{{ _("Enable") }}{% endif %}
       </button>
     </form>
 
     <form action="/admin/users/{{ target.id }}/toggle-admin" method="post"
-          data-confirm="{% if target.is_admin %}Retirer{% else %}Donner{% endif %} les droits admin ?"
-          {% if target.is_admin and admin_count <= 1 %}title="Dernier admin - impossible de retirer"{% endif %}>
+          data-confirm="{% if target.is_admin %}{{ _("Revoke admin rights?") }}{% else %}{{ _("Grant admin rights?") }}{% endif %}"
+          {% if target.is_admin and admin_count <= 1 %}title="{{ _("Last admin, cannot be revoked") }}"{% endif %}>
       {{ csrf_input(request) }}
       <button type="submit" class="btn btn-ghost btn-sm"
               {% if target.is_admin and admin_count <= 1 %}disabled{% endif %}>
-        {% if target.is_admin %}<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;margin-right:0.3rem;"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Retirer admin{% else %}<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;margin-right:0.3rem;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>Donner admin{% endif %}
+        {% if target.is_admin %}<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;margin-right:0.3rem;"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>{{ _("Revoke admin") }}{% else %}<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;margin-right:0.3rem;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>{{ _("Grant admin") }}{% endif %}
       </button>
     </form>
 
     <form action="/admin/users/{{ target.id }}/delete" method="post" style="margin-left:auto;"
-          data-confirm="Supprimer définitivement {{ target.name }} et toutes ses données ?">
+          data-confirm="{{ _("Permanently delete %(name)s and all their data?", name=target.name) }}">
       {{ csrf_input(request) }}
-      <button type="submit" class="btn btn-danger btn-sm">Supprimer</button>
+      <button type="submit" class="btn btn-danger btn-sm">{{ _("Delete") }}</button>
     </form>
     {% else %}
-    <span style="font-size:0.8rem;color:var(--text-muted);">Votre propre compte - actions restreintes.</span>
+    <span style="font-size:0.8rem;color:var(--text-muted);">{{ _("This is your own account, actions are restricted.") }}</span>
     {% endif %}
 
   </div>

@@ -182,6 +182,8 @@ def test_partial_fragment_return_to_excludes_partial(client):
 
 def test_broken_link_shows_recovery(client):
     r = client.get("/")
-    assert "Lien cassé" in r.text
-    assert "lire la copie sauvegardée" in r.text  # copie lecteur en cache
-    assert "voir l'archive" in r.text              # archive Wayback
+    # Chaînes source (msgid) : l'interface est en anglais, le français est un
+    # catalogue de traduction comme un autre. Voir docs/i18n.md.
+    assert "Broken link" in r.text
+    assert "read the saved copy" in r.text  # copie lecteur en cache
+    assert "view the archive" in r.text     # archive Wayback

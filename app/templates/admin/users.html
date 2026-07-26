@@ -1,22 +1,22 @@
 {% extends "base.html" %}
-{% block title %}Utilisateurs - Admin - Excerpta{% endblock %}
+{% block title %}{{ _("Users") }} - {{ _("Administration") }} - Excerpta{% endblock %}
 {% block content %}
 <div style="max-width:900px;">
   <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1.25rem;">
-    <h2 style="font-size:1.1rem;font-weight:600;margin:0;">Utilisateurs ({{ rows|length }})</h2>
-    <a href="/admin/" class="btn btn-ghost btn-sm">← Dashboard</a>
+    <h2 style="font-size:1.1rem;font-weight:600;margin:0;">{{ _("Users") }} ({{ rows|length }})</h2>
+    <a href="/admin/" class="btn btn-ghost btn-sm">← {{ _("Dashboard") }}</a>
   </div>
 
   {% if rows %}
   <table style="width:100%;border-collapse:collapse;font-size:0.85rem;">
     <thead>
       <tr style="border-bottom:2px solid var(--border);text-align:left;">
-        <th style="padding:0.5rem 0.75rem;">Nom</th>
-        <th style="padding:0.5rem 0.75rem;">Email</th>
-        <th style="padding:0.5rem 0.75rem;text-align:center;">Liens</th>
-        <th style="padding:0.5rem 0.75rem;text-align:center;">Tags</th>
-        <th style="padding:0.5rem 0.75rem;">Dernière activité</th>
-        <th style="padding:0.5rem 0.75rem;">Statut</th>
+        <th style="padding:0.5rem 0.75rem;">{{ _("Name") }}</th>
+        <th style="padding:0.5rem 0.75rem;">{{ _("Email") }}</th>
+        <th style="padding:0.5rem 0.75rem;text-align:center;">{{ _("Links") }}</th>
+        <th style="padding:0.5rem 0.75rem;text-align:center;">{{ _("Tags") }}</th>
+        <th style="padding:0.5rem 0.75rem;">{{ _("Last activity") }}</th>
+        <th style="padding:0.5rem 0.75rem;">{{ _("Status") }}</th>
         <th style="padding:0.5rem 0.75rem;"></th>
       </tr>
     </thead>
@@ -25,7 +25,7 @@
     <tr style="border-bottom:1px solid var(--border);">
       <td style="padding:0.6rem 0.75rem;font-weight:500;">
         {{ name }}
-        {% if is_admin %}<span style="font-size:0.65rem;background:var(--tag-bg);color:var(--tag-text);border-radius:4px;padding:0.1rem 0.35rem;margin-left:0.3rem;">admin</span>{% endif %}
+        {% if is_admin %}<span style="font-size:0.65rem;background:var(--tag-bg);color:var(--tag-text);border-radius:4px;padding:0.1rem 0.35rem;margin-left:0.3rem;">{{ _("admin") }}</span>{% endif %}
       </td>
       <td style="padding:0.6rem 0.75rem;color:var(--text-muted);">{{ email }}</td>
       <td style="padding:0.6rem 0.75rem;text-align:center;">{{ link_count }}</td>
@@ -35,20 +35,20 @@
       </td>
       <td style="padding:0.6rem 0.75rem;">
         {% if is_active %}
-        <span style="color:var(--color-success);font-size:0.75rem;font-weight:600;">● actif</span>
+        <span style="color:var(--color-success);font-size:0.75rem;font-weight:600;">● {{ _("active") }}</span>
         {% else %}
-        <span style="color:var(--btn-danger);font-size:0.75rem;font-weight:600;">● désactivé</span>
+        <span style="color:var(--btn-danger);font-size:0.75rem;font-weight:600;">● {{ _("disabled") }}</span>
         {% endif %}
       </td>
       <td style="padding:0.6rem 0.75rem;">
-        <a href="/admin/users/{{ id }}" class="btn btn-ghost btn-sm">Voir</a>
+        <a href="/admin/users/{{ id }}" class="btn btn-ghost btn-sm">{{ _("View") }}</a>
       </td>
     </tr>
     {% endfor %}
     </tbody>
   </table>
   {% else %}
-  <div class="empty-state"><p>Aucun utilisateur.</p></div>
+  <div class="empty-state"><p>{{ _("No users.") }}</p></div>
   {% endif %}
 </div>
 {% endblock %}

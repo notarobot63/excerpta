@@ -1,11 +1,11 @@
 {% extends 'base.html' %}
 
-{% block title %}Dossiers - Excerpta{% endblock %}
+{% block title %}{{ _("Folders") }} - Excerpta{% endblock %}
 
 {% block content %}
 <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1rem;">
-  <h2 style="margin:0;">Dossiers ({{ all_folders|length }})</h2>
-  <a href="/folders/add" class="btn btn-primary">+ Nouveau dossier</a>
+  <h2 style="margin:0;">{{ _("Folders") }} ({{ all_folders|length }})</h2>
+  <a href="/folders/add" class="btn btn-primary">+ {{ _("New folder") }}</a>
 </div>
 
 {% if folder_tree %}
@@ -15,7 +15,7 @@
     {% if depth > ns.current_depth %}
       <div class="folder-children" data-parent="{{ folder.parent_id }}" style="margin-left:1.5rem;">
     {% elif depth < ns.current_depth %}
-      {% for _ in range(ns.current_depth - depth) %}</div>{% endfor %}
+      {% for _i in range(ns.current_depth - depth) %}</div>{% endfor %}
     {% endif %}
     {% set ns.current_depth = depth %}
 
@@ -29,37 +29,37 @@
         {{ folder.name }}
       </span>
       <span class="sidebar-count">{{ folder_counts.get(folder.id, 0) }}</span>
-      <a href="/folders/{{ folder.id }}/edit" class="btn btn-ghost btn-sm">Modifier</a>
+      <a href="/folders/{{ folder.id }}/edit" class="btn btn-ghost btn-sm">{{ _("Edit") }}</a>
       <form action="/folders/{{ folder.id }}/delete" method="post" style="display:inline;"
-            data-confirm="Supprimer ce dossier et garder les liens à la racine ?">
+            data-confirm="{{ _("Delete this folder and keep its links at the top level?") }}">
         {{ csrf_input(request) }}
         <input type="hidden" name="delete_links" value="0">
-        <button type="submit" class="btn btn-ghost btn-sm">Supprimer</button>
+        <button type="submit" class="btn btn-ghost btn-sm">{{ _("Delete") }}</button>
       </form>
       {% if folder_counts.get(folder.id, 0) > 0 %}
       <form action="/folders/{{ folder.id }}/delete" method="post" style="display:inline;"
-            data-confirm="Supprimer ce dossier ET ses {{ folder_counts[folder.id] }} lien(s) ? Irréversible.">
+            data-confirm="{{ ngettext("Delete this folder AND its %(num)d link? This cannot be undone.", "Delete this folder AND its %(num)d links? This cannot be undone.", folder_counts[folder.id]) }}">
         {{ csrf_input(request) }}
         <input type="hidden" name="delete_links" value="1">
-        <button type="submit" class="btn btn-danger btn-sm" title="Supprimer avec les liens">+ liens</button>
+        <button type="submit" class="btn btn-danger btn-sm" title="{{ _("Delete along with its links") }}">{{ _("+ links") }}</button>
       </form>
       {% endif %}
     </div>
 
   {% endfor %}
-  {% for _ in range(ns.current_depth) %}</div>{% endfor %}
+  {% for _i in range(ns.current_depth) %}</div>{% endfor %}
 </div>
 
 <div id="drop-target-root" class="drop-zone"
      style="border:2px dashed var(--border); border-radius:6px; padding:0.75rem; margin-top:0.75rem;
             text-align:center; color:var(--text-muted); font-size:0.85rem; display:none;">
-  ↳ Déposer ici pour mettre à la racine
+  ↳ {{ _("Drop here to move to the top level") }}
 </div>
 
 {% else %}
 <div class="empty-state">
-  <p>Aucun dossier pour l’instant.</p>
-  <a href="/folders/add" class="btn btn-primary">Créer un dossier</a>
+  <p>{{ _("No folders yet.") }}</p>
+  <a href="/folders/add" class="btn btn-primary">{{ _("Create a folder") }}</a>
 </div>
 {% endif %}
 

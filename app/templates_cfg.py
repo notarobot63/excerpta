@@ -1,6 +1,8 @@
 import os
 from pathlib import Path
 from urllib.parse import urlparse, urlencode
+from babel.core import UnknownLocaleError
+from babel.dates import format_date, format_datetime
 from fastapi.templating import Jinja2Templates
 from markupsafe import Markup
 import mistune
@@ -20,6 +22,32 @@ templates.env.install_gettext_callables(
 )
 templates.env.globals["current_locale"] = i18n.get_locale
 templates.env.globals["available_locales"] = i18n.available_locales
+
+
+def _localedate(value, fmt: str = "medium") -> str:
+    """Date écrite selon la locale courante : 26/07/2026 en français,
+    Jul 26, 2026 en anglais. Un `strftime` codé en dur imposerait l'ordre
+    jour/mois français à toutes les langues."""
+    if not value:
+        return ""
+    try:
+        return format_date(value, format=fmt, locale=i18n.get_locale())
+    except (UnknownLocaleError, ValueError):
+        return format_date(value, format=fmt, locale=i18n.DEFAULT_LOCALE)
+
+
+def _localedatetime(value, fmt: str = "short") -> str:
+    """Date et heure selon la locale courante."""
+    if not value:
+        return ""
+    try:
+        return format_datetime(value, format=fmt, locale=i18n.get_locale())
+    except (UnknownLocaleError, ValueError):
+        return format_datetime(value, format=fmt, locale=i18n.DEFAULT_LOCALE)
+
+
+templates.env.filters["localedate"] = _localedate
+templates.env.filters["localedatetime"] = _localedatetime
 _md = mistune.create_markdown(escape=True)
 templates.env.filters["markdown"] = lambda text: Markup(_md(text or ""))
 templates.env.filters["domain"] = lambda url: urlparse(url).netloc or url
