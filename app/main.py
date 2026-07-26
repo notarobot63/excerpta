@@ -144,7 +144,7 @@ async def block_unauthenticated_api_options(request: Request, call_next):
     # Comme l'API n'a pas besoin d'un vrai preflight CORS (aucun CORSMiddleware
     # n'est configuré), on renvoie directement un 401 générique, sans Allow.
     if request.method == "OPTIONS" and request.url.path.startswith("/api/v1/"):
-        return JSONResponse(status_code=401, content={"detail": "Authentification requise"})
+        return JSONResponse(status_code=401, content={"detail": "Authentication required"})
     return await call_next(request)
 
 

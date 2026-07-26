@@ -1,14 +1,14 @@
 {% extends "base.html" %}
 
-{% block title %}Paramètres - Excerpta{% endblock %}
+{% block title %}{{ _("Settings") }} - Excerpta{% endblock %}
 
 {% block content %}
 <div class="form-card" style="max-width: 700px;">
-  <h2 style="font-size: 1.1rem; font-weight: 600; margin: 0 0 1.25rem;">Paramètres</h2>
+  <h2 style="font-size: 1.1rem; font-weight: 600; margin: 0 0 1.25rem;">{{ _("Settings") }}</h2>
 
   <hr style="border:none;border-top:1px solid var(--border);margin:1.5rem 0">
 
-  <h3 style="font-size:0.9rem;font-weight:600;margin:0 0 0.75rem;color:var(--text-muted)">Apparence</h3>
+  <h3 style="font-size:0.9rem;font-weight:600;margin:0 0 0.75rem;color:var(--text-muted)">{{ _("Appearance") }}</h3>
   <div style="display:flex;flex-direction:column;gap:0.5rem;" id="theme-picker">
     <div style="display:flex;gap:0.4rem;align-items:center;">
       <span style="font-size:0.72rem;color:var(--text-muted);width:90px;flex-shrink:0;">Default</span>
@@ -50,54 +50,54 @@
 
   <hr style="border:none;border-top:1px solid var(--border);margin:1.5rem 0">
 
-  <h3 style="font-size:0.9rem;font-weight:600;margin:0 0 0.75rem;color:var(--text-muted)">Bookmarklet</h3>
-  <p>Glisse ce lien dans ta barre de favoris :</p>
-  <a href="{{ bookmarklet|e }}" class="btn btn-primary"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;margin-right:0.3rem;"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>Ajouter à Excerpta</a>
-  <p style="margin-top:0.5rem;font-size:0.85rem;color:var(--text-muted)">Fais glisser le bouton ci-dessus dans la barre de favoris de ton navigateur.</p>
+  <h3 style="font-size:0.9rem;font-weight:600;margin:0 0 0.75rem;color:var(--text-muted)">{{ _("Bookmarklet") }}</h3>
+  <p>{{ _("Drag this link to your bookmarks bar:") }}</p>
+  <a href="{{ bookmarklet|e }}" class="btn btn-primary"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;margin-right:0.3rem;"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>{{ _("Add to Excerpta") }}</a>
+  <p style="margin-top:0.5rem;font-size:0.85rem;color:var(--text-muted)">{{ _("Drag the button above to your browser's bookmarks bar.") }}</p>
 
   <hr style="border:none;border-top:1px solid var(--border);margin:1.5rem 0">
 
-  <h3 style="font-size:0.9rem;font-weight:600;margin:0 0 0.75rem;color:var(--text-muted)">Clé API</h3>
+  <h3 style="font-size:0.9rem;font-weight:600;margin:0 0 0.75rem;color:var(--text-muted)">{{ _("API key") }}</h3>
   <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;">
     <code style="font-family:monospace;background:var(--bg-secondary);padding:0.25rem 0.5rem;border-radius:4px;word-break:break-all;">{{ api_key_plain|e }}</code>
-    <button class="btn btn-sm btn-ghost" id="copy-apikey-btn" data-value="{{ api_key_plain|e }}">Copier</button>
+    <button class="btn btn-sm btn-ghost" id="copy-apikey-btn" data-value="{{ api_key_plain|e }}">{{ _("Copy") }}</button>
   </div>
 
   <hr style="border:none;border-top:1px solid var(--border);margin:1.5rem 0">
 
-  <h3 style="font-size:0.9rem;font-weight:600;margin:0 0 0.75rem;color:var(--text-muted)">App Android</h3>
-  <p style="font-size:0.85rem;color:var(--text-muted);margin:0 0 0.75rem;">Scanne ce QR code depuis l’app Excerpta pour la configurer automatiquement.</p>
-  <img src="/settings/android-qr.png" alt="QR code Android"
+  <h3 style="font-size:0.9rem;font-weight:600;margin:0 0 0.75rem;color:var(--text-muted)">{{ _("Android app") }}</h3>
+  <p style="font-size:0.85rem;color:var(--text-muted);margin:0 0 0.75rem;">{{ _("Scan this QR code from the Excerpta app to set it up automatically.") }}</p>
+  <img src="/settings/android-qr.png" alt="{{ _("Android QR code") }}"
        style="width:180px;height:180px;border:1px solid var(--border);border-radius:8px;display:block;">
 
   <hr style="border:none;border-top:1px solid var(--border);margin:1.5rem 0">
 
-  <h3 style="font-size:0.9rem;font-weight:600;margin:0 0 0.75rem;color:var(--text-muted)">Intégrations</h3>
+  <h3 style="font-size:0.9rem;font-weight:600;margin:0 0 0.75rem;color:var(--text-muted)">{{ _("Integrations") }}</h3>
   <a href="/settings/freshrss" class="btn btn-ghost"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;margin-right:0.3rem;"><path d="M4 11a9 9 0 0 1 9 9"/><path d="M4 4a16 16 0 0 1 16 16"/><circle cx="5" cy="19" r="1"/></svg>FreshRSS</a>
 
   <hr style="border:none;border-top:1px solid var(--border);margin:1.5rem 0">
 
-  <h3 style="font-size:0.9rem;font-weight:600;margin:0 0 0.75rem;color:var(--text-muted)">Données</h3>
+  <h3 style="font-size:0.9rem;font-weight:600;margin:0 0 0.75rem;color:var(--text-muted)">{{ _("Data") }}</h3>
   {% if archiving %}
-  <p style="color:var(--text-muted);font-size:0.85rem;margin:0 0 0.75rem;">Archivage de {{ archiving }} lien{% if archiving > 1 %}s{% endif %} lancé en arrière-plan (throttlé pour Wayback). L'état se met à jour au fil de l'eau.</p>
+  <p style="color:var(--text-muted);font-size:0.85rem;margin:0 0 0.75rem;">{{ ngettext("Archiving %(num)d link in the background (rate-limited for Wayback). The status updates as it goes.", "Archiving %(num)d links in the background (rate-limited for Wayback). The status updates as it goes.", archiving) }}</p>
   {% endif %}
   <div style="display:flex;gap:0.5rem;flex-wrap:wrap;align-items:center;">
-    <a href="/settings/export" class="btn btn-ghost">Exporter (HTML)</a>
-    <a href="/settings/import" class="btn btn-ghost">Importer</a>
-    <a href="/settings/check-links" class="btn btn-ghost"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:middle"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg> Vérifier les liens</a>
+    <a href="/settings/export" class="btn btn-ghost">{{ _("Export (HTML)") }}</a>
+    <a href="/settings/import" class="btn btn-ghost">{{ _("Import") }}</a>
+    <a href="/settings/check-links" class="btn btn-ghost"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:middle"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg> {{ _("Check links") }}</a>
     <form action="/settings/archive-all" method="post"
-          data-confirm="Archiver sur Wayback Machine tous les liens pas encore archivés ? (lancé en arrière-plan, throttlé)">
+          data-confirm="{{ _("Archive every link not archived yet on the Wayback Machine? Runs in the background, rate-limited.") }}">
       {{ csrf_input(request) }}
-      <button type="submit" class="btn btn-ghost"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;margin-right:0.3rem;"><rect width="20" height="5" x="2" y="3" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"/><path d="M10 12h4"/></svg>Archiver les non-archivés</button>
+      <button type="submit" class="btn btn-ghost"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;margin-right:0.3rem;"><rect width="20" height="5" x="2" y="3" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"/><path d="M10 12h4"/></svg>{{ _("Archive the unarchived") }}</button>
     </form>
     <form action="/settings/rebuild-fts" method="post"
-          data-confirm="Reconstruire l’index de recherche pour {{ link_count }} liens ?">
+          data-confirm="{{ ngettext("Rebuild the search index for %(num)d link?", "Rebuild the search index for %(num)d links?", link_count) }}">
       {{ csrf_input(request) }}
-      <button type="submit" class="btn btn-ghost"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;margin-right:0.3rem;"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>Reconstruire l’index de recherche</button>
+      <button type="submit" class="btn btn-ghost"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;margin-right:0.3rem;"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>{{ _("Rebuild the search index") }}</button>
     </form>
     <form id="refresh-form" action="/settings/refresh-metadata" method="post">
       {{ csrf_input(request) }}
-      <button id="refresh-btn" type="submit" class="btn btn-ghost"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;margin-right:0.3rem;"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M3 21v-5h5"/></svg>Rafraîchir les métadonnées</button>
+      <button id="refresh-btn" type="submit" class="btn btn-ghost"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;margin-right:0.3rem;"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M3 21v-5h5"/></svg>{{ _("Refresh metadata") }}</button>
     </form>
   </div>
   <div id="refresh-progress" style="display:none;margin-top:1rem;">
@@ -105,6 +105,10 @@
     <p id="refresh-text" style="font-size:0.82rem;color:var(--text-muted);margin:0.35rem 0 0;"></p>
   </div>
   <script nonce="{{ request.state.nonce }}">
+  var LBL_STARTING = {{ _("Starting…")|tojson }};
+  var LBL_NETWORK_ERROR = {{ _("Network error.")|tojson }};
+  var LBL_UPDATED = {{ _("{n} link(s) updated.")|tojson }};
+  var LBL_PROGRESS = {{ _("{n} updated")|tojson }};
   document.getElementById('refresh-form').addEventListener('submit', async function(e) {
     e.preventDefault();
     const btn = document.getElementById('refresh-btn');
@@ -113,13 +117,13 @@
     const txt = document.getElementById('refresh-text');
     btn.disabled = true;
     progress.style.display = 'block';
-    txt.textContent = 'Démarrage…';
+    txt.textContent = LBL_STARTING;
     const fd = new FormData(this);
     let resp;
     try {
       resp = await fetch('/settings/refresh-metadata', {method: 'POST', body: fd});
     } catch {
-      txt.textContent = 'Erreur réseau.';
+      txt.textContent = LBL_NETWORK_ERROR;
       btn.disabled = false;
       return;
     }
@@ -137,11 +141,11 @@
         const d = JSON.parse(line.slice(6));
         if (d.done) {
           bar.value = bar.max;
-          txt.textContent = '✓ ' + d.updated + ' lien(s) mis à jour.';
+          txt.textContent = '✓ ' + LBL_UPDATED.replace('{n}', d.updated);
         } else {
           bar.max = d.total || 1;
           bar.value = d.current;
-          txt.textContent = d.current + ' / ' + d.total + '  -  ' + d.updated + ' mis à jour';
+          txt.textContent = d.current + ' / ' + d.total + '  -  ' + LBL_PROGRESS.replace('{n}', d.updated);
         }
       }
     }
@@ -151,65 +155,65 @@
 
   <hr style="border:none;border-top:1px solid var(--border);margin:1.5rem 0">
 
-  <h3 style="font-size:0.9rem;font-weight:600;margin:0 0 0.75rem;color:var(--btn-danger)">Zone de danger</h3>
+  <h3 style="font-size:0.9rem;font-weight:600;margin:0 0 0.75rem;color:var(--btn-danger)">{{ _("Danger zone") }}</h3>
   <div style="display:flex;flex-direction:column;gap:0.75rem;">
     <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;">
       <form action="/settings/purge-freshrss" method="post"
-            data-confirm="Supprimer tous les liens du dossier FreshRSS et réinitialiser le compteur de synchro ?">
+            data-confirm="{{ _("Delete every link in the FreshRSS folder and reset the sync counter?") }}">
         {{ csrf_input(request) }}
-        <button type="submit" class="btn btn-danger btn-sm">Purger les liens FreshRSS</button>
+        <button type="submit" class="btn btn-danger btn-sm">{{ _("Purge FreshRSS links") }}</button>
       </form>
-      <span style="font-size:0.78rem;color:var(--text-muted)">Supprime tous les liens du dossier FreshRSS configuré.</span>
+      <span style="font-size:0.78rem;color:var(--text-muted)">{{ _("Deletes every link in the configured FreshRSS folder.") }}</span>
     </div>
     <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;">
       <form action="/settings/purge-all" method="post"
-            data-confirm="Supprimer TOUS vos liens, tags et dossiers ? Cette action est irréversible.">
+            data-confirm="{{ _("Delete ALL your links, tags and folders? This cannot be undone.") }}">
         {{ csrf_input(request) }}
-        <button type="submit" class="btn btn-danger btn-sm">Purger toutes les données</button>
+        <button type="submit" class="btn btn-danger btn-sm">{{ _("Purge all data") }}</button>
       </form>
-      <span style="font-size:0.78rem;color:var(--text-muted)">Supprime définitivement tous vos liens, tags et dossiers.</span>
+      <span style="font-size:0.78rem;color:var(--text-muted)">{{ _("Permanently deletes all your links, tags and folders.") }}</span>
     </div>
   </div>
 
   <hr style="border:none;border-top:1px solid var(--border);margin:1.5rem 0">
 
-  <h3 style="font-size:0.9rem;font-weight:600;margin:0 0 0.75rem;color:var(--text-muted)">Page publique</h3>
+  <h3 style="font-size:0.9rem;font-weight:600;margin:0 0 0.75rem;color:var(--text-muted)">{{ _("Public page") }}</h3>
   <form action="/settings/public-page" method="post" style="display:flex;flex-direction:column;gap:0.6rem;max-width:420px;">
     {{ csrf_input(request) }}
-    <label style="font-size:0.8rem;color:var(--text-muted)">Titre
+    <label style="font-size:0.8rem;color:var(--text-muted)">{{ _("Title") }}
       <input type="text" name="public_page_title" maxlength="100"
              value="{{ user.public_page_title|e }}"
-             placeholder="Liens publics"
+             placeholder="{{ _("Public links") }}"
              class="form-input" style="width:100%;margin-top:0.25rem;">
     </label>
-    <label style="font-size:0.8rem;color:var(--text-muted)">Adresse
+    <label style="font-size:0.8rem;color:var(--text-muted)">{{ _("Address") }}
       <span style="display:flex;align-items:center;gap:0.25rem;margin-top:0.25rem;">
         <span style="color:var(--text-muted);font-size:0.85rem;white-space:nowrap;">/u/</span>
         <input type="text" name="public_slug" maxlength="64"
                value="{{ user.public_slug|e }}"
-               placeholder="mon-nom"
+               placeholder="{{ _("my-name") }}"
                class="form-input" style="flex:1;">
       </span>
     </label>
     <div style="display:flex;gap:0.5rem;align-items:center;">
-      <button type="submit" class="btn btn-primary btn-sm">Enregistrer</button>
-      <a href="/u/{{ user.public_slug }}" target="_blank" class="btn btn-ghost btn-sm">Voir →</a>
+      <button type="submit" class="btn btn-primary btn-sm">{{ _("Save") }}</button>
+      <a href="/u/{{ user.public_slug }}" target="_blank" class="btn btn-ghost btn-sm">{{ _("View") }} →</a>
     </div>
   </form>
   {% if request.query_params.get('saved') == 'public' %}
-  <p style="font-size:0.82rem;color:var(--color-success);margin:0.4rem 0 0;">Page publique mise à jour.</p>
+  <p style="font-size:0.82rem;color:var(--color-success);margin:0.4rem 0 0;">{{ _("Public page updated.") }}</p>
   {% endif %}
   {% if request.query_params.get('slug_error') == 'taken' %}
-  <p style="font-size:0.82rem;color:var(--color-danger,#c0392b);margin:0.4rem 0 0;">Cette adresse est déjà prise - choisissez-en une autre.</p>
+  <p style="font-size:0.82rem;color:var(--color-danger,#c0392b);margin:0.4rem 0 0;">{{ _("That address is already taken, pick another one.") }}</p>
   {% elif request.query_params.get('slug_error') == 'empty' %}
-  <p style="font-size:0.82rem;color:var(--color-danger,#c0392b);margin:0.4rem 0 0;">L'adresse ne peut pas être vide.</p>
+  <p style="font-size:0.82rem;color:var(--color-danger,#c0392b);margin:0.4rem 0 0;">{{ _("The address cannot be empty.") }}</p>
   {% endif %}
 
   <hr style="border:none;border-top:1px solid var(--border);margin:1.5rem 0">
 
-  <h3 style="font-size:0.9rem;font-weight:600;margin:0 0 0.75rem;color:var(--text-muted)">Compte</h3>
+  <h3 style="font-size:0.9rem;font-weight:600;margin:0 0 0.75rem;color:var(--text-muted)">{{ _("Account") }}</h3>
   <p><strong>{{ user.name|e }}</strong> - {{ user.email|e }}</p>
-  <p><a href="/auth/logout" class="btn btn-ghost btn-sm">Se déconnecter</a></p>
+  <p><a href="/auth/logout" class="btn btn-ghost btn-sm">{{ _("Sign out") }}</a></p>
 
   <p style="font-size:0.78rem;color:var(--text-muted);margin:1.25rem 0 0;">
     Excerpta {{ app_version }}

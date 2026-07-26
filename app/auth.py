@@ -24,5 +24,5 @@ async def get_current_user(request: Request, session: Session = Depends(get_sess
 
 async def get_admin_user(user: User = Depends(get_current_user)) -> User:
     if not user.is_admin:
-        raise HTTPException(status_code=403, detail="Accès réservé à l'administrateur")
+        raise HTTPException(status_code=403, detail="Administrator access only")
     return user

@@ -1,16 +1,16 @@
 {% extends "base.html" %}
 
-{% block title %}{% if link %}Modifier{% else %}Ajouter{% endif %} un lien - Excerpta{% endblock %}
+{% block title %}{% if link %}{{ _("Edit link") }}{% else %}{{ _("Add link") }}{% endif %} - Excerpta{% endblock %}
 
 {% block content %}
 <div class="form-card">
   {% if request.query_params.get('duplicate') %}
   <div style="background:var(--warning-bg,#fff8e1);border:1px solid var(--warning-border,#ffe082);border-radius:6px;padding:0.6rem 0.9rem;margin-bottom:1rem;font-size:0.875rem;color:var(--text);">
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;margin-right:0.3rem;"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>Ce lien existe déjà dans ta collection - tu peux le modifier ci-dessous.
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;margin-right:0.3rem;"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>{{ _("This link is already in your collection, you can edit it below.") }}
   </div>
   {% endif %}
   <h2 style="font-size: 1.1rem; font-weight: 600; margin: 0 0 1.25rem;">
-    {% if link %}Modifier le lien{% else %}Ajouter un lien{% endif %}
+    {% if link %}{{ _("Edit link") }}{% else %}{{ _("Add link") }}{% endif %}
   </h2>
 
   <form method="post"
@@ -26,44 +26,44 @@
                placeholder="https://…"
                @change="if (!titleDirty) fetchMeta()">
         <button type="button" class="btn btn-ghost btn-sm" @click="fetchMeta()" :disabled="loading">
-          <span x-show="!loading"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;margin-right:0.3rem;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/></svg>Métadonnées</span>
+          <span x-show="!loading"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;margin-right:0.3rem;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/></svg>{{ _("Metadata") }}</span>
           <span x-show="loading">…</span>
         </button>
       </div>
     </div>
 
     <div class="form-group">
-      <label class="form-label" for="title">Titre</label>
+      <label class="form-label" for="title">{{ _("Title") }}</label>
       <input id="title" name="title" type="text" class="form-input"
              value="{{ link.title if link else meta.get('title', '') }}"
-             placeholder="Titre du lien"
+             placeholder="{{ _("Link title") }}"
              @input="titleDirty = true">
     </div>
 
     <div class="form-group">
-      <label class="form-label" for="description">Description</label>
+      <label class="form-label" for="description">{{ _("Description") }}</label>
       <textarea id="description" name="description" class="form-textarea"
-                placeholder="Description courte…">{{ link.description if link else meta.get('description', '') }}</textarea>
+                placeholder="{{ _("Short description…") }}">{{ link.description if link else meta.get('description', '') }}</textarea>
     </div>
 
     <div class="form-group">
-      <label class="form-label" for="note">Note (Markdown)</label>
+      <label class="form-label" for="note">{{ _("Note (Markdown)") }}</label>
       <textarea id="note" name="note" class="form-textarea tall"
-                placeholder="Note personnelle… supporte le Markdown">{{ link.note if link else '' }}</textarea>
-      <div class="form-hint">Supporte le Markdown : **gras**, *italique*, `code`, [lien](url)…</div>
+                placeholder="{{ _("Personal note… supports Markdown") }}">{{ link.note if link else '' }}</textarea>
+      <div class="form-hint">{{ _("Supports Markdown: **bold**, *italic*, `code`, [link](url)…") }}</div>
     </div>
 
     <div class="form-group">
-      <label class="form-label" for="tags">Tags</label>
+      <label class="form-label" for="tags">{{ _("Tags") }}</label>
       <input id="tags" name="tags" type="text" class="form-input"
              value="{{ current_tags if current_tags is defined else '' }}"
-             placeholder="python, web, outils (séparés par des virgules)">
-      <div class="form-hint">Séparés par des virgules. Les nouveaux tags sont créés automatiquement.</div>
+             placeholder="{{ _("python, web, tools (comma separated)") }}">
+      <div class="form-hint">{{ _("Comma separated. New tags are created automatically.") }}</div>
     </div>
 
     {% if folder_tree %}
     <div class="form-group">
-      <label class="form-label">Dossier</label>
+      <label class="form-label">{{ _("Folder") }}</label>
       {% set current_folder_id = link.folder_id if link else prefill_folder_id %}
       <div x-data="folderPicker({{ current_folder_id or 'null' }})">
         <div @click="open = !open"
@@ -79,7 +79,7 @@
           <div @click="select(null)"
                :style="selected === null ? 'background:var(--primary-light,#e8f0fe);font-weight:600;' : ''"
                style="padding:0.4rem 0.75rem; cursor:pointer;" class="folder-opt">
-            - Aucun dossier -
+            {{ _("- No folder -") }}
           </div>
           {% for f, depth in folder_tree %}
           <div @click="select({{ f.id }})"
@@ -99,38 +99,38 @@
       <label class="form-check">
         <input type="checkbox" name="is_public" value="1"
                {% if link and link.is_public %}checked{% endif %}>
-        Lien public (visible sur <strong>votre</strong> page publique <code>/u/{{ user.public_slug }}</code>)
+        {{ _("Public link, shown on your public page") }} <code>/u/{{ user.public_slug }}</code>
       </label>
     </div>
 
     <div class="form-actions">
       <button type="submit" class="btn btn-primary">
-        {% if link %}Enregistrer{% else %}Ajouter{% endif %}
+        {% if link %}{{ _("Save") }}{% else %}{{ _("Add") }}{% endif %}
       </button>
-      <a href="/" class="btn btn-ghost">Annuler</a>
+      <a href="/" class="btn btn-ghost">{{ _("Cancel") }}</a>
       {% if link %}
       <form action="/links/{{ link.id }}/archive" method="post" style="display:inline;"
-            title="{% if link.archived_url %}Ré-archiver{% else %}Archiver sur Wayback Machine{% endif %}">
+            title="{% if link.archived_url %}{{ _("Re-archive") }}{% else %}{{ _("Archive on the Wayback Machine") }}{% endif %}">
         {{ csrf_input(request) }}
         <button type="submit" class="btn btn-ghost">
-          {% if link.archived_url %}<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;margin-right:0.3rem;"><rect width="20" height="5" x="2" y="3" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"/><path d="M10 12h4"/></svg>Ré-archiver{% else %}<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;margin-right:0.3rem;"><rect width="20" height="5" x="2" y="3" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"/><path d="M10 12h4"/></svg>Archiver{% endif %}
+          {% if link.archived_url %}<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;margin-right:0.3rem;"><rect width="20" height="5" x="2" y="3" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"/><path d="M10 12h4"/></svg>{{ _("Re-archive") }}{% else %}<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;margin-right:0.3rem;"><rect width="20" height="5" x="2" y="3" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"/><path d="M10 12h4"/></svg>{{ _("Archive") }}{% endif %}
         </button>
       </form>
       {% if link.archived_url %}
       <a href="{{ link.archived_url }}" target="_blank" class="btn btn-ghost" style="color:var(--text-muted)">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;margin-right:0.3rem;"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>Archive
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;margin-right:0.3rem;"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>{{ _("Archive") }}
       </a>
       {% endif %}
       <form action="/links/{{ link.id }}/delete" method="post" style="margin-left: auto;display:flex;align-items:center;gap:0.75rem;"
-            data-confirm="Supprimer ce lien ?">
+            data-confirm="{{ _("Delete this link?") }}">
         {{ csrf_input(request) }}
         {% if link.freshrss_item_id %}
         <label style="font-size:0.82rem;color:var(--text-muted);cursor:pointer;white-space:nowrap;">
           <input type="checkbox" name="unstar_freshrss" value="1" checked style="margin-right:0.25rem;">
-          Déséttoiler dans FreshRSS
+          {{ _("Unstar in FreshRSS") }}
         </label>
         {% endif %}
-        <button type="submit" class="btn btn-danger">Supprimer</button>
+        <button type="submit" class="btn btn-danger">{{ _("Delete") }}</button>
       </form>
       {% endif %}
     </div>
@@ -140,7 +140,8 @@
 
 <script nonce="{{ request.state.nonce }}">
 function folderPicker(initialId) {
-  var labels = { null: '- Aucun dossier -' };
+  var noFolderLabel = {{ _("- No folder -")|tojson }};
+  var labels = { null: noFolderLabel };
   document.querySelectorAll('.folder-opt[data-id]').forEach(function(el) {
     labels[parseInt(el.dataset.id)] = el.dataset.label;
   });
@@ -149,8 +150,8 @@ function folderPicker(initialId) {
     open: false,
     select: function(id) { this.selected = id; this.open = false; },
     selectedLabel: function() {
-      if (this.selected === null) return '- Aucun dossier -';
-      return labels[this.selected] || '- Aucun dossier -';
+      if (this.selected === null) return noFolderLabel;
+      return labels[this.selected] || noFolderLabel;
     },
   };
 }

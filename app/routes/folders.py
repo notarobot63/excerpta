@@ -133,7 +133,7 @@ async def rename_folder(
         raise HTTPException(status_code=404)
     new_name = body.name.strip()
     if not new_name:
-        raise HTTPException(status_code=422, detail="Nom vide")
+        raise HTTPException(status_code=422, detail="Empty name")
     folder.name = new_name
     session.add(folder)
     session.commit()
