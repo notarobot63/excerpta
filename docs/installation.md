@@ -25,7 +25,7 @@ git clone https://github.com/notarobot63/excerpta.git
 cd excerpta
 cp .env.example .env
 # Edit .env
-GIT_COMMIT=$(git rev-parse --short HEAD) docker compose up --build -d
+GIT_COMMIT=$(git describe --tags --always | sed 's/^v//') docker compose up --build -d
 ```
 
 ## Environment variables
@@ -76,7 +76,7 @@ REGISTRY_IMAGE=ghcr.io/notarobot63/excerpta:latest \
   docker compose -f docker-compose.prod.yml up -d
 
 # Local build
-git pull && GIT_COMMIT=$(git rev-parse --short HEAD) docker compose up --build -d
+git pull && GIT_COMMIT=$(git describe --tags --always | sed 's/^v//') docker compose up --build -d
 ```
 
 ## Persistent data
