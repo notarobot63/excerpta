@@ -5,9 +5,21 @@ from fastapi.templating import Jinja2Templates
 from markupsafe import Markup
 import mistune
 
+from . import i18n
 from .csrf import csrf_input
 
 templates = Jinja2Templates(directory=Path(__file__).parent / "templates")
+
+# i18n : les callables sont résolues à CHAQUE appel et lisent la locale dans le
+# ContextVar de la requête en cours. Ne jamais remplacer par
+# install_gettext_translations() avec un catalogue figé : deux requêtes
+# concurrentes de langues différentes se contamineraient. Voir docs/i18n.md.
+templates.env.add_extension("jinja2.ext.i18n")
+templates.env.install_gettext_callables(
+    gettext=i18n.gettext, ngettext=i18n.ngettext, newstyle=True
+)
+templates.env.globals["current_locale"] = i18n.get_locale
+templates.env.globals["available_locales"] = i18n.available_locales
 _md = mistune.create_markdown(escape=True)
 templates.env.filters["markdown"] = lambda text: Markup(_md(text or ""))
 templates.env.filters["domain"] = lambda url: urlparse(url).netloc or url
