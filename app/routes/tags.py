@@ -42,7 +42,7 @@ async def rename_tag(
         raise HTTPException(status_code=404)
     new_name = body.name.strip()
     if not new_name:
-        raise HTTPException(status_code=422, detail="Nom vide")
+        raise HTTPException(status_code=422, detail="Empty name")
     existing = session.exec(
         select(Tag).where(Tag.user_id == user.id, Tag.name == new_name)
     ).first()

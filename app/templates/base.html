@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fr" data-theme="light">
+<html lang="{{ current_locale() }}" data-theme="light">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -31,43 +31,43 @@
 
     <nav style="padding: 0.5rem 0; flex: 1;">
       <a href="/" class="sidebar-item {% if not current_tag and not current_group and not q %}active{% endif %}">
-        <span>Tous les liens</span>
+        <span>{{ _("All links") }}</span>
         <span class="sidebar-count">{{ total_links if total_links is defined else '' }}</span>
       </a>
       <a href="/tags" class="sidebar-item {% if request.url.path == '/tags' %}active{% endif %}">
         <svg class="icon-tags" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink:0"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
-        <span>Gérer les tags</span>
+        <span>{{ _("Manage tags") }}</span>
       </a>
       <a href="/folders" class="sidebar-item {% if request.url.path.startswith('/folders') %}active{% endif %}">
         <svg class="icon-folders" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink:0"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
-        <span>Gérer les dossiers</span>
+        <span>{{ _("Manage folders") }}</span>
       </a>
       <a href="/settings" class="sidebar-item {% if request.url.path.startswith('/settings') %}active{% endif %}">
         <svg class="icon-settings" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink:0"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-        <span>Paramètres</span>
+        <span>{{ _("Settings") }}</span>
       </a>
       <a href="/u/{{ user.public_slug }}" class="sidebar-item {% if request.url.path == '/u/' ~ user.public_slug %}active{% endif %}" target="_blank">
         <svg class="icon-public" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink:0"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-        <span>Page publique</span>
+        <span>{{ _("Public page") }}</span>
       </a>
       {% if user is defined and user.is_admin %}
       <a href="/admin/" class="sidebar-item {% if request.url.path.startswith('/admin') %}active{% endif %}">
         <svg class="icon-admin" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink:0"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-        <span>Administration</span>
+        <span>{{ _("Administration") }}</span>
       </a>
       {% endif %}
 
       <div class="sidebar-section" style="display:flex;align-items:center;justify-content:space-between;">
-        <span>Dossiers</span>
+        <span>{{ _("Folders") }}</span>
         <span style="display:flex;align-items:center;gap:0.15rem;">
           {% if folder_tree %}
-          <button type="button" id="folder-sort-alpha" title="Trier A→Z"
+          <button type="button" id="folder-sort-alpha" title="{{ _("Sort A→Z") }}"
                   class="sidebar-add-btn"
                   style="background:none;border:none;cursor:pointer;line-height:1;padding:0 0.2rem;">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h6M3 12h9M3 18h12"/><path d="M17 8l3-3 3 3"/><path d="M20 5v14"/></svg>
           </button>
           {% endif %}
-          <a href="/folders/add" title="Nouveau dossier"
+          <a href="/folders/add" title="{{ _("New folder") }}"
              style="color:var(--text-muted);font-size:1rem;line-height:1;padding:0 0.25rem;text-decoration:none;"
              class="sidebar-add-btn">+</a>
         </span>
@@ -83,7 +83,7 @@
            style="padding-left: {{ 0.875 + depth * 0.875 }}rem;"
            @mouseenter="hovered = true"
            @mouseleave="if (!editing) hovered = false">
-        <span class="drag-handle" title="Réorganiser"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="9" cy="5" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="9" cy="19" r="1.6"/><circle cx="15" cy="5" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="15" cy="19" r="1.6"/></svg></span>
+        <span class="drag-handle" title="{{ _("Reorder") }}"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="9" cy="5" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="9" cy="19" r="1.6"/><circle cx="15" cy="5" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="15" cy="19" r="1.6"/></svg></span>
         <template x-if="!editing">
           <a :href="'/?group_id=' + fid"
              style="flex:1;min-width:0;display:flex;align-items:center;gap:0.35rem;color:inherit;text-decoration:none;">{% if depth > 0 %}<span style="color:var(--text-muted);">↳</span>{% else %}<svg class="folder-glyph" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink:0;opacity:0.85;"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>{% endif %}<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" x-text="currentName"></span></a>
@@ -96,23 +96,23 @@
         </template>
         <span class="sidebar-count" data-count-folder="{{ folder.id }}" x-show="!editing">{{ folder_counts.get(folder.id, 0) }}</span>
         <span :style="(hovered && !editing) ? 'display:flex;gap:0.1rem' : 'display:none'">
-          <button class="sidebar-tag-btn" @click.prevent.stop="editing = true; editName = currentName" title="Renommer"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+          <button class="sidebar-tag-btn" @click.prevent.stop="editing = true; editName = currentName" title="{{ _("Rename") }}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
         </span>
         <span :style="editing ? 'display:flex;gap:0.1rem' : 'display:none'">
-          <button class="sidebar-tag-btn" @click.prevent.stop="save()" title="Valider"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></button>
-          <button class="sidebar-tag-btn" @click.prevent.stop="cancel()" title="Annuler"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+          <button class="sidebar-tag-btn" @click.prevent.stop="save()" title="{{ _("Confirm") }}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></button>
+          <button class="sidebar-tag-btn" @click.prevent.stop="cancel()" title="{{ _("Cancel") }}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
         </span>
       </div>
       {% endfor %}
       </div>
       {% else %}
       <a href="/folders/add" class="sidebar-item" style="color:var(--text-muted);font-style:italic;font-size:0.82rem;">
-        + Créer un dossier
+        + {{ _("Create a folder") }}
       </a>
       {% endif %}
 
       {% if all_tags %}
-      <div class="sidebar-section">Tags</div>
+      <div class="sidebar-section">{{ _("Tags") }}</div>
       {% for tag in all_tags %}
       <div class="sidebar-item sidebar-tag-item {% if current_tag == tag.name %}active{% endif %}"
            x-data="sidebarTag()"
@@ -133,12 +133,12 @@
         </template>
         <span class="sidebar-count" x-show="!editing">{{ tag_counts.get(tag.name, 0) }}</span>
         <span :style="(hovered && !editing) ? 'display:flex;gap:0.1rem' : 'display:none'">
-          <button class="sidebar-tag-btn" @click.prevent.stop="editing = true; editName = currentName" title="Renommer"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
-          <button class="sidebar-tag-btn" @click.prevent.stop="del()" title="Supprimer"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg></button>
+          <button class="sidebar-tag-btn" @click.prevent.stop="editing = true; editName = currentName" title="{{ _("Rename") }}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+          <button class="sidebar-tag-btn" @click.prevent.stop="del()" title="{{ _("Delete") }}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg></button>
         </span>
         <span :style="editing ? 'display:flex;gap:0.1rem' : 'display:none'">
-          <button class="sidebar-tag-btn" @click.prevent.stop="save()" title="Valider"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></button>
-          <button class="sidebar-tag-btn" @click.prevent.stop="cancel()" title="Annuler"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+          <button class="sidebar-tag-btn" @click.prevent.stop="save()" title="{{ _("Confirm") }}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></button>
+          <button class="sidebar-tag-btn" @click.prevent.stop="cancel()" title="{{ _("Cancel") }}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
         </span>
       </div>
       {% endfor %}
@@ -147,7 +147,7 @@
 
     <div class="sidebar-bottom">
       {% if user is defined %}
-      <a href="/auth/logout" class="btn btn-ghost btn-sm" title="Déconnexion"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></svg></a>
+      <a href="/auth/logout" class="btn btn-ghost btn-sm" title="{{ _("Sign out") }}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></svg></a>
       {% endif %}
     </div>
   </aside>
@@ -158,7 +158,7 @@
   <!-- Contenu principal -->
   <div class="main">
     <header class="topbar">
-      <button class="hamburger" @click="sidebarOpen = !sidebarOpen" aria-label="Menu">
+      <button class="hamburger" @click="sidebarOpen = !sidebarOpen" aria-label="{{ _("Menu") }}">
         <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
           <path d="M4 6h16M4 12h16M4 18h16"/>
         </svg>
@@ -168,17 +168,17 @@
         {% if current_tag %}<input type="hidden" name="tag" value="{{ current_tag }}">{% endif %}
         {% if current_group %}<input type="hidden" name="group_id" value="{{ current_group }}">{% endif %}
         <input type="search" name="q" value="{{ q|default('') }}"
-               placeholder="Rechercher…" class="search-input">
+               placeholder="{{ _("Search…") }}" class="search-input">
         {% if q %}
-        <a href="/" class="btn btn-ghost btn-sm" title="Effacer la recherche"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></a>
+        <a href="/" class="btn btn-ghost btn-sm" title="{{ _("Clear the search") }}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></a>
         {% endif %}
       </form>
 
-      <button id="view-toggle-btn" class="btn btn-ghost btn-sm" title="Vue grille" style="padding:0.4rem 0.5rem;">
+      <button id="view-toggle-btn" class="btn btn-ghost btn-sm" title="{{ _("Grid view") }}" style="padding:0.4rem 0.5rem;">
         <svg class="icon-grid" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
         <svg class="icon-list" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="display:none"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>
       </button>
-      <button id="theme-toggle" class="btn btn-ghost btn-sm" title="Basculer clair/sombre" style="padding:0.4rem 0.5rem;">
+      <button id="theme-toggle" class="btn btn-ghost btn-sm" title="{{ _("Toggle light/dark") }}" style="padding:0.4rem 0.5rem;">
         <svg class="icon-sun" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
         <svg class="icon-moon" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="display:none"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
       </button>
@@ -186,7 +186,7 @@
         <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
           <path d="M12 5v14M5 12h14"/>
         </svg>
-        <span class="btn-label">Ajouter</span>
+        <span class="btn-label">{{ _("Add") }}</span>
       </a>
     </header>
 
@@ -285,6 +285,8 @@
 </script>
 
 <script nonce="{{ request.state.nonce }}">
+var LBL_CONFIRM_DELETE_TAG = {{ _("Delete the tag #{tag}?")|tojson }};
+
 function sidebarTag() {
   return {
     id: 0, currentName: '', editName: '', editing: false, hovered: false,
@@ -312,7 +314,7 @@ function sidebarTag() {
     },
     cancel() { this.editName = this.currentName; this.editing = false; },
     del() {
-      if (!window.confirm('Supprimer le tag #' + this.currentName + ' ?')) return;
+      if (!window.confirm(LBL_CONFIRM_DELETE_TAG.replace('{tag}', this.currentName))) return;
       var el = this.$el;
       var csrf = document.querySelector('input[name="csrf_token"]');
       el.style.display = 'none';

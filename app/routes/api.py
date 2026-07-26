@@ -23,12 +23,12 @@ async def _get_api_user(
     session: Session = Depends(get_session),
 ) -> User:
     if not x_api_key:
-        raise HTTPException(status_code=401, detail="Authentification requise")
+        raise HTTPException(status_code=401, detail="Authentication required")
     await _api_rate_limit(request)
     computed_hmac = hmac_key(x_api_key)
     user = session.exec(select(User).where(User.api_key_hmac == computed_hmac)).first()
     if not user or not user.is_active:
-        raise HTTPException(status_code=401, detail="Clé API invalide")
+        raise HTTPException(status_code=401, detail="Invalid API key")
     return user
 
 
@@ -55,7 +55,7 @@ async def api_add_link(
     session: Session = Depends(get_session),
 ):
     if not _safe_url(body.url):
-        raise HTTPException(status_code=400, detail="URL invalide")
+        raise HTTPException(status_code=400, detail="Invalid URL")
 
     validated_folder_id: Optional[int] = None
     if body.folder_id is not None:
@@ -279,7 +279,7 @@ async def api_link_reader(
         session.commit()
         session.refresh(link)
     if not link.reader_html:
-        raise HTTPException(status_code=404, detail="Vue lecteur indisponible")
+        raise HTTPException(status_code=404, detail="Reader view unavailable")
     return {
         "id": link.id,
         "reader_title": link.reader_title or link.title,

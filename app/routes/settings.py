@@ -295,11 +295,11 @@ async def import_links(
     content = await file.read(MAX + 1)
     if len(content) > MAX:
         from fastapi import HTTPException
-        raise HTTPException(status_code=413, detail="Fichier trop volumineux (max 10 Mo)")
+        raise HTTPException(status_code=413, detail="File too large (max 10 MB)")
     snippet = content[:512].lower()
     if b"<!doctype" not in snippet and b"<html" not in snippet and b"<dl" not in snippet and b"<a href" not in snippet:
         from fastapi import HTTPException
-        raise HTTPException(status_code=400, detail="Format non reconnu - fichier HTML Netscape attendu")
+        raise HTTPException(status_code=400, detail="Unrecognised format, a Netscape HTML file is expected")
     items = _parse_netscape(content.decode("utf-8", errors="replace"))[:10_000]
 
     imported = skipped = 0

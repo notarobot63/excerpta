@@ -145,7 +145,7 @@ async def toggle_active(
     if not target:
         raise HTTPException(status_code=404)
     if target.id == admin.id:
-        raise HTTPException(status_code=400, detail="Impossible de se désactiver soi-même")
+        raise HTTPException(status_code=400, detail="You cannot disable your own account")
     target.is_active = not target.is_active
     target.session_version += 1  # invalide les sessions actives
     session.add(target)
@@ -164,10 +164,10 @@ async def toggle_admin(
     if not target:
         raise HTTPException(status_code=404)
     if target.id == admin.id:
-        raise HTTPException(status_code=400, detail="Impossible de se retirer les droits admin")
+        raise HTTPException(status_code=400, detail="You cannot revoke your own admin rights")
     admin_count = session.execute(text("SELECT COUNT(*) FROM users WHERE is_admin=1")).scalar()
     if target.is_admin and admin_count <= 1:
-        raise HTTPException(status_code=400, detail="Il doit rester au moins un administrateur")
+        raise HTTPException(status_code=400, detail="At least one administrator must remain")
     target.is_admin = not target.is_admin
     target.session_version += 1  # invalide les sessions actives
     session.add(target)
@@ -204,7 +204,7 @@ async def delete_user(
     if not target:
         raise HTTPException(status_code=404)
     if target.id == admin.id:
-        raise HTTPException(status_code=400, detail="Impossible de supprimer son propre compte")
+        raise HTTPException(status_code=400, detail="You cannot delete your own account")
     target_name = target.name
     # Cascade manuelle dans l'ordre des dépendances FK
     session.execute(text("DELETE FROM fts_links   WHERE rowid IN (SELECT id FROM links WHERE user_id=:id)"), {"id": uid})

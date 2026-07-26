@@ -302,11 +302,11 @@ async def _get_api_user(
 ) -> User:
     x_api_key = request.headers.get("X-API-Key")
     if not x_api_key:
-        raise HTTPException(status_code=401, detail="Authentification requise")
+        raise HTTPException(status_code=401, detail="Authentication required")
     computed_hmac = hmac_key(x_api_key)
     user = session.exec(select(User).where(User.api_key_hmac == computed_hmac)).first()
     if not user or not user.is_active:
-        raise HTTPException(status_code=401, detail="Clé API invalide")
+        raise HTTPException(status_code=401, detail="Invalid API key")
     return user
 
 
@@ -321,7 +321,7 @@ async def api_freshrss_sync(
     if not config or not config.is_enabled:
         raise HTTPException(
             status_code=404,
-            detail="Aucune configuration FreshRSS active pour cet utilisateur",
+            detail="No active FreshRSS configuration for this user",
         )
     added = await sync_user(config, session)
     return {
@@ -369,7 +369,7 @@ async def freshrss_settings_save(
         try:
             await _assert_safe_freshrss_url(url)
         except ValueError:
-            raise HTTPException(status_code=400, detail="URL FreshRSS invalide ou adresse privée")
+            raise HTTPException(status_code=400, detail="Invalid FreshRSS URL or private address")
 
     config = session.exec(
         select(FreshRSSConfig).where(FreshRSSConfig.user_id == current_user.id)
@@ -399,7 +399,7 @@ async def freshrss_sync_now(
         select(FreshRSSConfig).where(FreshRSSConfig.user_id == current_user.id)
     ).first()
     if not config or not config.freshrss_url:
-        raise HTTPException(status_code=400, detail="Configuration FreshRSS manquante")
+        raise HTTPException(status_code=400, detail="Missing FreshRSS configuration")
     try:
         added = await sync_user(config, session)
     except RuntimeError as exc:

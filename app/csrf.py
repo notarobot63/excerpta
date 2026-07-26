@@ -19,14 +19,14 @@ async def csrf_protect(request: Request) -> None:
         return
     expected = request.session.get("csrf_token")
     if not expected:
-        raise HTTPException(status_code=403, detail="CSRF token manquant")
+        raise HTTPException(status_code=403, detail="CSRF token missing")
     # Accepter le token via header (requêtes JSON/AJAX same-origin)
     header_token = request.headers.get("X-CSRF-Token", "")
     if header_token and secrets.compare_digest(header_token, expected):
         return
     form = await request.form()
     if not secrets.compare_digest(str(form.get("csrf_token", "")), expected):
-        raise HTTPException(status_code=403, detail="CSRF token invalide")
+        raise HTTPException(status_code=403, detail="Invalid CSRF token")
 
 
 def csrf_input(request: Request) -> Markup:

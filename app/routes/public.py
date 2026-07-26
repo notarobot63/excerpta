@@ -25,7 +25,7 @@ def _get_public_owner(session: Session, slug: str) -> User:
         select(User).where(User.public_slug == slug, User.is_active == True)
     ).first()
     if not owner:
-        raise HTTPException(status_code=404, detail="Page publique introuvable")
+        raise HTTPException(status_code=404, detail="Public page not found")
     return owner
 
 

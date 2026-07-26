@@ -608,7 +608,7 @@ async def add_link(
     session: Session = Depends(get_session),
 ):
     if not _safe_url(url):
-        raise HTTPException(status_code=400, detail="URL invalide")
+        raise HTTPException(status_code=400, detail="Invalid URL")
 
     tag_names = [t.strip() for t in tags.split(",") if t.strip()]
     link, created = create_link(
@@ -677,7 +677,7 @@ async def edit_link(
         raise HTTPException(status_code=404)
 
     if not _safe_url(url):
-        raise HTTPException(status_code=400, detail="URL invalide")
+        raise HTTPException(status_code=400, detail="Invalid URL")
 
     old_folder_id = link.folder_id
     fr_item_id = link.freshrss_item_id
