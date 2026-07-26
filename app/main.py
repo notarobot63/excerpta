@@ -72,7 +72,7 @@ async def _freshrss_loop():
         try:
             await sync_all_enabled()
         except Exception:
-            logger.exception("Erreur dans la boucle de sync FreshRSS")
+            logger.exception("Error in the FreshRSS sync loop")
         await asyncio.sleep(settings.freshrss_sync_interval * 60)
 
 

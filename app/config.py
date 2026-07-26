@@ -34,10 +34,10 @@ class Settings(BaseSettings):
             # centralisés, l'y écrire en clair reviendrait à publier le secret
             # qui signe les sessions.
             logger.warning(
-                "SECRET_KEY absente ou non sécurisée. Clé temporaire générée : "
-                "les sessions expireront au prochain redémarrage. Définissez une "
-                "SECRET_KEY persistante (python3 -c 'import secrets; "
-                "print(secrets.token_hex(32))') dans votre .env."
+                "SECRET_KEY missing or too weak. A temporary one was generated: "
+                "sessions will expire on the next restart. Set a persistent "
+                "SECRET_KEY (python3 -c 'import secrets; "
+                "print(secrets.token_hex(32))') in your .env."
             )
             self.secret_key = secrets.token_hex(32)
         return self
