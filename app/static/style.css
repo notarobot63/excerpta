@@ -785,6 +785,19 @@ a.lang-picker-item:hover {
   cursor: default;
 }
 
+.lang-picker-full {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+/* Langue active : même relief que le bouton de thème sélectionné, sans
+   curseur cliquable puisqu'il n'y a rien à activer. */
+.lang-picker-full .is-current-lang {
+  cursor: default;
+  border-color: var(--btn-primary);
+  color: var(--text);
+}
+
 /* ── Empty state ── */
 .empty-state {
   text-align: center;

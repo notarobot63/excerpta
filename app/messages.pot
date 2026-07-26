@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Excerpta VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-07-26 15:44+0200\n"
+"POT-Creation-Date: 2026-07-26 15:57+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,7 +17,8 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.18.0\n"
 
-#: app/templates/_lang_picker.html:10
+#: app/templates/_lang_picker.html:16 app/templates/_lang_picker.html:26
+#: app/templates/settings/index.html:53
 msgid "Language"
 msgstr ""
 
@@ -38,7 +39,7 @@ msgstr ""
 msgid "Settings"
 msgstr ""
 
-#: app/templates/base.html:51 app/templates/settings/index.html:180
+#: app/templates/base.html:51 app/templates/settings/index.html:188
 msgid "Public page"
 msgstr ""
 
@@ -100,35 +101,35 @@ msgstr ""
 msgid "Delete"
 msgstr ""
 
-#: app/templates/base.html:151 app/templates/settings/index.html:216
+#: app/templates/base.html:150 app/templates/settings/index.html:224
 msgid "Sign out"
 msgstr ""
 
-#: app/templates/base.html:162
+#: app/templates/base.html:161
 msgid "Menu"
 msgstr ""
 
-#: app/templates/base.html:172 app/templates/public/index.html:27
+#: app/templates/base.html:171 app/templates/public/index.html:27
 msgid "Search…"
 msgstr ""
 
-#: app/templates/base.html:174
+#: app/templates/base.html:173
 msgid "Clear the search"
 msgstr ""
 
-#: app/templates/base.html:178
+#: app/templates/base.html:177
 msgid "Grid view"
 msgstr ""
 
-#: app/templates/base.html:182
+#: app/templates/base.html:181
 msgid "Toggle light/dark"
 msgstr ""
 
-#: app/templates/base.html:190 app/templates/links/form.html:108
+#: app/templates/base.html:189 app/templates/links/form.html:108
 msgid "Add"
 msgstr ""
 
-#: app/templates/base.html:289
+#: app/templates/base.html:288
 #, python-brace-format
 msgid "Delete the tag #{tag}?"
 msgstr ""
@@ -180,11 +181,11 @@ msgstr ""
 msgid "Signed up"
 msgstr ""
 
-#: app/templates/admin/user_detail.html:20 app/templates/settings/index.html:80
+#: app/templates/admin/user_detail.html:20 app/templates/settings/index.html:88
 msgid "Data"
 msgstr ""
 
-#: app/templates/admin/user_detail.html:30 app/templates/settings/index.html:55
+#: app/templates/admin/user_detail.html:30 app/templates/settings/index.html:63
 msgid "Add to Excerpta"
 msgstr ""
 
@@ -192,7 +193,7 @@ msgstr ""
 msgid "Drag this to your browser's bookmarks bar."
 msgstr ""
 
-#: app/templates/admin/user_detail.html:35 app/templates/settings/index.html:60
+#: app/templates/admin/user_detail.html:35 app/templates/settings/index.html:68
 msgid "API key"
 msgstr ""
 
@@ -200,7 +201,7 @@ msgstr ""
 msgid "Reveal"
 msgstr ""
 
-#: app/templates/admin/user_detail.html:39 app/templates/settings/index.html:63
+#: app/templates/admin/user_detail.html:39 app/templates/settings/index.html:71
 msgid "Copy"
 msgstr ""
 
@@ -285,7 +286,7 @@ msgstr ""
 msgid "active"
 msgstr ""
 
-#: app/templates/admin/users.html:44 app/templates/settings/index.html:200
+#: app/templates/admin/users.html:44 app/templates/settings/index.html:208
 msgid "View"
 msgstr ""
 
@@ -327,7 +328,7 @@ msgstr ""
 
 #: app/templates/folders/form.html:58 app/templates/links/form.html:108
 #: app/templates/settings/freshrss.html:46
-#: app/templates/settings/index.html:199
+#: app/templates/settings/index.html:207
 msgid "Save"
 msgstr ""
 
@@ -476,7 +477,7 @@ msgstr ""
 msgid "Metadata"
 msgstr ""
 
-#: app/templates/links/form.html:36 app/templates/settings/index.html:183
+#: app/templates/links/form.html:36 app/templates/settings/index.html:191
 msgid "Title"
 msgstr ""
 
@@ -631,7 +632,7 @@ msgid "Link check"
 msgstr ""
 
 #: app/templates/settings/check_links.html:7
-#: app/templates/settings/index.html:87
+#: app/templates/settings/index.html:95
 msgid "Check links"
 msgstr ""
 
@@ -776,7 +777,7 @@ msgstr ""
 msgid "Bookmarks file (.html)"
 msgstr ""
 
-#: app/templates/settings/import.html:29 app/templates/settings/index.html:86
+#: app/templates/settings/import.html:29 app/templates/settings/index.html:94
 msgid "Import"
 msgstr ""
 
@@ -790,35 +791,39 @@ msgstr ""
 msgid "Appearance"
 msgstr ""
 
-#: app/templates/settings/index.html:53
+#: app/templates/settings/index.html:56
+msgid "Applies to your account. Signed out pages follow your browser's language."
+msgstr ""
+
+#: app/templates/settings/index.html:61
 msgid "Bookmarklet"
 msgstr ""
 
-#: app/templates/settings/index.html:54
+#: app/templates/settings/index.html:62
 msgid "Drag this link to your bookmarks bar:"
 msgstr ""
 
-#: app/templates/settings/index.html:56
+#: app/templates/settings/index.html:64
 msgid "Drag the button above to your browser's bookmarks bar."
 msgstr ""
 
-#: app/templates/settings/index.html:68
+#: app/templates/settings/index.html:76
 msgid "Android app"
 msgstr ""
 
-#: app/templates/settings/index.html:69
+#: app/templates/settings/index.html:77
 msgid "Scan this QR code from the Excerpta app to set it up automatically."
 msgstr ""
 
-#: app/templates/settings/index.html:70
+#: app/templates/settings/index.html:78
 msgid "Android QR code"
 msgstr ""
 
-#: app/templates/settings/index.html:75
+#: app/templates/settings/index.html:83
 msgid "Integrations"
 msgstr ""
 
-#: app/templates/settings/index.html:82
+#: app/templates/settings/index.html:90
 #, python-format
 msgid ""
 "Archiving %(num)d link in the background (rate-limited for Wayback). The "
@@ -829,106 +834,106 @@ msgid_plural ""
 msgstr[0] ""
 msgstr[1] ""
 
-#: app/templates/settings/index.html:85
+#: app/templates/settings/index.html:93
 msgid "Export (HTML)"
 msgstr ""
 
-#: app/templates/settings/index.html:89
+#: app/templates/settings/index.html:97
 msgid ""
 "Archive every link not archived yet on the Wayback Machine? Runs in the "
 "background, rate-limited."
 msgstr ""
 
-#: app/templates/settings/index.html:91
+#: app/templates/settings/index.html:99
 msgid "Archive the unarchived"
 msgstr ""
 
-#: app/templates/settings/index.html:94
+#: app/templates/settings/index.html:102
 #, python-format
 msgid "Rebuild the search index for %(num)d link?"
 msgid_plural "Rebuild the search index for %(num)d links?"
 msgstr[0] ""
 msgstr[1] ""
 
-#: app/templates/settings/index.html:96
+#: app/templates/settings/index.html:104
 msgid "Rebuild the search index"
 msgstr ""
 
-#: app/templates/settings/index.html:100
+#: app/templates/settings/index.html:108
 msgid "Refresh metadata"
 msgstr ""
 
-#: app/templates/settings/index.html:108
+#: app/templates/settings/index.html:116
 msgid "Starting…"
 msgstr ""
 
-#: app/templates/settings/index.html:109
+#: app/templates/settings/index.html:117
 msgid "Network error."
 msgstr ""
 
-#: app/templates/settings/index.html:110
+#: app/templates/settings/index.html:118
 #, python-brace-format
 msgid "{n} link(s) updated."
 msgstr ""
 
-#: app/templates/settings/index.html:111
+#: app/templates/settings/index.html:119
 #, python-brace-format
 msgid "{n} updated"
 msgstr ""
 
-#: app/templates/settings/index.html:158
+#: app/templates/settings/index.html:166
 msgid "Danger zone"
 msgstr ""
 
-#: app/templates/settings/index.html:162
+#: app/templates/settings/index.html:170
 msgid "Delete every link in the FreshRSS folder and reset the sync counter?"
 msgstr ""
 
-#: app/templates/settings/index.html:164
+#: app/templates/settings/index.html:172
 msgid "Purge FreshRSS links"
 msgstr ""
 
-#: app/templates/settings/index.html:166
+#: app/templates/settings/index.html:174
 msgid "Deletes every link in the configured FreshRSS folder."
 msgstr ""
 
-#: app/templates/settings/index.html:170
+#: app/templates/settings/index.html:178
 msgid "Delete ALL your links, tags and folders? This cannot be undone."
 msgstr ""
 
-#: app/templates/settings/index.html:172
+#: app/templates/settings/index.html:180
 msgid "Purge all data"
 msgstr ""
 
-#: app/templates/settings/index.html:174
+#: app/templates/settings/index.html:182
 msgid "Permanently deletes all your links, tags and folders."
 msgstr ""
 
-#: app/templates/settings/index.html:186
+#: app/templates/settings/index.html:194
 msgid "Public links"
 msgstr ""
 
-#: app/templates/settings/index.html:189
+#: app/templates/settings/index.html:197
 msgid "Address"
 msgstr ""
 
-#: app/templates/settings/index.html:194
+#: app/templates/settings/index.html:202
 msgid "my-name"
 msgstr ""
 
-#: app/templates/settings/index.html:204
+#: app/templates/settings/index.html:212
 msgid "Public page updated."
 msgstr ""
 
-#: app/templates/settings/index.html:207
+#: app/templates/settings/index.html:215
 msgid "That address is already taken, pick another one."
 msgstr ""
 
-#: app/templates/settings/index.html:209
+#: app/templates/settings/index.html:217
 msgid "The address cannot be empty."
 msgstr ""
 
-#: app/templates/settings/index.html:214
+#: app/templates/settings/index.html:222
 msgid "Account"
 msgstr ""
 
