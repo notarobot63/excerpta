@@ -225,6 +225,18 @@ carried by the `/api/v1/` prefix, not by a shared version number.
 
 ---
 
+## Translations
+
+The interface ships in English and French, and can be translated into any
+language without touching the code: one gettext catalogue per language, a
+single text file to fill in.
+
+Contributions are welcome, and you do not need to know Python. See
+[TRANSLATING.md](TRANSLATING.md) for the translator's guide, and
+[docs/i18n.md](docs/i18n.md) for the technical decisions behind it.
+
+---
+
 ## License
 
 [GNU Affero General Public License v3.0](LICENSE) - free to fork, strong copyleft, attribution required.
