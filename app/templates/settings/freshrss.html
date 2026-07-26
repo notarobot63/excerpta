@@ -4,13 +4,13 @@
 
 {% block content %}
 <div class="form-card" style="max-width: 700px;">
-  <h2 style="font-size: 1.1rem; font-weight: 600; margin: 0 0 1.25rem;">Synchronisation FreshRSS</h2>
+  <h2 style="font-size: 1.1rem; font-weight: 600; margin: 0 0 1.25rem;">{{ _("FreshRSS sync") }}</h2>
 
   {% if request.query_params.get('saved') is not none %}
-  <p style="font-size:0.85rem;color:var(--color-success);margin:0 0 0.75rem;">✓ Configuration sauvegardée.</p>
+  <p style="font-size:0.85rem;color:var(--color-success);margin:0 0 0.75rem;">✓ {{ _("Settings saved.") }}</p>
   {% endif %}
   {% if request.query_params.get('synced') is not none %}
-  <p style="font-size:0.85rem;color:var(--color-success);margin:0 0 0.75rem;">✓ Synchronisation effectuée.</p>
+  <p style="font-size:0.85rem;color:var(--color-success);margin:0 0 0.75rem;">✓ {{ _("Sync complete.") }}</p>
   {% endif %}
 
   <hr style="border:none;border-top:1px solid var(--border);margin:1.5rem 0">
@@ -19,50 +19,50 @@
     {{ csrf_input(request) }}
 
     <div style="margin-bottom: 0.75rem;">
-      <label style="display:block;font-size:0.85rem;color:var(--text-muted);margin-bottom:0.25rem;">URL du serveur FreshRSS</label>
+      <label style="display:block;font-size:0.85rem;color:var(--text-muted);margin-bottom:0.25rem;">{{ _("FreshRSS server URL") }}</label>
       <input type="text" name="freshrss_url" value="{{ config.freshrss_url if config else '' }}" style="width:100%;padding:0.5rem;border:1px solid var(--border);border-radius:4px;background:var(--bg-secondary);color:inherit;">
     </div>
 
     <div style="margin-bottom: 0.75rem;">
-      <label style="display:block;font-size:0.85rem;color:var(--text-muted);margin-bottom:0.25rem;">Nom d’utilisateur</label>
+      <label style="display:block;font-size:0.85rem;color:var(--text-muted);margin-bottom:0.25rem;">{{ _("Username") }}</label>
       <input type="text" name="freshrss_user" value="{{ config.freshrss_user if config else '' }}" style="width:100%;padding:0.5rem;border:1px solid var(--border);border-radius:4px;background:var(--bg-secondary);color:inherit;">
     </div>
 
     <div style="margin-bottom: 0.75rem;">
-      <label style="display:block;font-size:0.85rem;color:var(--text-muted);margin-bottom:0.25rem;">Token API</label>
-      <input type="password" name="freshrss_token" value="" style="width:100%;padding:0.5rem;border:1px solid var(--border);border-radius:4px;background:var(--bg-secondary);color:inherit;" placeholder="Ne pas remplir si inchangé">
+      <label style="display:block;font-size:0.85rem;color:var(--text-muted);margin-bottom:0.25rem;">{{ _("API token") }}</label>
+      <input type="password" name="freshrss_token" value="" style="width:100%;padding:0.5rem;border:1px solid var(--border);border-radius:4px;background:var(--bg-secondary);color:inherit;" placeholder="{{ _("Leave empty to keep the current one") }}">
     </div>
 
     <div style="margin-bottom: 0.75rem;">
-      <label style="display:block;font-size:0.85rem;color:var(--text-muted);margin-bottom:0.25rem;">Nom du dossier (catégorie)</label>
+      <label style="display:block;font-size:0.85rem;color:var(--text-muted);margin-bottom:0.25rem;">{{ _("Folder name (category)") }}</label>
       <input type="text" name="group_name" value="{{ config.group_name if config else 'FreshRSS' }}" style="width:100%;padding:0.5rem;border:1px solid var(--border);border-radius:4px;background:var(--bg-secondary);color:inherit;">
     </div>
 
     <div style="margin-bottom: 1rem;display:flex;align-items:center;gap:0.5rem;">
       <input type="checkbox" name="is_enabled" id="is_enabled" {% if config and config.is_enabled %}checked{% endif %} style="accent-color:var(--primary);">
-      <label for="is_enabled" style="font-size:0.85rem;color:var(--text-muted);">Activer la synchronisation</label>
+      <label for="is_enabled" style="font-size:0.85rem;color:var(--text-muted);">{{ _("Enable sync") }}</label>
     </div>
 
-    <button type="submit" class="btn btn-primary">Enregistrer</button>
+    <button type="submit" class="btn btn-primary">{{ _("Save") }}</button>
   </form>
 
   {% if config %}
   <hr style="border:none;border-top:1px solid var(--border);margin:1.5rem 0">
 
-  <h3 style="font-size:0.9rem;font-weight:600;margin:0 0 0.75rem;color:var(--text-muted)">Statut</h3>
+  <h3 style="font-size:0.9rem;font-weight:600;margin:0 0 0.75rem;color:var(--text-muted)">{{ _("Status") }}</h3>
   <p style="font-size:0.85rem;color:var(--text-muted);margin:0 0 0.25rem;">
-    Dernière synchronisation :
+    {{ _("Last sync:") }}
     {% if config.last_sync %}
-      {{ config.last_sync.strftime('%d/%m/%Y %H:%M') }}
+      {{ config.last_sync|localedatetime }}
     {% else %}
-      Jamais
+      {{ _("Never") }}
     {% endif %}
   </p>
   <p style="font-size:0.85rem;color:var(--text-muted);margin:0 0 0.25rem;">
-    Liens synchronisés : {{ config.synced_count }}
+    {{ _("Links synced:") }} {{ config.synced_count }}
   </p>
   <p style="font-size:0.85rem;color:var(--text-muted);margin:0 0 0.25rem;">
-    Activation : {{ "Oui" if config.is_enabled else "Non" }}
+    {{ _("Enabled:") }} {{ _("Yes") if config.is_enabled else _("No") }}
   </p>
 
   {% if config.freshrss_url %}
@@ -70,13 +70,13 @@
 
   <form action="/settings/freshrss/sync-now" method="post">
     {{ csrf_input(request) }}
-    <button type="submit" class="btn btn-ghost btn-sm"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;margin-right:0.3rem;"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M3 21v-5h5"/></svg>Synchroniser maintenant</button>
+    <button type="submit" class="btn btn-ghost btn-sm"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;margin-right:0.3rem;"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M3 21v-5h5"/></svg>{{ _("Sync now") }}</button>
   </form>
   {% endif %}
   {% endif %}
 
   <hr style="border:none;border-top:1px solid var(--border);margin:1.5rem 0">
 
-  <a href="/settings" class="btn btn-ghost btn-sm">← Retour aux paramètres</a>
+  <a href="/settings" class="btn btn-ghost btn-sm">← {{ _("Back to settings") }}</a>
 </div>
 {% endblock %}

@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Excerpta VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-07-26 14:53+0200\n"
+"POT-Creation-Date: 2026-07-26 15:15+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -16,4 +16,643 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.18.0\n"
+
+#: app/templates/admin/dashboard.html:2 app/templates/admin/dashboard.html:5
+#: app/templates/admin/user_detail.html:2 app/templates/admin/users.html:2
+msgid "Administration"
+msgstr ""
+
+#: app/templates/admin/dashboard.html:9 app/templates/admin/user_detail.html:9
+#: app/templates/admin/users.html:2 app/templates/admin/users.html:6
+msgid "Users"
+msgstr ""
+
+#: app/templates/admin/dashboard.html:10
+#: app/templates/admin/user_detail.html:21 app/templates/admin/users.html:16
+#: app/templates/tags/list.html:13
+msgid "Links"
+msgstr ""
+
+#: app/templates/admin/dashboard.html:11
+#: app/templates/admin/user_detail.html:22 app/templates/admin/users.html:17
+#: app/templates/tags/list.html:3 app/templates/tags/list.html:6
+msgid "Tags"
+msgstr ""
+
+#: app/templates/admin/dashboard.html:12
+#: app/templates/admin/user_detail.html:23 app/templates/folders/list.html:3
+#: app/templates/folders/list.html:7
+msgid "Folders"
+msgstr ""
+
+#: app/templates/admin/dashboard.html:13
+msgid "Database"
+msgstr ""
+
+#: app/templates/admin/dashboard.html:23
+msgid "Last 10 links added"
+msgstr ""
+
+#: app/templates/admin/dashboard.html:24
+msgid "Manage users"
+msgstr ""
+
+#: app/templates/admin/dashboard.html:44 app/templates/links/_results.html:135
+msgid "No links yet."
+msgstr ""
+
+#: app/templates/admin/user_detail.html:7 app/templates/admin/users.html:28
+msgid "admin"
+msgstr ""
+
+#: app/templates/admin/user_detail.html:8 app/templates/admin/users.html:40
+msgid "disabled"
+msgstr ""
+
+#: app/templates/admin/user_detail.html:14
+msgid "Info"
+msgstr ""
+
+#: app/templates/admin/user_detail.html:15 app/templates/admin/users.html:15
+msgid "Email"
+msgstr ""
+
+#: app/templates/admin/user_detail.html:16
+msgid "Signed up"
+msgstr ""
+
+#: app/templates/admin/user_detail.html:20
+msgid "Data"
+msgstr ""
+
+#: app/templates/admin/user_detail.html:30
+msgid "Add to Excerpta"
+msgstr ""
+
+#: app/templates/admin/user_detail.html:31
+msgid "Drag this to your browser's bookmarks bar."
+msgstr ""
+
+#: app/templates/admin/user_detail.html:35
+msgid "API key"
+msgstr ""
+
+#: app/templates/admin/user_detail.html:38
+msgid "Reveal"
+msgstr ""
+
+#: app/templates/admin/user_detail.html:39
+msgid "Copy"
+msgstr ""
+
+#: app/templates/admin/user_detail.html:42
+msgid "Regenerate the API key? The current one will stop working."
+msgstr ""
+
+#: app/templates/admin/user_detail.html:44
+msgid "Regenerate"
+msgstr ""
+
+#: app/templates/admin/user_detail.html:49
+msgid "Last 5 links"
+msgstr ""
+
+#: app/templates/admin/user_detail.html:65
+msgid "Actions"
+msgstr ""
+
+#: app/templates/admin/user_detail.html:70
+msgid "Disable this user?"
+msgstr ""
+
+#: app/templates/admin/user_detail.html:70
+msgid "Enable this user?"
+msgstr ""
+
+#: app/templates/admin/user_detail.html:73
+msgid "Disable"
+msgstr ""
+
+#: app/templates/admin/user_detail.html:73
+msgid "Enable"
+msgstr ""
+
+#: app/templates/admin/user_detail.html:78
+msgid "Revoke admin rights?"
+msgstr ""
+
+#: app/templates/admin/user_detail.html:78
+msgid "Grant admin rights?"
+msgstr ""
+
+#: app/templates/admin/user_detail.html:79
+msgid "Last admin, cannot be revoked"
+msgstr ""
+
+#: app/templates/admin/user_detail.html:83
+msgid "Revoke admin"
+msgstr ""
+
+#: app/templates/admin/user_detail.html:83
+msgid "Grant admin"
+msgstr ""
+
+#: app/templates/admin/user_detail.html:88
+#, python-format
+msgid "Permanently delete %(name)s and all their data?"
+msgstr ""
+
+#: app/templates/admin/user_detail.html:90 app/templates/folders/form.html:65
+#: app/templates/folders/list.html:37 app/templates/links/_results.html:16
+#: app/templates/links/_results.html:103
+#: app/templates/settings/check_links.html:78 app/templates/tags/list.html:30
+msgid "Delete"
+msgstr ""
+
+#: app/templates/admin/user_detail.html:93
+msgid "This is your own account, actions are restricted."
+msgstr ""
+
+#: app/templates/admin/users.html:7
+msgid "Dashboard"
+msgstr ""
+
+#: app/templates/admin/users.html:14
+msgid "Name"
+msgstr ""
+
+#: app/templates/admin/users.html:18
+msgid "Last activity"
+msgstr ""
+
+#: app/templates/admin/users.html:19 app/templates/settings/freshrss.html:52
+msgid "Status"
+msgstr ""
+
+#: app/templates/admin/users.html:38
+msgid "active"
+msgstr ""
+
+#: app/templates/admin/users.html:44
+msgid "View"
+msgstr ""
+
+#: app/templates/admin/users.html:51
+msgid "No users."
+msgstr ""
+
+#: app/templates/auth/login.html:6
+msgid "Sign in"
+msgstr ""
+
+#: app/templates/auth/login.html:25
+msgid "Authentication failed. Please try again."
+msgstr ""
+
+#: app/templates/auth/login.html:30
+msgid "Sign in with PocketID"
+msgstr ""
+
+#: app/templates/folders/form.html:3 app/templates/folders/form.html:8
+msgid "Edit folder"
+msgstr ""
+
+#: app/templates/folders/form.html:3 app/templates/folders/form.html:8
+#: app/templates/folders/list.html:8
+msgid "New folder"
+msgstr ""
+
+#: app/templates/folders/form.html:16
+msgid "Folder name"
+msgstr ""
+
+#: app/templates/folders/form.html:19
+msgid "e.g. Tech watch"
+msgstr ""
+
+#: app/templates/folders/form.html:23
+msgid "Parent folder"
+msgstr ""
+
+#: app/templates/folders/form.html:39 app/templates/folders/form.html:74
+msgid "- None (top level) -"
+msgstr ""
+
+#: app/templates/folders/form.html:58 app/templates/settings/freshrss.html:46
+msgid "Save"
+msgstr ""
+
+#: app/templates/folders/form.html:58
+msgid "Create"
+msgstr ""
+
+#: app/templates/folders/form.html:60 app/templates/links/_results.html:17
+#: app/templates/settings/import.html:30
+msgid "Cancel"
+msgstr ""
+
+#: app/templates/folders/form.html:63
+msgid "Delete this folder? Its subfolders will become top-level folders."
+msgstr ""
+
+#: app/templates/folders/list.html:32 app/templates/links/_results.html:97
+#: app/templates/settings/check_links.html:74
+msgid "Edit"
+msgstr ""
+
+#: app/templates/folders/list.html:34
+msgid "Delete this folder and keep its links at the top level?"
+msgstr ""
+
+#: app/templates/folders/list.html:41
+#, python-format
+msgid "Delete this folder AND its %(num)d link? This cannot be undone."
+msgid_plural "Delete this folder AND its %(num)d links? This cannot be undone."
+msgstr[0] ""
+msgstr[1] ""
+
+#: app/templates/folders/list.html:44
+msgid "Delete along with its links"
+msgstr ""
+
+#: app/templates/folders/list.html:44
+msgid "+ links"
+msgstr ""
+
+#: app/templates/folders/list.html:56
+msgid "Drop here to move to the top level"
+msgstr ""
+
+#: app/templates/folders/list.html:61
+msgid "No folders yet."
+msgstr ""
+
+#: app/templates/folders/list.html:62
+msgid "Create a folder"
+msgstr ""
+
+#: app/templates/links/_results.html:3
+#, python-format
+msgid "%(num)d result for “%(query)s”"
+msgid_plural "%(num)d results for “%(query)s”"
+msgstr[0] ""
+msgstr[1] ""
+
+#: app/templates/links/_results.html:4
+msgid "clear"
+msgstr ""
+
+#: app/templates/links/_results.html:8
+msgid "Tag:"
+msgstr ""
+
+#: app/templates/links/_results.html:8 app/templates/links/_results.html:118
+#: app/templates/public/index.html:59
+#, python-format
+msgid "%(num)d link"
+msgid_plural "%(num)d links"
+msgstr[0] ""
+msgstr[1] ""
+
+#: app/templates/links/_results.html:9 app/templates/public/index.html:62
+msgid "view all"
+msgstr ""
+
+#: app/templates/links/_results.html:26
+msgid "Drag to a folder in the sidebar"
+msgstr ""
+
+#: app/templates/links/_results.html:56 app/templates/links/_results.html:62
+msgid "Broken link"
+msgstr ""
+
+#: app/templates/links/_results.html:63
+msgid "read the saved copy"
+msgstr ""
+
+#: app/templates/links/_results.html:65
+msgid "view the archive"
+msgstr ""
+
+#: app/templates/links/_results.html:66
+msgid "no copy available"
+msgstr ""
+
+#: app/templates/links/_results.html:87
+msgid "View the Wayback archive"
+msgstr ""
+
+#: app/templates/links/_results.html:89
+msgid "Archiving…"
+msgstr ""
+
+#: app/templates/links/_results.html:91
+msgid "Archiving failed, try again"
+msgstr ""
+
+#: app/templates/links/_results.html:96
+msgid "Read (reader view)"
+msgstr ""
+
+#: app/templates/links/_results.html:99
+#: app/templates/settings/check_links.html:75
+msgid "Delete this link?"
+msgstr ""
+
+#: app/templates/links/_results.html:113 app/templates/links/_results.html:115
+msgid "Previous"
+msgstr ""
+
+#: app/templates/links/_results.html:121 app/templates/links/_results.html:123
+msgid "Next"
+msgstr ""
+
+#: app/templates/links/_results.html:131
+#, python-format
+msgid "No results for “%(query)s”."
+msgstr ""
+
+#: app/templates/links/_results.html:133
+msgid "No links with the tag"
+msgstr ""
+
+#: app/templates/links/_results.html:135
+msgid "Add the first one"
+msgstr ""
+
+#: app/templates/links/list.html:4
+msgid "Folder"
+msgstr ""
+
+#: app/templates/links/list.html:18 app/templates/links/list.html:19
+#, python-brace-format
+msgid "{n} link selected"
+msgid_plural "{n} links selected"
+msgstr[0] ""
+msgstr[1] ""
+
+#: app/templates/links/list.html:20 app/templates/links/list.html:21
+#, python-brace-format
+msgid "Delete {n} link?"
+msgid_plural "Delete {n} links?"
+msgstr[0] ""
+msgstr[1] ""
+
+#: app/templates/links/reader.html:6
+msgid "Reader"
+msgstr ""
+
+#: app/templates/links/reader.html:66 app/templates/links/reader.html:68
+msgid "Back"
+msgstr ""
+
+#: app/templates/links/reader.html:71
+msgid "Decrease font size"
+msgstr ""
+
+#: app/templates/links/reader.html:72
+msgid "Increase font size"
+msgstr ""
+
+#: app/templates/links/reader.html:73
+msgid "Light / dark"
+msgstr ""
+
+#: app/templates/links/reader.html:76
+msgid "View the original"
+msgstr ""
+
+#: app/templates/links/reader.html:78
+msgid "Source"
+msgstr ""
+
+#: app/templates/links/reader.html:87
+#, python-format
+msgid "%(num)d min read"
+msgid_plural "%(num)d min read"
+msgstr[0] ""
+msgstr[1] ""
+
+#: app/templates/links/reader.html:94
+msgid "Could not extract a readable version of this page."
+msgstr ""
+
+#: app/templates/links/reader.html:96
+msgid "Open the original"
+msgstr ""
+
+#: app/templates/links/reader.html:97
+msgid "Try again"
+msgstr ""
+
+#: app/templates/public/index.html:27
+msgid "Search…"
+msgstr ""
+
+#: app/templates/public/index.html:31
+msgid "RSS feed"
+msgstr ""
+
+#: app/templates/public/index.html:49
+msgid "All"
+msgstr ""
+
+#: app/templates/public/index.html:60
+msgid "tag"
+msgstr ""
+
+#: app/templates/public/index.html:61
+#, python-format
+msgid "search for “%(query)s”"
+msgstr ""
+
+#: app/templates/public/index.html:99
+msgid "No results."
+msgstr ""
+
+#: app/templates/public/index.html:101
+msgid "No public links yet."
+msgstr ""
+
+#: app/templates/settings/check_links.html:3
+msgid "Link check"
+msgstr ""
+
+#: app/templates/settings/check_links.html:7
+msgid "Check links"
+msgstr ""
+
+#: app/templates/settings/check_links.html:9
+msgid "Tests every link and stores the result so it shows up in the list."
+msgstr ""
+
+#: app/templates/settings/check_links.html:15
+msgid "Checking"
+msgstr ""
+
+#: app/templates/settings/check_links.html:24
+msgid "Start the check"
+msgstr ""
+
+#: app/templates/settings/check_links.html:28
+#, python-format
+msgid "%(done)d/%(total)d links checked"
+msgstr ""
+
+#: app/templates/settings/check_links.html:30
+#, python-format
+msgid "%(num)d broken"
+msgid_plural "%(num)d broken"
+msgstr[0] ""
+msgstr[1] ""
+
+#: app/templates/settings/check_links.html:32
+msgid "all valid"
+msgstr ""
+
+#: app/templates/settings/check_links.html:47
+#, python-format
+msgid "Delete all (%(num)d)"
+msgstr ""
+
+#: app/templates/settings/check_links.html:50
+msgid "Manual selection"
+msgstr ""
+
+#: app/templates/settings/check_links.html:53
+msgid "Delete selection"
+msgstr ""
+
+#: app/templates/settings/check_links.html:67
+msgid "HTTP status code"
+msgstr ""
+
+#: app/templates/settings/freshrss.html:7
+msgid "FreshRSS sync"
+msgstr ""
+
+#: app/templates/settings/freshrss.html:10
+msgid "Settings saved."
+msgstr ""
+
+#: app/templates/settings/freshrss.html:13
+msgid "Sync complete."
+msgstr ""
+
+#: app/templates/settings/freshrss.html:22
+msgid "FreshRSS server URL"
+msgstr ""
+
+#: app/templates/settings/freshrss.html:27
+msgid "Username"
+msgstr ""
+
+#: app/templates/settings/freshrss.html:32
+msgid "API token"
+msgstr ""
+
+#: app/templates/settings/freshrss.html:33
+msgid "Leave empty to keep the current one"
+msgstr ""
+
+#: app/templates/settings/freshrss.html:37
+msgid "Folder name (category)"
+msgstr ""
+
+#: app/templates/settings/freshrss.html:43
+msgid "Enable sync"
+msgstr ""
+
+#: app/templates/settings/freshrss.html:54
+msgid "Last sync:"
+msgstr ""
+
+#: app/templates/settings/freshrss.html:58
+msgid "Never"
+msgstr ""
+
+#: app/templates/settings/freshrss.html:62
+msgid "Links synced:"
+msgstr ""
+
+#: app/templates/settings/freshrss.html:65
+msgid "Enabled:"
+msgstr ""
+
+#: app/templates/settings/freshrss.html:65
+msgid "Yes"
+msgstr ""
+
+#: app/templates/settings/freshrss.html:65
+msgid "No"
+msgstr ""
+
+#: app/templates/settings/freshrss.html:73
+msgid "Sync now"
+msgstr ""
+
+#: app/templates/settings/freshrss.html:80
+msgid "Back to settings"
+msgstr ""
+
+#: app/templates/settings/import.html:3 app/templates/settings/import.html:7
+msgid "Import links"
+msgstr ""
+
+#: app/templates/settings/import.html:11
+#, python-format
+msgid "Import complete: %(num)d link imported."
+msgid_plural "Import complete: %(num)d links imported."
+msgstr[0] ""
+msgstr[1] ""
+
+#: app/templates/settings/import.html:12
+#, python-format
+msgid "%(num)d duplicate skipped."
+msgid_plural "%(num)d duplicates skipped."
+msgstr[0] ""
+msgstr[1] ""
+
+#: app/templates/settings/import.html:17
+msgid ""
+"Supported format: Netscape HTML (exported from Linkding, Pinboard, "
+"Firefox, Chrome). Duplicates (same URL) are skipped."
+msgstr ""
+
+#: app/templates/settings/import.html:23
+msgid "Bookmarks file (.html)"
+msgstr ""
+
+#: app/templates/settings/import.html:29
+msgid "Import"
+msgstr ""
+
+#: app/templates/settings/import.html:35
+msgid ""
+"Metadata (favicon) is fetched the next time the link is opened. Tags are "
+"imported automatically."
+msgstr ""
+
+#: app/templates/tags/list.html:12
+msgid "Tag"
+msgstr ""
+
+#: app/templates/tags/list.html:14
+msgid "Action"
+msgstr ""
+
+#: app/templates/tags/list.html:28
+#, python-format
+msgid "This tag is used by %(num)d link. Delete it anyway?"
+msgid_plural "This tag is used by %(num)d links. Delete it anyway?"
+msgstr[0] ""
+msgstr[1] ""
+
+#: app/templates/tags/list.html:28
+msgid "Delete this tag?"
+msgstr ""
+
+#: app/templates/tags/list.html:39
+msgid "No tags yet."
+msgstr ""
 

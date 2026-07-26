@@ -1,16 +1,16 @@
 {% extends "base.html" %}
-{% block title %}Administration - Excerpta{% endblock %}
+{% block title %}{{ _("Administration") }} - Excerpta{% endblock %}
 {% block content %}
 <div style="max-width:900px;">
-  <h2 style="font-size:1.1rem;font-weight:600;margin:0 0 1.5rem;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;margin-right:0.3rem;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>Administration</h2>
+  <h2 style="font-size:1.1rem;font-weight:600;margin:0 0 1.5rem;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;margin-right:0.3rem;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>{{ _("Administration") }}</h2>
 
   <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1rem;margin-bottom:2rem;">
     {% for label, val in [
-        ('Utilisateurs', stats.users),
-        ('Liens', stats.links),
-        ('Tags', stats.tags),
-        ('Dossiers', stats.folders),
-        ('Base de données', stats.db_size),
+        (_('Users'), stats.users),
+        (_('Links'), stats.links),
+        (_('Tags'), stats.tags),
+        (_('Folders'), stats.folders),
+        (_('Database'), stats.db_size),
     ] %}
     <div style="background:var(--bg-alt);border:1px solid var(--border);border-radius:0.5rem;padding:1rem;text-align:center;">
       <div style="font-size:1.5rem;font-weight:700;color:var(--text);">{{ val }}</div>
@@ -20,8 +20,8 @@
   </div>
 
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem;">
-    <h3 style="font-size:0.9rem;font-weight:600;color:var(--text-muted);margin:0;">10 derniers liens ajoutés</h3>
-    <a href="/admin/users" class="btn btn-ghost btn-sm">Gérer les utilisateurs →</a>
+    <h3 style="font-size:0.9rem;font-weight:600;color:var(--text-muted);margin:0;">{{ _("Last 10 links added") }}</h3>
+    <a href="/admin/users" class="btn btn-ghost btn-sm">{{ _("Manage users") }} →</a>
   </div>
 
   {% if recent %}
@@ -41,7 +41,7 @@
     {% endfor %}
   </div>
   {% else %}
-  <div class="empty-state"><p>Aucun lien pour l’instant.</p></div>
+  <div class="empty-state"><p>{{ _("No links yet.") }}</p></div>
   {% endif %}
 </div>
 {% endblock %}

@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="fr" data-theme="light">
+<html lang="{{ current_locale() }}" data-theme="light">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Connexion - Excerpta</title>
+  <title>{{ _("Sign in") }} - Excerpta</title>
   <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/static/style.css?v={{ static_version }}">
   <script nonce="{{ request.state.nonce }}">
@@ -22,12 +22,12 @@
     {% if error %}
     <div style="background:rgba(239,68,68,0.1); border:1px solid #ef4444; border-radius:0.5rem;
                 padding:0.75rem; margin-bottom:1.5rem; font-size:0.875rem; color:#ef4444;">
-      Erreur d’authentification. Veuillez réessayer.
+      {{ _("Authentication failed. Please try again.") }}
     </div>
     {% endif %}
 
     <a href="/auth/oidc/start" class="btn btn-primary" style="width:100%; justify-content:center;">
-      Se connecter via PocketID
+      {{ _("Sign in with PocketID") }}
     </a>
   </div>
 </body>

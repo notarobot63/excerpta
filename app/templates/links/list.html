@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block title %}
-  {% if current_tag %}#{{ current_tag }} - {% elif current_group %}Dossier - {% endif %}Excerpta
+  {% if current_tag %}#{{ current_tag }} - {% elif current_group %}{{ _("Folder") }} - {% endif %}Excerpta
 {% endblock %}
 
 {% block content %}
@@ -14,6 +14,11 @@
 (function() {
   var resultsEl = document.getElementById('results');
   if (!resultsEl) return;
+
+  var LBL_SELECTED_ONE = {{ ngettext("{n} link selected", "{n} links selected", 1)|tojson }};
+  var LBL_SELECTED_MANY = {{ ngettext("{n} link selected", "{n} links selected", 2)|tojson }};
+  var LBL_CONFIRM_ONE = {{ ngettext("Delete {n} link?", "Delete {n} links?", 1)|tojson }};
+  var LBL_CONFIRM_MANY = {{ ngettext("Delete {n} link?", "Delete {n} links?", 2)|tojson }};
 
   // ── Sélection groupée (état) ───────────────────────────────────────────
   var _selectedIds = new Set();
@@ -31,7 +36,7 @@
     if (!bar || !cnt) return;
     var n = _selectedIds.size;
     bar.classList.toggle('bulk-bar--visible', n > 0);
-    cnt.textContent = n + ' lien' + (n > 1 ? 's' : '') + ' sélectionné' + (n > 1 ? 's' : '');
+    cnt.textContent = (n > 1 ? LBL_SELECTED_MANY : LBL_SELECTED_ONE).replace('{n}', n);
   }
 
   function clearBulkSelect() {
@@ -46,7 +51,7 @@
   function submitBulkDelete() {
     var n = _selectedIds.size;
     if (n === 0) return;
-    if (!window.confirm('Supprimer ' + n + ' lien' + (n > 1 ? 's' : '') + ' ?')) return;
+    if (!window.confirm((n > 1 ? LBL_CONFIRM_MANY : LBL_CONFIRM_ONE).replace('{n}', n))) return;
     var ids = Array.from(_selectedIds);
     var cards = ids.map(function(id) { return resultsEl.querySelector('.link-card[data-link-id="' + id + '"]'); });
     cards.forEach(function(c) { if (c) c.classList.add('link-deleting'); });

@@ -1,11 +1,11 @@
 {% extends "base.html" %}
 
-{% block title %}{% if folder %}Modifier{% else %}Nouveau{% endif %} dossier - Excerpta{% endblock %}
+{% block title %}{% if folder %}{{ _("Edit folder") }}{% else %}{{ _("New folder") }}{% endif %} - Excerpta{% endblock %}
 
 {% block content %}
 <div class="form-card">
   <h2 style="font-size:1.1rem; font-weight:600; margin:0 0 1.25rem;">
-    {% if folder %}Modifier le dossier{% else %}Nouveau dossier{% endif %}
+    {% if folder %}{{ _("Edit folder") }}{% else %}{{ _("New folder") }}{% endif %}
   </h2>
 
   <form method="post"
@@ -13,14 +13,14 @@
     {{ csrf_input(request) }}
 
     <div class="form-group">
-      <label class="form-label" for="name">Nom du dossier *</label>
+      <label class="form-label" for="name">{{ _("Folder name") }} *</label>
       <input id="name" name="name" type="text" required class="form-input"
              value="{{ folder.name if folder else '' }}"
-             placeholder="Ex: Veille tech">
+             placeholder="{{ _("e.g. Tech watch") }}">
     </div>
 
     <div class="form-group">
-      <label class="form-label">Dossier parent</label>
+      <label class="form-label">{{ _("Parent folder") }}</label>
       <div class="folder-picker" x-data="folderPicker({{ folder.parent_id if folder and folder.parent_id else 'null' }})">
         <div class="folder-picker-selected" @click="open = !open"
              style="cursor:pointer; padding:0.5rem 0.75rem; border:1px solid var(--border);
@@ -36,7 +36,7 @@
                style="padding:0.4rem 0.75rem; cursor:pointer;"
                :style="selected === null ? 'background:var(--primary-light, #e8f0fe);font-weight:600;' : ''"
                class="folder-option">
-            - Aucun (dossier racine) -
+            {{ _("- None (top level) -") }}
           </div>
           {% for f, depth in folder_tree %}
             {% if not folder or f.id != folder.id %}
@@ -55,14 +55,14 @@
 
     <div class="form-actions">
       <button type="submit" class="btn btn-primary">
-        {% if folder %}Enregistrer{% else %}Créer{% endif %}
+        {% if folder %}{{ _("Save") }}{% else %}{{ _("Create") }}{% endif %}
       </button>
-      <a href="/folders" class="btn btn-ghost">Annuler</a>
+      <a href="/folders" class="btn btn-ghost">{{ _("Cancel") }}</a>
       {% if folder %}
       <form action="/folders/{{ folder.id }}/delete" method="post" style="margin-left:auto;"
-            data-confirm="Supprimer ce dossier ? Les sous-dossiers deviendront des dossiers racines.">
+            data-confirm="{{ _("Delete this folder? Its subfolders will become top-level folders.") }}">
         {{ csrf_input(request) }}
-        <button type="submit" class="btn btn-danger btn-sm">Supprimer</button>
+        <button type="submit" class="btn btn-danger btn-sm">{{ _("Delete") }}</button>
       </form>
       {% endif %}
     </div>
@@ -71,7 +71,8 @@
 
 <script nonce="{{ request.state.nonce }}">
 function folderPicker(initialId) {
-  var labels = { null: '- Aucun (dossier racine) -' };
+  var rootLabel = {{ _("- None (top level) -")|tojson }};
+  var labels = { null: rootLabel };
   document.querySelectorAll('.folder-option[data-id]').forEach(function(el) {
     labels[parseInt(el.dataset.id)] = el.dataset.label;
   });
@@ -79,7 +80,7 @@ function folderPicker(initialId) {
     selected: initialId,
     open: false,
     select: function(id) { this.selected = id; this.open = false; },
-    selectedLabel: function() { return labels[this.selected] || '- Aucun (dossier racine) -'; },
+    selectedLabel: function() { return labels[this.selected] || rootLabel; },
   };
 }
 </script>

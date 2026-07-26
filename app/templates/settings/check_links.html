@@ -1,18 +1,18 @@
 {% extends "base.html" %}
 
-{% block title %}Vérification des liens - Excerpta{% endblock %}
+{% block title %}{{ _("Link check") }} - Excerpta{% endblock %}
 
 {% block content %}
 <div class="form-card">
-  <h2 style="font-size: 1.1rem; font-weight: 600; margin: 0 0 0.5rem;">Vérifier les liens</h2>
+  <h2 style="font-size: 1.1rem; font-weight: 600; margin: 0 0 0.5rem;">{{ _("Check links") }}</h2>
   <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0 0 1.5rem;">
-    Teste chaque lien et persiste le résultat pour l’afficher dans la liste.
+    {{ _("Tests every link and stores the result so it shows up in the list.") }}
   </p>
 
   {% if job.running %}
   <div id="check-progress" style="margin-bottom: 1.5rem;">
     <div style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.5rem;">
-      Vérification en cours&hellip; <span id="prog-text">{{ job.done }}/{{ job.total }}</span>
+      {{ _("Checking") }}&hellip; <span id="prog-text">{{ job.done }}/{{ job.total }}</span>
     </div>
     <progress id="prog-bar" value="{{ job.done }}" max="{{ job.total }}"
               style="width: 100%; height: 8px; border-radius: 4px;"></progress>
@@ -21,15 +21,15 @@
   <div style="display:flex; align-items:center; gap:1rem; margin-bottom:1.5rem; flex-wrap:wrap;">
     <form method="post" action="/settings/check-links">
       {{ csrf_input(request) }}
-      <button type="submit" class="btn btn-primary">Lancer la vérification</button>
+      <button type="submit" class="btn btn-primary">{{ _("Start the check") }}</button>
     </form>
     {% if checked_count > 0 %}
     <span style="font-size:0.85rem; color:var(--text-muted);">
-      {{ checked_count }}/{{ total_count }} liens vérifiés
+      {{ _("%(done)d/%(total)d links checked", done=checked_count, total=total_count) }}
       {% if broken %}
-      &mdash; <strong style="color:var(--btn-danger);">{{ broken|length }} cassé{% if broken|length > 1 %}s{% endif %}</strong>
+      &mdash; <strong style="color:var(--btn-danger);">{{ ngettext("%(num)d broken", "%(num)d broken", broken|length) }}</strong>
       {% else %}
-      &mdash; <strong style="color:var(--color-success);">tous valides ✓</strong>
+      &mdash; <strong style="color:var(--color-success);">{{ _("all valid") }} ✓</strong>
       {% endif %}
     </span>
     {% endif %}
@@ -44,13 +44,13 @@
 
   <div style="display:flex; align-items:center; gap:1rem; margin-bottom:0.75rem; border-top:1px solid var(--border); padding-top:1rem; flex-wrap:wrap;">
     <button type="button" id="delete-all-btn" class="btn btn-danger btn-sm">
-      Supprimer tout ({{ broken|length }})
+      {{ _("Delete all (%(num)d)", num=broken|length) }}
     </button>
     <label style="display:flex; align-items:center; gap:0.4rem; font-size:0.85rem; cursor:pointer;">
-      <input type="checkbox" id="select-all"> Sélection manuelle
+      <input type="checkbox" id="select-all"> {{ _("Manual selection") }}
     </label>
     <button type="button" id="bulk-btn" class="btn btn-danger btn-sm" style="display:none;">
-      Supprimer la sélection
+      {{ _("Delete selection") }}
     </button>
   </div>
 
@@ -64,18 +64,18 @@
         <div class="link-source">
           <img class="link-favicon" src="{{ link.favicon_url }}" data-hide-on-error="hidden" alt="">
           <span class="link-domain">{{ link.url | domain }}</span>
-          {% if link.check_status %}<span class="broken-badge" title="Code HTTP">{{ link.check_status }}</span>{% endif %}
+          {% if link.check_status %}<span class="broken-badge" title="{{ _("HTTP status code") }}">{{ link.check_status }}</span>{% endif %}
         </div>
         <a class="link-title" href="{{ link.url }}" target="_blank" rel="noopener">
           {{ link.title or link.url }}
         </a>
       </div>
       <div class="link-actions" style="opacity:1;">
-        <a href="/links/{{ link.id }}/edit" class="btn btn-ghost btn-sm" title="Modifier"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></a>
-        <form method="post" action="/links/{{ link.id }}/delete" data-confirm="Supprimer ce lien ?">
+        <a href="/links/{{ link.id }}/edit" class="btn btn-ghost btn-sm" title="{{ _("Edit") }}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></a>
+        <form method="post" action="/links/{{ link.id }}/delete" data-confirm="{{ _("Delete this link?") }}">
           {{ csrf_input(request) }}
           <input type="hidden" name="return_to" value="/settings/check-links">
-          <button type="submit" class="btn btn-ghost btn-sm" title="Supprimer"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg></button>
+          <button type="submit" class="btn btn-ghost btn-sm" title="{{ _("Delete") }}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg></button>
         </form>
       </div>
     </div>
