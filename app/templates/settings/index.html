@@ -50,6 +50,14 @@
 
   <hr style="border:none;border-top:1px solid var(--border);margin:1.5rem 0">
 
+  <h3 style="font-size:0.9rem;font-weight:600;margin:0 0 0.75rem;color:var(--text-muted)">{{ _("Language") }}</h3>
+  {% with lang_picker_full = true %}{% include "_lang_picker.html" %}{% endwith %}
+  <p style="font-size:0.78rem;color:var(--text-muted);margin:0.5rem 0 0;">
+    {{ _("Applies to your account. Signed out pages follow your browser's language.") }}
+  </p>
+
+  <hr style="border:none;border-top:1px solid var(--border);margin:1.5rem 0">
+
   <h3 style="font-size:0.9rem;font-weight:600;margin:0 0 0.75rem;color:var(--text-muted)">{{ _("Bookmarklet") }}</h3>
   <p>{{ _("Drag this link to your bookmarks bar:") }}</p>
   <a href="{{ bookmarklet|e }}" class="btn btn-primary"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;margin-right:0.3rem;"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>{{ _("Add to Excerpta") }}</a>
