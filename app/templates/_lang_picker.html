@@ -1,0 +1,20 @@
+{#
+  Sélecteur de langue. Volontairement des liens et non un <select> : les pages
+  autonomes (connexion, page publique) ne chargent pas app.js, et la CSP
+  interdit les gestionnaires inline, donc un <select> y serait inerte.
+
+  Chaque lien renvoie sur la page courante, query comprise, pour que changer de
+  langue ne fasse pas perdre une recherche ou une pagination en cours.
+#}
+{% set _here = request.url.path ~ ('?' ~ request.url.query if request.url.query else '') %}
+<nav class="lang-picker" aria-label="{{ _("Language") }}">
+  {% for code in available_locales() %}
+  {%- if code == current_locale() %}
+  <span class="lang-picker-item is-current" aria-current="true"
+        title="{{ locale_name(code) }}">{{ code.split('_')[0]|upper }}</span>
+  {%- else %}
+  <a class="lang-picker-item" href="/lang/{{ code }}?next={{ _here|urlencode }}"
+     title="{{ locale_name(code) }}">{{ code.split('_')[0]|upper }}</a>
+  {%- endif %}
+  {% endfor %}
+</nav>

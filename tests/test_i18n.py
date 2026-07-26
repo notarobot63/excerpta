@@ -290,6 +290,70 @@ def test_catalog_placeholders_survive_translation(locale, po_path):
     assert not problems, "\n".join(problems)
 
 
+# --------------------------------------------------------------------------
+# Choix de la langue (route /lang)
+# --------------------------------------------------------------------------
+
+@pytest.mark.parametrize(
+    "raw,expected",
+    [
+        ("/", "/"),
+        ("/settings", "/settings"),
+        ("/?q=python&page=2", "/?q=python&page=2"),
+        # Redirecteur ouvert : le navigateur lit « //evil.example » comme un
+        # hôte, et certains acceptent « /\evil.example » de la même façon.
+        ("//evil.example", "/"),
+        ("/\\evil.example", "/"),
+        ("https://evil.example", "/"),
+        ("http://evil.example", "/"),
+        ("evil.example", "/"),
+        ("", "/"),
+        (None, "/"),
+    ],
+)
+def test_safe_next_refuses_anything_external(raw, expected):
+    from app.routes.lang import safe_next
+
+    assert safe_next(raw) == expected
+
+
+@pytest.fixture
+def lang_client(engine):
+    """Client HTTP sans utilisateur connecté : le cas de la page de connexion."""
+    from fastapi.testclient import TestClient
+    from sqlmodel import Session
+
+    from app.database import get_session
+    from app.main import app
+
+    def _get_session():
+        with Session(engine) as s:
+            yield s
+
+    app.dependency_overrides[get_session] = _get_session
+    yield TestClient(app)
+    app.dependency_overrides.clear()
+
+
+def test_choosing_a_language_sets_the_cookie(lang_client):
+    r = lang_client.get("/lang/fr?next=/settings", follow_redirects=False)
+    assert r.status_code == 303
+    assert r.headers["location"] == "/settings"
+    assert r.cookies[i18n.LOCALE_COOKIE] == "fr"
+
+
+def test_unknown_language_is_not_stored(lang_client):
+    """Une locale inventée ne doit pas se retrouver en cookie ni en base."""
+    r = lang_client.get("/lang/zz", follow_redirects=False)
+    assert r.status_code == 303
+    assert i18n.LOCALE_COOKIE not in r.cookies
+
+
+def test_language_choice_does_not_redirect_offsite(lang_client):
+    r = lang_client.get("/lang/fr?next=https://evil.example", follow_redirects=False)
+    assert r.headers["location"] == "/"
+
+
 def test_french_catalog_is_complete():
     """Le français est la langue d'origine de l'interface : il reste complet.
 

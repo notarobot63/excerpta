@@ -126,4 +126,21 @@ async def oidc_callback(request: Request, session: Session = Depends(get_session
     request.session.clear()
     request.session["user_id"] = user.id
     request.session["session_version"] = user.session_version
+
+    # Langue : la session est vidée juste au-dessus, il faut donc y reporter la
+    # préférence enregistrée, sinon elle serait ignorée jusqu'à la prochaine
+    # visite. Et si le visiteur a choisi une langue AVANT de se connecter, on
+    # l'adopte comme préférence : sans cela, son choix serait perdu au login.
+    if user.language:
+        request.session["lang"] = user.language
+    else:
+        from ..i18n import LOCALE_COOKIE, available_locales, negotiate
+
+        chosen = negotiate([request.cookies.get(LOCALE_COOKIE) or ""], available_locales())
+        if chosen:
+            user.language = chosen
+            session.add(user)
+            session.commit()
+            request.session["lang"] = chosen
+
     return RedirectResponse(url="/", status_code=303)
