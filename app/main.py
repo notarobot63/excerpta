@@ -19,6 +19,7 @@ from .auth import NotAuthenticated
 from .config import settings
 from .csrf import csrf_protect
 from .database import init_db, cleanup_freshrss_tag
+from .i18n import LocaleMiddleware
 from . import models  # noqa: F401
 from .routes import auth as auth_router
 from .routes import links as links_router
@@ -117,6 +118,9 @@ if settings.testing:
 # donc le DERNIER ajouté s'exécute en PREMIER. StrictHostMiddleware doit rester
 # le dernier appel de ce bloc pour rejeter un Host invalide avant que la session
 # ne soit déchiffrée et que la réponse ne soit compressée.
+# LocaleMiddleware est ajouté en premier, donc s'exécute en dernier : il lit la
+# préférence de langue dans la session, qui doit déjà avoir été déchiffrée.
+app.add_middleware(LocaleMiddleware)
 app.add_middleware(
     SessionMiddleware,
     secret_key=settings.secret_key,

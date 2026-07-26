@@ -11,3 +11,6 @@ dist/
 build/
 *.egg-info/
 .pytest_cache/
+
+# Catalogues i18n compilés : générés au build (voir Dockerfile), jamais versionnés.
+*.mo
