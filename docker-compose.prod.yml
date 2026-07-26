@@ -1,6 +1,8 @@
 services:
   excerpta:
-    image: ${REGISTRY_IMAGE}
+    # Image publique par défaut, pour que ce fichier serve tel quel.
+    # Un déploiement depuis un autre registre surcharge REGISTRY_IMAGE.
+    image: ${REGISTRY_IMAGE:-ghcr.io/notarobot63/excerpta:latest}
     container_name: excerpta
     restart: unless-stopped
     ports:
