@@ -29,6 +29,9 @@ class User(SQLModel, table=True):
     is_active: bool = Field(default=True)
     public_page_title: str = Field(default="Liens publics")
     public_slug: Optional[str] = Field(default=None, unique=True, index=True)
+    # Langue de l'interface. NULL = pas de choix explicite : on négocie alors
+    # depuis l'en-tête Accept-Language du navigateur. Voir docs/i18n.md.
+    language: Optional[str] = Field(default=None)
     session_version: int = Field(default=0)
     created_at: datetime = Field(default_factory=_utcnow)
 

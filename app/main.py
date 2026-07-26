@@ -25,6 +25,7 @@ from .routes import auth as auth_router
 from .routes import links as links_router
 from .routes import tags as tags_router
 from .routes import folders as folders_router
+from .routes import lang as lang_router
 from .routes import oidc as oidc_router
 from .routes import settings as settings_router
 from .routes import public as public_router
@@ -194,6 +195,7 @@ app.include_router(tags_router.router, dependencies=_csrf)
 app.include_router(folders_router.router, dependencies=_csrf)
 app.include_router(settings_router.router, dependencies=_csrf)
 app.include_router(public_router.router)  # pas de CSRF ni auth
+app.include_router(lang_router.router)  # GET bénin, accessible sans auth
 app.include_router(admin_router.router, dependencies=_csrf)
 app.include_router(api_router.router)  # JSON API - pas de CSRF, auth par X-API-Key
 app.include_router(freshrss_settings_router, dependencies=_csrf)

@@ -759,6 +759,32 @@ a:hover { text-decoration: underline; }
   cursor: pointer;
 }
 
+/* ── Sélecteur de langue ── */
+.lang-picker {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.15rem;
+}
+.lang-picker-item {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  padding: 0.2rem 0.35rem;
+  border-radius: 0.25rem;
+  color: var(--text-muted);
+  text-decoration: none;
+  line-height: 1;
+}
+a.lang-picker-item:hover {
+  color: var(--text);
+  background: var(--card-hover, rgba(127, 127, 127, 0.12));
+}
+.lang-picker-item.is-current {
+  color: var(--text);
+  background: var(--card-hover, rgba(127, 127, 127, 0.12));
+  cursor: default;
+}
+
 /* ── Empty state ── */
 .empty-state {
   text-align: center;

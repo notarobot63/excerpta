@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Excerpta VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-07-26 15:26+0200\n"
+"POT-Creation-Date: 2026-07-26 15:44+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -16,6 +16,10 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.18.0\n"
+
+#: app/templates/_lang_picker.html:10
+msgid "Language"
+msgstr ""
 
 #: app/templates/base.html:34
 msgid "All links"
@@ -96,35 +100,35 @@ msgstr ""
 msgid "Delete"
 msgstr ""
 
-#: app/templates/base.html:150 app/templates/settings/index.html:216
+#: app/templates/base.html:151 app/templates/settings/index.html:216
 msgid "Sign out"
 msgstr ""
 
-#: app/templates/base.html:161
+#: app/templates/base.html:162
 msgid "Menu"
 msgstr ""
 
-#: app/templates/base.html:171 app/templates/public/index.html:27
+#: app/templates/base.html:172 app/templates/public/index.html:27
 msgid "Search…"
 msgstr ""
 
-#: app/templates/base.html:173
+#: app/templates/base.html:174
 msgid "Clear the search"
 msgstr ""
 
-#: app/templates/base.html:177
+#: app/templates/base.html:178
 msgid "Grid view"
 msgstr ""
 
-#: app/templates/base.html:181
+#: app/templates/base.html:182
 msgid "Toggle light/dark"
 msgstr ""
 
-#: app/templates/base.html:189 app/templates/links/form.html:108
+#: app/templates/base.html:190 app/templates/links/form.html:108
 msgid "Add"
 msgstr ""
 
-#: app/templates/base.html:288
+#: app/templates/base.html:289
 #, python-brace-format
 msgid "Delete the tag #{tag}?"
 msgstr ""
@@ -383,14 +387,14 @@ msgid "Tag:"
 msgstr ""
 
 #: app/templates/links/_results.html:8 app/templates/links/_results.html:118
-#: app/templates/public/index.html:59
+#: app/templates/public/index.html:60
 #, python-format
 msgid "%(num)d link"
 msgid_plural "%(num)d links"
 msgstr[0] ""
 msgstr[1] ""
 
-#: app/templates/links/_results.html:9 app/templates/public/index.html:62
+#: app/templates/links/_results.html:9 app/templates/public/index.html:63
 msgid "view all"
 msgstr ""
 
@@ -601,24 +605,24 @@ msgstr ""
 msgid "RSS feed"
 msgstr ""
 
-#: app/templates/public/index.html:49
+#: app/templates/public/index.html:50
 msgid "All"
 msgstr ""
 
-#: app/templates/public/index.html:60
+#: app/templates/public/index.html:61
 msgid "tag"
 msgstr ""
 
-#: app/templates/public/index.html:61
+#: app/templates/public/index.html:62
 #, python-format
 msgid "search for “%(query)s”"
 msgstr ""
 
-#: app/templates/public/index.html:99
+#: app/templates/public/index.html:100
 msgid "No results."
 msgstr ""
 
-#: app/templates/public/index.html:101
+#: app/templates/public/index.html:102
 msgid "No public links yet."
 msgstr ""
 

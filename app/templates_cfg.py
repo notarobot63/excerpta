@@ -1,7 +1,7 @@
 import os
 from pathlib import Path
 from urllib.parse import urlparse, urlencode
-from babel.core import UnknownLocaleError
+from babel.core import Locale, UnknownLocaleError
 from babel.dates import format_date, format_datetime
 from fastapi.templating import Jinja2Templates
 from markupsafe import Markup
@@ -22,6 +22,22 @@ templates.env.install_gettext_callables(
 )
 templates.env.globals["current_locale"] = i18n.get_locale
 templates.env.globals["available_locales"] = i18n.available_locales
+
+
+def _locale_name(code: str) -> str:
+    """Nom de la langue dans cette langue : « français », « Deutsch ».
+
+    Un anglophone ne cherche pas « French » dans un sélecteur, il cherche
+    « Français ». Le repli sur le code brut évite qu'une locale exotique fasse
+    disparaître l'entrée du sélecteur.
+    """
+    try:
+        return Locale.parse(code).get_display_name(code) or code
+    except (UnknownLocaleError, ValueError):
+        return code
+
+
+templates.env.globals["locale_name"] = _locale_name
 
 
 def _localedate(value, fmt: str = "medium") -> str:

@@ -138,6 +138,10 @@ def init_db():
     if "public_slug" not in ucols:
         con.execute("ALTER TABLE users ADD COLUMN public_slug TEXT")
         con.execute("CREATE UNIQUE INDEX IF NOT EXISTS ix_users_public_slug ON users(public_slug)")
+    if "language" not in ucols:
+        # NULL volontairement : distingue « pas encore choisi », où l'on négocie
+        # depuis Accept-Language, de « a choisi l'anglais ».
+        con.execute("ALTER TABLE users ADD COLUMN language TEXT")
     # Backfill des slugs manquants (multi-tenant page publique)
     from .utils import slugify
     missing = con.execute(
