@@ -123,7 +123,7 @@ git clone https://github.com/notarobot63/excerpta.git
 cd excerpta
 cp .env.example .env
 # Edit .env with your values
-GIT_COMMIT=$(git rev-parse --short HEAD) docker compose up --build -d
+GIT_COMMIT=$(git describe --tags --always | sed 's/^v//') docker compose up --build -d
 ```
 
 ### Environment variables
