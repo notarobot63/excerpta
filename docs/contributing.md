@@ -86,6 +86,25 @@ Before submitting a contribution:
 - JSON requests use the `X-CSRF-Token` header
 - Any new authenticated route uses `Depends(get_current_user)`
 
+## Translations
+
+Interface strings are English in the code (`msgid`); French is a catalogue like
+any other. Every new string is therefore written in English first, then
+translated in `app/translations/fr/LC_MESSAGES/messages.po`.
+
+```bash
+pybabel extract -F babel.cfg -o app/messages.pot --project=Excerpta .
+pybabel update -i app/messages.pot -d app/translations -l fr
+pybabel compile -d app/translations
+```
+
+`pytest tests/test_i18n.py` validates catalogue integrity and rejects an
+incomplete French catalogue. The `.mo` files are not committed; they are
+compiled at build time.
+
+Guide for external translators: [TRANSLATING.md](../TRANSLATING.md).
+Decisions and pitfalls: [i18n.md](i18n.md).
+
 ## Reporting an issue
 
 Open an issue on the repository with a precise description of the observed behavior and steps to reproduce it.
