@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _("Demo catalogue") }} - Excerpta{% endblock %}
+
+{% block content %}
+<div class="form-card">
+  <h2 style="font-size:1.1rem; font-weight:600; margin:0 0 0.75rem;">{{ _("Demo catalogue") }}</h2>
+
+  <p style="font-size:0.9rem; margin:0 0 1.5rem;">
+    {{ _("In this demo, links are added from the list below rather than by typing an address: the server never fetches a page from the internet.") }}
+    {{ ngettext("%(num)d link left to add.", "%(num)d links left to add.", restants) }}
+  </p>
+
+  {% for entree in entrees %}
+  <div style="display:flex; align-items:flex-start; gap:1rem; padding:0.85rem 0; border-top:1px solid var(--border);">
+    <div style="flex:1; min-width:0;">
+      <div style="font-weight:600; margin-bottom:0.15rem;">{{ entree.title }}</div>
+      <div style="font-size:0.85rem; opacity:0.85; margin-bottom:0.3rem;">{{ entree.description }}</div>
+      <div style="font-size:0.8rem; opacity:0.7;">
+        {{ entree.url | domain }} · {{ entree.folder }}
+        {% for tag in entree.tags %} · {{ tag }}{% endfor %}
+      </div>
+    </div>
+    <div style="flex-shrink:0; padding-top:0.15rem;">
+      {% if entree.deja_ajoute %}
+      <span style="font-size:0.8rem; opacity:0.6;">{{ _("Already added") }}</span>
+      {% else %}
+      <form method="post" action="/demo/add">
+        {{ csrf_input(request) }}
+        <input type="hidden" name="url" value="{{ entree.url }}">
+        <button type="submit" class="btn btn-sm">{{ _("Add") }}</button>
+      </form>
+      {% endif %}
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

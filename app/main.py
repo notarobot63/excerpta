@@ -19,9 +19,11 @@ from .auth import NotAuthenticated
 from .config import settings
 from .csrf import csrf_protect
 from .database import init_db, cleanup_freshrss_tag
+from .demo import forbid_in_demo_dep
 from .i18n import LocaleMiddleware
 from . import models  # noqa: F401
 from .routes import auth as auth_router
+from .routes import demo as demo_router
 from .routes import links as links_router
 from .routes import tags as tags_router
 from .routes import folders as folders_router
@@ -183,22 +185,30 @@ async def security_headers(request: Request, call_next):
 
 @app.exception_handler(NotAuthenticated)
 async def not_authenticated_handler(request: Request, exc: NotAuthenticated):
+    # En démo il n'y a pas d'IdP : le visiteur est envoyé sur la page qui lui
+    # propose d'ouvrir un espace jetable.
+    if settings.demo_mode:
+        return RedirectResponse(url="/demo")
     return RedirectResponse(url="/auth/login")
 
 
 _csrf = [Depends(csrf_protect)]
+# Routeurs entièrement fermés en démo : l'administration, et FreshRSS qui stocke
+# des identifiants et interroge une URL fournie par l'utilisateur.
+_no_demo = [Depends(forbid_in_demo_dep)]
 
 app.include_router(auth_router.router)
 app.include_router(oidc_router.router)
+app.include_router(demo_router.router, dependencies=_csrf)  # 404 hors mode démo
 app.include_router(links_router.router, dependencies=_csrf)
 app.include_router(tags_router.router, dependencies=_csrf)
 app.include_router(folders_router.router, dependencies=_csrf)
 app.include_router(settings_router.router, dependencies=_csrf)
 app.include_router(public_router.router)  # pas de CSRF ni auth
 app.include_router(lang_router.router)  # GET bénin, accessible sans auth
-app.include_router(admin_router.router, dependencies=_csrf)
+app.include_router(admin_router.router, dependencies=_csrf + _no_demo)
 app.include_router(api_router.router)  # JSON API - pas de CSRF, auth par X-API-Key
-app.include_router(freshrss_settings_router, dependencies=_csrf)
+app.include_router(freshrss_settings_router, dependencies=_csrf + _no_demo)
 app.include_router(freshrss_api_router)  # JSON API FreshRSS - pas de CSRF
 
 

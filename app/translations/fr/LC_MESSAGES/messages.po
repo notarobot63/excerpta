@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Excerpta VERSION\n"
 "Report-Msgid-Bugs-To: https://github.com/notarobot63/excerpta/issues\n"
-"POT-Creation-Date: 2026-07-26 15:57+0200\n"
+"POT-Creation-Date: 2026-08-01 19:06+0200\n"
 "PO-Revision-Date: 2026-07-26 14:53+0200\n"
 "Last-Translator: \n"
 "Language: fr\n"
@@ -27,106 +27,115 @@ msgstr "Langue"
 msgid "All links"
 msgstr "Tous les liens"
 
-#: app/templates/base.html:39
+#: app/templates/base.html:38 app/templates/links/_results.html:70
+msgid "Unread"
+msgstr "Non lus"
+
+#: app/templates/base.html:43
 msgid "Manage tags"
 msgstr "Gérer les tags"
 
-#: app/templates/base.html:43
+#: app/templates/base.html:47
 msgid "Manage folders"
 msgstr "Gérer les dossiers"
 
-#: app/templates/base.html:47 app/templates/settings/index.html:3 app/templates/settings/index.html:7
+#: app/templates/base.html:51 app/templates/settings/index.html:3
+#: app/templates/settings/index.html:7
 msgid "Settings"
 msgstr "Paramètres"
 
-#: app/templates/base.html:51 app/templates/settings/index.html:188
+#: app/templates/base.html:57 app/templates/settings/index.html:199
 msgid "Public page"
 msgstr "Page publique"
 
 #: app/templates/admin/dashboard.html:2 app/templates/admin/dashboard.html:5
-#: app/templates/admin/user_detail.html:2 app/templates/admin/users.html:2 app/templates/base.html:56
+#: app/templates/admin/user_detail.html:2 app/templates/admin/users.html:2
+#: app/templates/base.html:63
 msgid "Administration"
 msgstr "Administration"
 
-#: app/templates/admin/dashboard.html:12 app/templates/admin/user_detail.html:23
-#: app/templates/base.html:61 app/templates/folders/list.html:3 app/templates/folders/list.html:7
+#: app/templates/admin/dashboard.html:12
+#: app/templates/admin/user_detail.html:23 app/templates/base.html:68
+#: app/templates/folders/list.html:3 app/templates/folders/list.html:7
 msgid "Folders"
 msgstr "Dossiers"
 
-#: app/templates/base.html:64
+#: app/templates/base.html:71
 msgid "Sort A→Z"
 msgstr "Trier A→Z"
 
-#: app/templates/base.html:70 app/templates/folders/form.html:3 app/templates/folders/form.html:8
-#: app/templates/folders/list.html:8
+#: app/templates/base.html:77 app/templates/folders/form.html:3
+#: app/templates/folders/form.html:8 app/templates/folders/list.html:8
 msgid "New folder"
 msgstr "Nouveau dossier"
 
-#: app/templates/base.html:86
+#: app/templates/base.html:93
 msgid "Reorder"
 msgstr "Réorganiser"
 
-#: app/templates/base.html:99 app/templates/base.html:136
+#: app/templates/base.html:106 app/templates/base.html:143
 msgid "Rename"
 msgstr "Renommer"
 
-#: app/templates/base.html:102 app/templates/base.html:140
+#: app/templates/base.html:109 app/templates/base.html:147
 msgid "Confirm"
 msgstr "Valider"
 
-#: app/templates/base.html:103 app/templates/base.html:141 app/templates/folders/form.html:60
-#: app/templates/links/_results.html:17 app/templates/links/form.html:110
-#: app/templates/settings/import.html:30
+#: app/templates/base.html:110 app/templates/base.html:148
+#: app/templates/folders/form.html:60 app/templates/links/_results.html:27
+#: app/templates/links/form.html:112 app/templates/settings/import.html:30
 msgid "Cancel"
 msgstr "Annuler"
 
-#: app/templates/base.html:110 app/templates/folders/list.html:62
+#: app/templates/base.html:117 app/templates/folders/list.html:62
 msgid "Create a folder"
 msgstr "Créer un dossier"
 
-#: app/templates/admin/dashboard.html:11 app/templates/admin/user_detail.html:22
-#: app/templates/admin/users.html:17 app/templates/base.html:115 app/templates/links/form.html:57
+#: app/templates/admin/dashboard.html:11
+#: app/templates/admin/user_detail.html:22 app/templates/admin/users.html:17
+#: app/templates/base.html:122 app/templates/links/form.html:57
 #: app/templates/tags/list.html:3 app/templates/tags/list.html:6
 msgid "Tags"
 msgstr "Tags"
 
-#: app/templates/admin/user_detail.html:90 app/templates/base.html:137
+#: app/templates/admin/user_detail.html:90 app/templates/base.html:144
 #: app/templates/folders/form.html:65 app/templates/folders/list.html:37
-#: app/templates/links/_results.html:16 app/templates/links/_results.html:103
-#: app/templates/links/form.html:133 app/templates/settings/check_links.html:78
+#: app/templates/links/_results.html:26 app/templates/links/_results.html:123
+#: app/templates/links/form.html:135 app/templates/settings/check_links.html:78
 #: app/templates/tags/list.html:30
 msgid "Delete"
 msgstr "Supprimer"
 
-#: app/templates/base.html:150 app/templates/settings/index.html:224
+#: app/templates/base.html:157 app/templates/settings/index.html:236
 msgid "Sign out"
 msgstr "Déconnexion"
 
-#: app/templates/base.html:161
+#: app/templates/base.html:168
 msgid "Menu"
 msgstr "Menu"
 
-#: app/templates/base.html:171 app/templates/public/index.html:27
+#: app/templates/base.html:178 app/templates/public/index.html:27
 msgid "Search…"
 msgstr "Rechercher…"
 
-#: app/templates/base.html:173
+#: app/templates/base.html:180
 msgid "Clear the search"
 msgstr "Effacer la recherche"
 
-#: app/templates/base.html:177
+#: app/templates/base.html:184
 msgid "Grid view"
 msgstr "Vue grille"
 
-#: app/templates/base.html:181
+#: app/templates/base.html:188
 msgid "Toggle light/dark"
 msgstr "Basculer clair/sombre"
 
-#: app/templates/base.html:189 app/templates/links/form.html:108
+#: app/templates/base.html:198 app/templates/demo/catalogue.html:31
+#: app/templates/links/form.html:110
 msgid "Add"
 msgstr "Ajouter"
 
-#: app/templates/base.html:288
+#: app/templates/base.html:297
 #, python-brace-format
 msgid "Delete the tag #{tag}?"
 msgstr "Supprimer le tag #{tag} ?"
@@ -136,8 +145,9 @@ msgstr "Supprimer le tag #{tag} ?"
 msgid "Users"
 msgstr "Utilisateurs"
 
-#: app/templates/admin/dashboard.html:10 app/templates/admin/user_detail.html:21
-#: app/templates/admin/users.html:16 app/templates/tags/list.html:13
+#: app/templates/admin/dashboard.html:10
+#: app/templates/admin/user_detail.html:21 app/templates/admin/users.html:16
+#: app/templates/tags/list.html:13
 msgid "Links"
 msgstr "Liens"
 
@@ -153,7 +163,7 @@ msgstr "10 derniers liens ajoutés"
 msgid "Manage users"
 msgstr "Gérer les utilisateurs"
 
-#: app/templates/admin/dashboard.html:44 app/templates/links/_results.html:135
+#: app/templates/admin/dashboard.html:44 app/templates/links/_results.html:155
 msgid "No links yet."
 msgstr "Aucun lien pour l’instant."
 
@@ -177,7 +187,7 @@ msgstr "Email"
 msgid "Signed up"
 msgstr "Inscrit"
 
-#: app/templates/admin/user_detail.html:20 app/templates/settings/index.html:88
+#: app/templates/admin/user_detail.html:20 app/templates/settings/index.html:92
 msgid "Data"
 msgstr "Données"
 
@@ -189,7 +199,7 @@ msgstr "Ajouter à Excerpta"
 msgid "Drag this to your browser's bookmarks bar."
 msgstr "À glisser dans la barre de favoris du navigateur."
 
-#: app/templates/admin/user_detail.html:35 app/templates/settings/index.html:68
+#: app/templates/admin/user_detail.html:35 app/templates/settings/index.html:69
 msgid "API key"
 msgstr "Clé API"
 
@@ -197,7 +207,7 @@ msgstr "Clé API"
 msgid "Reveal"
 msgstr "Révéler"
 
-#: app/templates/admin/user_detail.html:39 app/templates/settings/index.html:71
+#: app/templates/admin/user_detail.html:39 app/templates/settings/index.html:72
 msgid "Copy"
 msgstr "Copier"
 
@@ -282,7 +292,7 @@ msgstr "Statut"
 msgid "active"
 msgstr "actif"
 
-#: app/templates/admin/users.html:44 app/templates/settings/index.html:208
+#: app/templates/admin/users.html:44 app/templates/settings/index.html:219
 msgid "View"
 msgstr "Voir"
 
@@ -301,6 +311,82 @@ msgstr "Erreur d’authentification. Veuillez réessayer."
 #: app/templates/auth/login.html:30
 msgid "Sign in with PocketID"
 msgstr "Se connecter via PocketID"
+
+#: app/templates/demo/catalogue.html:3 app/templates/demo/catalogue.html:7
+msgid "Demo catalogue"
+msgstr "Catalogue de démonstration"
+
+#: app/templates/demo/catalogue.html:10
+msgid ""
+"In this demo, links are added from the list below rather than by typing "
+"an address: the server never fetches a page from the internet."
+msgstr ""
+"Dans cette démonstration, les liens s’ajoutent depuis la liste ci-dessous "
+"plutôt qu’en saisissant une adresse : le serveur ne va jamais chercher une "
+"page sur Internet."
+
+#: app/templates/demo/catalogue.html:11
+#, python-format
+msgid "%(num)d link left to add."
+msgid_plural "%(num)d links left to add."
+msgstr[0] "Il reste %(num)d lien à ajouter."
+msgstr[1] "Il reste %(num)d liens à ajouter."
+
+#: app/templates/demo/catalogue.html:26
+msgid "Already added"
+msgstr "Déjà présent"
+
+#: app/templates/demo/index.html:7
+msgid "Demo"
+msgstr "Démonstration"
+
+#: app/templates/demo/index.html:24
+msgid ""
+"This instance is a demo. When you enter, you get a pre-filled personal "
+"space that only you can see and that you can change freely."
+msgstr ""
+"Cette instance est une démonstration. En entrant, vous recevez un espace "
+"personnel prérempli, que vous êtes seul à voir et que vous pouvez "
+"modifier librement."
+
+#: app/templates/demo/index.html:28
+msgid "Search, folders, tags, notes and the reader view are all active."
+msgstr "Recherche, dossiers, étiquettes, notes et vue lecteur sont actifs."
+
+#: app/templates/demo/index.html:29
+#, python-format
+msgid ""
+"Links are added from a catalogue of %(num)d prepared page: the demo never"
+" fetches anything from the internet."
+msgid_plural ""
+"Links are added from a catalogue of %(num)d prepared pages: the demo "
+"never fetches anything from the internet."
+msgstr[0] ""
+"Les liens s’ajoutent depuis un catalogue de %(num)d page préparée : la "
+"démonstration ne va chercher aucune adresse sur Internet."
+msgstr[1] ""
+"Les liens s’ajoutent depuis un catalogue de %(num)d pages préparées : la "
+"démonstration ne va chercher aucune adresse sur Internet."
+
+#: app/templates/demo/index.html:30
+msgid ""
+"Nothing is published or shared, and the space is deleted automatically "
+"after a few hours."
+msgstr ""
+"Rien n’est publié ni partagé, et l’espace est supprimé automatiquement "
+"après quelques heures."
+
+#: app/templates/demo/index.html:36
+msgid "Enter the demo"
+msgstr "Entrer dans la démonstration"
+
+#: app/templates/demo/index.html:45
+msgid "Project website"
+msgstr "Site du projet"
+
+#: app/templates/demo/index.html:46
+msgid "Source code"
+msgstr "Code source"
 
 #: app/templates/folders/form.html:3 app/templates/folders/form.html:8
 msgid "Edit folder"
@@ -322,8 +408,9 @@ msgstr "Dossier parent"
 msgid "- None (top level) -"
 msgstr "- Aucun (dossier racine) -"
 
-#: app/templates/folders/form.html:58 app/templates/links/form.html:108
-#: app/templates/settings/freshrss.html:46 app/templates/settings/index.html:207
+#: app/templates/folders/form.html:58 app/templates/links/form.html:110
+#: app/templates/settings/freshrss.html:46
+#: app/templates/settings/index.html:218
 msgid "Save"
 msgstr "Enregistrer"
 
@@ -335,7 +422,7 @@ msgstr "Créer"
 msgid "Delete this folder? Its subfolders will become top-level folders."
 msgstr "Supprimer ce dossier ? Les sous-dossiers deviendront des dossiers racines."
 
-#: app/templates/folders/list.html:32 app/templates/links/_results.html:97
+#: app/templates/folders/list.html:32 app/templates/links/_results.html:117
 #: app/templates/settings/check_links.html:74
 msgid "Edit"
 msgstr "Modifier"
@@ -382,7 +469,7 @@ msgstr "effacer"
 msgid "Tag:"
 msgstr "Tag :"
 
-#: app/templates/links/_results.html:8 app/templates/links/_results.html:118
+#: app/templates/links/_results.html:8 app/templates/links/_results.html:138
 #: app/templates/public/index.html:60
 #, python-format
 msgid "%(num)d link"
@@ -394,65 +481,89 @@ msgstr[1] "%(num)d liens"
 msgid "view all"
 msgstr "voir tout"
 
-#: app/templates/links/_results.html:26
+#: app/templates/links/_results.html:17
+msgid "Move to folder…"
+msgstr "Déplacer vers…"
+
+#: app/templates/links/_results.html:18
+msgid "(No folder)"
+msgstr "(Aucun dossier)"
+
+#: app/templates/links/_results.html:23
+msgid "Add tags…"
+msgstr "Ajouter des tags…"
+
+#: app/templates/links/_results.html:24 app/templates/tags/list.html:12
+msgid "Tag"
+msgstr "Tag"
+
+#: app/templates/links/_results.html:25 app/templates/links/_results.html:113
+msgid "Mark as read"
+msgstr "Marquer comme lu"
+
+#: app/templates/links/_results.html:40
 msgid "Drag to a folder in the sidebar"
 msgstr "Glisser vers un dossier de la sidebar"
 
-#: app/templates/links/_results.html:56 app/templates/links/_results.html:62
+#: app/templates/links/_results.html:71 app/templates/links/_results.html:77
 msgid "Broken link"
 msgstr "Lien cassé"
 
-#: app/templates/links/_results.html:63
+#: app/templates/links/_results.html:78
 msgid "read the saved copy"
 msgstr "lire la copie sauvegardée"
 
-#: app/templates/links/_results.html:65
+#: app/templates/links/_results.html:80
 msgid "view the archive"
 msgstr "voir l’archive"
 
-#: app/templates/links/_results.html:66
+#: app/templates/links/_results.html:81
 msgid "no copy available"
 msgstr "aucune copie disponible"
 
-#: app/templates/links/_results.html:87
+#: app/templates/links/_results.html:102
 msgid "View the Wayback archive"
 msgstr "Voir l’archive Wayback"
 
-#: app/templates/links/_results.html:89
+#: app/templates/links/_results.html:104
 msgid "Archiving…"
 msgstr "Archivage en cours…"
 
-#: app/templates/links/_results.html:91
+#: app/templates/links/_results.html:106
 msgid "Archiving failed, try again"
 msgstr "Échec archivage, réessayer"
 
-#: app/templates/links/_results.html:96
+#: app/templates/links/_results.html:113
+msgid "Mark as unread"
+msgstr "Marquer comme non lu"
+
+#: app/templates/links/_results.html:116
 msgid "Read (reader view)"
 msgstr "Lire (vue lecteur)"
 
-#: app/templates/links/_results.html:99 app/templates/links/form.html:125
+#: app/templates/links/_results.html:119 app/templates/links/form.html:127
 #: app/templates/settings/check_links.html:75
 msgid "Delete this link?"
 msgstr "Supprimer ce lien ?"
 
-#: app/templates/links/_results.html:113 app/templates/links/_results.html:115
+#: app/templates/links/_results.html:133 app/templates/links/_results.html:135
 msgid "Previous"
 msgstr "Précédent"
 
-#: app/templates/links/_results.html:121 app/templates/links/_results.html:123
+#: app/templates/links/_results.html:141 app/templates/links/_results.html:143
 msgid "Next"
 msgstr "Suivant"
 
-#: app/templates/links/_results.html:131
+#: app/templates/links/_results.html:151
 #, python-format
 msgid "No results for “%(query)s”."
 msgstr "Aucun résultat pour « %(query)s »."
 
-#: app/templates/links/_results.html:133
+#: app/templates/links/_results.html:153
 msgid "No links with the tag"
 msgstr "Aucun lien avec le tag"
 
-#: app/templates/links/_results.html:135
+#: app/templates/links/_results.html:155
 msgid "Add the first one"
 msgstr "Ajouter le premier"
 
@@ -472,7 +583,7 @@ msgstr "Ce lien existe déjà dans ta collection, tu peux le modifier ci-dessous
 msgid "Metadata"
 msgstr "Métadonnées"
 
-#: app/templates/links/form.html:36 app/templates/settings/index.html:191
+#: app/templates/links/form.html:36 app/templates/settings/index.html:202
 msgid "Title"
 msgstr "Titre"
 
@@ -512,27 +623,27 @@ msgstr "Séparés par des virgules. Les nouveaux tags sont créés automatiqueme
 msgid "Folder"
 msgstr "Dossier"
 
-#: app/templates/links/form.html:82 app/templates/links/form.html:143
+#: app/templates/links/form.html:82 app/templates/links/form.html:145
 msgid "- No folder -"
 msgstr "- Aucun dossier -"
 
-#: app/templates/links/form.html:102
+#: app/templates/links/form.html:103
 msgid "Public link, shown on your public page"
 msgstr "Lien public, visible sur votre page publique"
 
-#: app/templates/links/form.html:113 app/templates/links/form.html:116
+#: app/templates/links/form.html:115 app/templates/links/form.html:118
 msgid "Re-archive"
 msgstr "Ré-archiver"
 
-#: app/templates/links/form.html:113
+#: app/templates/links/form.html:115
 msgid "Archive on the Wayback Machine"
 msgstr "Archiver sur Wayback Machine"
 
-#: app/templates/links/form.html:116 app/templates/links/form.html:121
+#: app/templates/links/form.html:118 app/templates/links/form.html:123
 msgid "Archive"
 msgstr "Archive"
 
-#: app/templates/links/form.html:130
+#: app/templates/links/form.html:132
 msgid "Unstar in FreshRSS"
 msgstr "Déséttoiler dans FreshRSS"
 
@@ -626,7 +737,8 @@ msgstr "Aucun lien public pour l’instant."
 msgid "Link check"
 msgstr "Vérification des liens"
 
-#: app/templates/settings/check_links.html:7 app/templates/settings/index.html:95
+#: app/templates/settings/check_links.html:7
+#: app/templates/settings/index.html:100
 msgid "Check links"
 msgstr "Vérifier les liens"
 
@@ -763,25 +875,27 @@ msgstr[1] "%(num)d doublons ignorés."
 
 #: app/templates/settings/import.html:17
 msgid ""
-"Supported format: Netscape HTML (exported from Linkding, Pinboard, Firefox, Chrome). Duplicates "
-"(same URL) are skipped."
+"Supported format: Netscape HTML (exported from Linkding, Pinboard, "
+"Firefox, Chrome). Duplicates (same URL) are skipped."
 msgstr ""
-"Format supporté : Netscape HTML (export Linkding, Pinboard, Firefox, Chrome). Les doublons (même "
-"URL) sont ignorés."
+"Format supporté : Netscape HTML (export Linkding, Pinboard, Firefox, "
+"Chrome). Les doublons (même URL) sont ignorés."
 
 #: app/templates/settings/import.html:23
 msgid "Bookmarks file (.html)"
 msgstr "Fichier de bookmarks (.html)"
 
-#: app/templates/settings/import.html:29 app/templates/settings/index.html:94
+#: app/templates/settings/import.html:29 app/templates/settings/index.html:99
 msgid "Import"
 msgstr "Importer"
 
 #: app/templates/settings/import.html:35
-msgid "Metadata (favicon) is fetched the next time the link is opened. Tags are imported automatically."
+msgid ""
+"Metadata (favicon) is fetched the next time the link is opened. Tags are "
+"imported automatically."
 msgstr ""
-"Les métadonnées (favicon) seront chargées à la prochaine visite du lien. Les tags sont importés "
-"automatiquement."
+"Les métadonnées (favicon) seront chargées à la prochaine visite du lien. "
+"Les tags sont importés automatiquement."
 
 #: app/templates/settings/index.html:11
 msgid "Appearance"
@@ -789,7 +903,9 @@ msgstr "Apparence"
 
 #: app/templates/settings/index.html:56
 msgid "Applies to your account. Signed out pages follow your browser's language."
-msgstr "S’applique à votre compte. Les pages hors connexion suivent la langue de votre navigateur."
+msgstr ""
+"S’applique à votre compte. Les pages hors connexion suivent la langue de "
+"votre navigateur."
 
 #: app/templates/settings/index.html:61
 msgid "Bookmarklet"
@@ -801,145 +917,151 @@ msgstr "Glisse ce lien dans ta barre de favoris :"
 
 #: app/templates/settings/index.html:64
 msgid "Drag the button above to your browser's bookmarks bar."
-msgstr "Fais glisser le bouton ci-dessus dans la barre de favoris de ton navigateur."
+msgstr ""
+"Fais glisser le bouton ci-dessus dans la barre de favoris de ton "
+"navigateur."
 
-#: app/templates/settings/index.html:76
+#: app/templates/settings/index.html:77
 msgid "Android app"
 msgstr "App Android"
 
-#: app/templates/settings/index.html:77
-msgid "Scan this QR code from the Excerpta app to set it up automatically."
-msgstr "Scanne ce QR code depuis l’app Excerpta pour la configurer automatiquement."
-
 #: app/templates/settings/index.html:78
+msgid "Scan this QR code from the Excerpta app to set it up automatically."
+msgstr ""
+"Scanne ce QR code depuis l’app Excerpta pour la configurer "
+"automatiquement."
+
+#: app/templates/settings/index.html:79
 msgid "Android QR code"
 msgstr "QR code Android"
 
-#: app/templates/settings/index.html:83
+#: app/templates/settings/index.html:86
 msgid "Integrations"
 msgstr "Intégrations"
 
-#: app/templates/settings/index.html:90
+#: app/templates/settings/index.html:94
 #, python-format
 msgid ""
-"Archiving %(num)d link in the background (rate-limited for Wayback). The status updates as it "
-"goes."
+"Archiving %(num)d link in the background (rate-limited for Wayback). The "
+"status updates as it goes."
 msgid_plural ""
-"Archiving %(num)d links in the background (rate-limited for Wayback). The status updates as it "
-"goes."
+"Archiving %(num)d links in the background (rate-limited for Wayback). The"
+" status updates as it goes."
 msgstr[0] ""
-"Archivage de %(num)d lien lancé en arrière-plan (throttlé pour Wayback). L’état se met à jour au "
-"fil de l’eau."
+"Archivage de %(num)d lien lancé en arrière-plan (throttlé pour Wayback). "
+"L’état se met à jour au fil de l’eau."
 msgstr[1] ""
-"Archivage de %(num)d liens lancé en arrière-plan (throttlé pour Wayback). L’état se met à jour au"
-" fil de l’eau."
+"Archivage de %(num)d liens lancé en arrière-plan (throttlé pour Wayback)."
+" L’état se met à jour au fil de l’eau."
 
-#: app/templates/settings/index.html:93
+#: app/templates/settings/index.html:97
 msgid "Export (HTML)"
 msgstr "Exporter (HTML)"
 
-#: app/templates/settings/index.html:97
-msgid "Archive every link not archived yet on the Wayback Machine? Runs in the background, rate-limited."
+#: app/templates/settings/index.html:102
+msgid ""
+"Archive every link not archived yet on the Wayback Machine? Runs in the "
+"background, rate-limited."
 msgstr ""
-"Archiver sur Wayback Machine tous les liens pas encore archivés ? (lancé en arrière-plan, "
-"throttlé)"
+"Archiver sur Wayback Machine tous les liens pas encore archivés ? (lancé "
+"en arrière-plan, throttlé)"
 
-#: app/templates/settings/index.html:99
+#: app/templates/settings/index.html:104
 msgid "Archive the unarchived"
 msgstr "Archiver les non-archivés"
 
-#: app/templates/settings/index.html:102
+#: app/templates/settings/index.html:107
 #, python-format
 msgid "Rebuild the search index for %(num)d link?"
 msgid_plural "Rebuild the search index for %(num)d links?"
 msgstr[0] "Reconstruire l’index de recherche pour %(num)d lien ?"
 msgstr[1] "Reconstruire l’index de recherche pour %(num)d liens ?"
 
-#: app/templates/settings/index.html:104
+#: app/templates/settings/index.html:109
 msgid "Rebuild the search index"
 msgstr "Reconstruire l’index de recherche"
 
-#: app/templates/settings/index.html:108
+#: app/templates/settings/index.html:113
 msgid "Refresh metadata"
 msgstr "Rafraîchir les métadonnées"
 
-#: app/templates/settings/index.html:116
+#: app/templates/settings/index.html:123
 msgid "Starting…"
 msgstr "Démarrage…"
 
-#: app/templates/settings/index.html:117
+#: app/templates/settings/index.html:124
 msgid "Network error."
 msgstr "Erreur réseau."
 
-#: app/templates/settings/index.html:118
+#: app/templates/settings/index.html:125
 #, python-brace-format
 msgid "{n} link(s) updated."
 msgstr "{n} lien(s) mis à jour."
 
-#: app/templates/settings/index.html:119
+#: app/templates/settings/index.html:126
 #, python-brace-format
 msgid "{n} updated"
 msgstr "{n} mis à jour"
 
-#: app/templates/settings/index.html:166
+#: app/templates/settings/index.html:174
 msgid "Danger zone"
 msgstr "Zone de danger"
 
-#: app/templates/settings/index.html:170
+#: app/templates/settings/index.html:179
 msgid "Delete every link in the FreshRSS folder and reset the sync counter?"
-msgstr "Supprimer tous les liens du dossier FreshRSS et réinitialiser le compteur de synchro ?"
+msgstr ""
+"Supprimer tous les liens du dossier FreshRSS et réinitialiser le compteur"
+" de synchro ?"
 
-#: app/templates/settings/index.html:172
+#: app/templates/settings/index.html:181
 msgid "Purge FreshRSS links"
 msgstr "Purger les liens FreshRSS"
 
-#: app/templates/settings/index.html:174
+#: app/templates/settings/index.html:183
 msgid "Deletes every link in the configured FreshRSS folder."
 msgstr "Supprime tous les liens du dossier FreshRSS configuré."
 
-#: app/templates/settings/index.html:178
+#: app/templates/settings/index.html:188
 msgid "Delete ALL your links, tags and folders? This cannot be undone."
-msgstr "Supprimer TOUS vos liens, tags et dossiers ? Cette action est irréversible."
+msgstr ""
+"Supprimer TOUS vos liens, tags et dossiers ? Cette action est "
+"irréversible."
 
-#: app/templates/settings/index.html:180
+#: app/templates/settings/index.html:190
 msgid "Purge all data"
 msgstr "Purger toutes les données"
 
-#: app/templates/settings/index.html:182
+#: app/templates/settings/index.html:192
 msgid "Permanently deletes all your links, tags and folders."
 msgstr "Supprime définitivement tous vos liens, tags et dossiers."
 
-#: app/templates/settings/index.html:194
+#: app/templates/settings/index.html:205
 msgid "Public links"
 msgstr "Liens publics"
 
-#: app/templates/settings/index.html:197
+#: app/templates/settings/index.html:208
 msgid "Address"
 msgstr "Adresse"
 
-#: app/templates/settings/index.html:202
+#: app/templates/settings/index.html:213
 msgid "my-name"
 msgstr "mon-nom"
 
-#: app/templates/settings/index.html:212
+#: app/templates/settings/index.html:223
 msgid "Public page updated."
 msgstr "Page publique mise à jour."
 
-#: app/templates/settings/index.html:215
+#: app/templates/settings/index.html:226
 msgid "That address is already taken, pick another one."
 msgstr "Cette adresse est déjà prise, choisissez-en une autre."
 
-#: app/templates/settings/index.html:217
+#: app/templates/settings/index.html:228
 msgid "The address cannot be empty."
 msgstr "L’adresse ne peut pas être vide."
 
-#: app/templates/settings/index.html:222
+#: app/templates/settings/index.html:234
 msgid "Account"
 msgstr "Compte"
-
-#: app/templates/tags/list.html:12
-msgid "Tag"
-msgstr "Tag"
 
 #: app/templates/tags/list.html:14
 msgid "Action"
