@@ -40,6 +40,7 @@ Lists links, paginated, with optional search and filters.
 | `q` | string | Full-text search (title, description, note, URL, tags), accent-insensitive |
 | `tag` | string | Filter by tag |
 | `group_id` | int | Filter by folder (includes subfolders) |
+| `unread` | bool | Only show unread links |
 | `page` | int | Page (default: 1) |
 | `per_page` | int | Results per page (default: 30, max: 100) |
 
@@ -60,6 +61,7 @@ curl "https://your-instance.example.com/api/v1/links?q=python&tag=dev&page=1" \
       "thumbnail_url": "https://...",
       "note": "My note in **Markdown**",
       "is_public": false,
+      "is_read": false,
       "created_at": "2026-01-15T10:30:00",
       "tags": ["python", "dev"]
     }
@@ -117,6 +119,7 @@ curl -X PATCH https://your-instance.example.com/api/v1/links/42 \
 | Field | Type | Description |
 |---|---|---|
 | `is_public` | bool | Make the link public or private |
+| `is_read` | bool | Mark the link as read or unread |
 
 ---
 
