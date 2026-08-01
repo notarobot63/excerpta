@@ -24,7 +24,10 @@ build:
     DOCKER_TLS_CERTDIR: ""
   script:
     - echo "$CI_REGISTRY_PASSWORD" | docker login "$CI_REGISTRY" -u "$CI_REGISTRY_USER" --password-stdin
-    - docker build --build-arg GIT_COMMIT="$CI_COMMIT_SHORT_SHA" -t "$CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA" -t "$CI_REGISTRY_IMAGE:latest" .
+    # --provenance=false --sbom=false : le registre GitLab (v4.40.2) ne gère pas
+    # le manifeste d'attestation que Docker/BuildKit génère par défaut depuis peu,
+    # ce qui faisait échouer le push avec "blob unknown to registry".
+    - docker build --provenance=false --sbom=false --build-arg GIT_COMMIT="$CI_COMMIT_SHORT_SHA" -t "$CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA" -t "$CI_REGISTRY_IMAGE:latest" .
     - docker push "$CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA"
     - docker push "$CI_REGISTRY_IMAGE:latest"
   only: [main]
