@@ -18,6 +18,7 @@ from ..auth import get_current_user
 from ..config import settings as cfg
 from ..crypto import decrypt
 from ..database import engine as db_engine, get_session
+from ..demo import forbid_in_demo_dep
 from ..models import Folder, Link, LinkTagLink, Tag, User
 from ..ratelimit import rate_limit
 from ..templates_cfg import templates
@@ -127,7 +128,7 @@ async def settings_page(
 
 # ── Page publique ────────────────────────────────────────────────────────────
 
-@router.post("/settings/public-page")
+@router.post("/settings/public-page", dependencies=[Depends(forbid_in_demo_dep)])
 async def save_public_page(
     public_page_title: str = Form("", max_length=100),
     public_slug: str = Form("", max_length=64),
@@ -158,7 +159,7 @@ async def save_public_page(
 
 # ── QR code Android ───────────────────────────────────────────────────────────
 
-@router.get("/settings/android-qr.png")
+@router.get("/settings/android-qr.png", dependencies=[Depends(forbid_in_demo_dep)])
 async def android_qr(
     user: User = Depends(get_current_user),
 ):
@@ -172,7 +173,7 @@ async def android_qr(
 
 # ── Refresh métadonnées ────────────────────────────────────────────────────────
 
-@router.post("/settings/refresh-metadata", dependencies=[Depends(rate_limit(2, 3600))])
+@router.post("/settings/refresh-metadata", dependencies=[Depends(rate_limit(2, 3600)), Depends(forbid_in_demo_dep)])
 async def refresh_metadata(
     user: User = Depends(get_current_user),
 ):
@@ -283,7 +284,7 @@ async def import_form(
     )
 
 
-@router.post("/settings/import", dependencies=[Depends(rate_limit(5, 3600))])
+@router.post("/settings/import", dependencies=[Depends(rate_limit(5, 3600)), Depends(forbid_in_demo_dep)])
 async def import_links(
     request: Request,
     background_tasks: BackgroundTasks,
@@ -566,7 +567,7 @@ async def check_links_form(
     )
 
 
-@router.post("/settings/check-links", dependencies=[Depends(rate_limit(3, 3600))])
+@router.post("/settings/check-links", dependencies=[Depends(rate_limit(3, 3600)), Depends(forbid_in_demo_dep)])
 async def check_links_run(
     user: User = Depends(get_current_user),
 ):
@@ -579,7 +580,7 @@ async def check_links_run(
 # La route unitaire POST /links/{id}/archive vit désormais dans routes/links.py
 # (co-localisée avec _wayback_archive). Ici : archivage de tous les non-archivés.
 
-@router.post("/settings/archive-all")
+@router.post("/settings/archive-all", dependencies=[Depends(forbid_in_demo_dep)])
 async def archive_all(
     background_tasks: BackgroundTasks,
     user: User = Depends(get_current_user),

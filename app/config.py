@@ -25,6 +25,13 @@ class Settings(BaseSettings):
     session_cookie_secure: bool = True  # flag Secure sur le cookie de session
     testing: bool = False  # autorise le host "testserver" (TestClient Starlette)
 
+    # Mode démo : instance publique jetable, à n'activer QUE sur l'instance de
+    # démonstration isolée, jamais sur une instance qui détient de vraies données.
+    # Il ouvre l'application sans authentification, ce qui n'a de sens que sur une
+    # base dédiée dont le contenu est destiné à être détruit.
+    demo_mode: bool = False
+    demo_ttl_hours: int = 6  # durée de vie d'un espace de démo avant purge
+
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
 
     @model_validator(mode="after")

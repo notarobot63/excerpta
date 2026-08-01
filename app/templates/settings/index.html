@@ -63,6 +63,7 @@
   <a href="{{ bookmarklet|e }}" class="btn btn-primary"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;margin-right:0.3rem;"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>{{ _("Add to Excerpta") }}</a>
   <p style="margin-top:0.5rem;font-size:0.85rem;color:var(--text-muted)">{{ _("Drag the button above to your browser's bookmarks bar.") }}</p>
 
+  {% if not demo_mode() %}{# démo : la clé API et le QR ouvriraient un accès programmatique à l'espace #}
   <hr style="border:none;border-top:1px solid var(--border);margin:1.5rem 0">
 
   <h3 style="font-size:0.9rem;font-weight:600;margin:0 0 0.75rem;color:var(--text-muted)">{{ _("API key") }}</h3>
@@ -77,11 +78,14 @@
   <p style="font-size:0.85rem;color:var(--text-muted);margin:0 0 0.75rem;">{{ _("Scan this QR code from the Excerpta app to set it up automatically.") }}</p>
   <img src="/settings/android-qr.png" alt="{{ _("Android QR code") }}"
        style="width:180px;height:180px;border:1px solid var(--border);border-radius:8px;display:block;">
+  {% endif %}
 
+  {% if not demo_mode() %}{# démo : FreshRSS stocke des identifiants et interroge une URL fournie #}
   <hr style="border:none;border-top:1px solid var(--border);margin:1.5rem 0">
 
   <h3 style="font-size:0.9rem;font-weight:600;margin:0 0 0.75rem;color:var(--text-muted)">{{ _("Integrations") }}</h3>
   <a href="/settings/freshrss" class="btn btn-ghost"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;margin-right:0.3rem;"><path d="M4 11a9 9 0 0 1 9 9"/><path d="M4 4a16 16 0 0 1 16 16"/><circle cx="5" cy="19" r="1"/></svg>FreshRSS</a>
+  {% endif %}
 
   <hr style="border:none;border-top:1px solid var(--border);margin:1.5rem 0">
 
@@ -91,6 +95,7 @@
   {% endif %}
   <div style="display:flex;gap:0.5rem;flex-wrap:wrap;align-items:center;">
     <a href="/settings/export" class="btn btn-ghost">{{ _("Export (HTML)") }}</a>
+  {% if not demo_mode() %}{# démo : import, vérification, archivage et rafraîchissement sortent tous vers le réseau #}
     <a href="/settings/import" class="btn btn-ghost">{{ _("Import") }}</a>
     <a href="/settings/check-links" class="btn btn-ghost"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:middle"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg> {{ _("Check links") }}</a>
     <form action="/settings/archive-all" method="post"
@@ -107,7 +112,9 @@
       {{ csrf_input(request) }}
       <button id="refresh-btn" type="submit" class="btn btn-ghost"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;margin-right:0.3rem;"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M3 21v-5h5"/></svg>{{ _("Refresh metadata") }}</button>
     </form>
+    {% endif %}
   </div>
+  {% if not demo_mode() %}{# démo : progression du rafraîchissement, sans objet #}
   <div id="refresh-progress" style="display:none;margin-top:1rem;">
     <progress id="refresh-bar" value="0" max="100" style="width:100%;height:6px;"></progress>
     <p id="refresh-text" style="font-size:0.82rem;color:var(--text-muted);margin:0.35rem 0 0;"></p>
@@ -161,10 +168,12 @@
   });
   </script>
 
+  {% endif %}
   <hr style="border:none;border-top:1px solid var(--border);margin:1.5rem 0">
 
   <h3 style="font-size:0.9rem;font-weight:600;margin:0 0 0.75rem;color:var(--btn-danger)">{{ _("Danger zone") }}</h3>
   <div style="display:flex;flex-direction:column;gap:0.75rem;">
+    {% if not demo_mode() %}{# démo : aucun dossier FreshRSS à purger #}
     <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;">
       <form action="/settings/purge-freshrss" method="post"
             data-confirm="{{ _("Delete every link in the FreshRSS folder and reset the sync counter?") }}">
@@ -173,6 +182,7 @@
       </form>
       <span style="font-size:0.78rem;color:var(--text-muted)">{{ _("Deletes every link in the configured FreshRSS folder.") }}</span>
     </div>
+    {% endif %}
     <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;">
       <form action="/settings/purge-all" method="post"
             data-confirm="{{ _("Delete ALL your links, tags and folders? This cannot be undone.") }}">
@@ -183,6 +193,7 @@
     </div>
   </div>
 
+  {% if not demo_mode() %}{# démo : la publication exposerait au public le contenu saisi par un visiteur #}
   <hr style="border:none;border-top:1px solid var(--border);margin:1.5rem 0">
 
   <h3 style="font-size:0.9rem;font-weight:600;margin:0 0 0.75rem;color:var(--text-muted)">{{ _("Public page") }}</h3>
@@ -215,6 +226,7 @@
   <p style="font-size:0.82rem;color:var(--color-danger,#c0392b);margin:0.4rem 0 0;">{{ _("That address is already taken, pick another one.") }}</p>
   {% elif request.query_params.get('slug_error') == 'empty' %}
   <p style="font-size:0.82rem;color:var(--color-danger,#c0392b);margin:0.4rem 0 0;">{{ _("The address cannot be empty.") }}</p>
+  {% endif %}
   {% endif %}
 
   <hr style="border:none;border-top:1px solid var(--border);margin:1.5rem 0">

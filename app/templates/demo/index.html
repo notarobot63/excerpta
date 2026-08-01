@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="{{ current_locale() }}" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>{{ _("Demo") }} - {{ app_name }}</title>
+  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/static/style.css?v={{ static_version }}">
+  <script nonce="{{ request.state.nonce }}">
+    (function() {
+      var t = localStorage.getItem('theme') || 'light';
+      document.documentElement.setAttribute('data-theme', t);
+    })();
+  </script>
+</head>
+<body style="display:flex; align-items:center; justify-content:center; min-height:100vh;">
+  <div style="padding:2rem; max-width:34rem; width:100%;">
+    <div style="margin-bottom:2rem; text-align:center;">
+      <img src="/static/logo_full.svg" alt="{{ app_name }}" style="width:280px; max-width:100%; display:block; margin:0 auto; border-radius:12px;">
+    </div>
+
+    <p style="margin-bottom:1.25rem;">
+      {{ _("This instance is a demo. When you enter, you get a pre-filled personal space that only you can see and that you can change freely.") }}
+    </p>
+
+    <ul style="margin:0 0 1.5rem 1.25rem; padding:0; line-height:1.7;">
+      <li>{{ _("Search, folders, tags, notes and the reader view are all active.") }}</li>
+      <li>{{ ngettext("Links are added from a catalogue of %(num)d prepared page: the demo never fetches anything from the internet.", "Links are added from a catalogue of %(num)d prepared pages: the demo never fetches anything from the internet.", catalog_size) }}</li>
+      <li>{{ _("Nothing is published or shared, and the space is deleted automatically after a few hours.") }}</li>
+    </ul>
+
+    <form method="post" action="/demo/start">
+      {{ csrf_input(request) }}
+      <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center;">
+        {{ _("Enter the demo") }}
+      </button>
+    </form>
+
+    <div style="margin-top:1.5rem; text-align:center;">
+      {% include "_lang_picker.html" %}
+    </div>
+
+    <p style="margin-top:0.75rem; font-size:0.875rem; text-align:center;">
+      <a href="https://www.excerpta.eu/">{{ _("Project website") }}</a> ·
+      <a href="https://github.com/notarobot63/excerpta">{{ _("Source code") }}</a>
+    </p>
+  </div>
+</body>
+</html>
