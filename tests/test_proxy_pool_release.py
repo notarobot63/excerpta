@@ -9,9 +9,12 @@ import asyncio
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from fastapi import HTTPException
 from sqlmodel import Session
 
-from app.routes import links
+from app.routes.links import crud as crud_mod
+from app.routes.links import net_guard as net_guard_mod
+from app.routes.links import proxy as proxy_mod
 
 
 def test_session_close_releases_connection_immediately(engine):
@@ -50,21 +53,21 @@ async def test_proxy_image_closes_session_before_http_call():
 
     fake_client = MagicMock()
     fake_client.stream = MagicMock(return_value=fake_stream_cm)
-    original_client = links._http_client
-    links.set_http_client(fake_client)
+    original_client = net_guard_mod._http_client
+    net_guard_mod.set_http_client(fake_client)
 
-    with patch.object(links, "_safe_url", return_value=True):
+    with patch.object(proxy_mod, "_safe_url", return_value=True):
         try:
-            await links.proxy_image(
+            await proxy_mod.proxy_image(
                 request=_FakeRequest(),
                 url="http://example.com/thumb.png",
                 user=MagicMock(),
                 session=session,
             )
-        except links.HTTPException:
+        except HTTPException:
             pass  # le 404 simulé lève HTTPException(404), attendu
         finally:
-            links.set_http_client(original_client)
+            net_guard_mod.set_http_client(original_client)
 
     session.close.assert_called_once()
     assert events == ["session_closed", "http_call_started"], (
@@ -82,8 +85,8 @@ async def test_api_fetch_meta_closes_session_before_http_call():
         events.append("http_call_started")
         return {"title": "", "description": "", "favicon_url": ""}
 
-    with patch.object(links, "_fetch_meta", side_effect=_fake_fetch_meta):
-        await links.api_fetch_meta(url="http://example.com", user=MagicMock(), session=session)
+    with patch.object(crud_mod, "_fetch_meta", side_effect=_fake_fetch_meta):
+        await crud_mod.api_fetch_meta(url="http://example.com", user=MagicMock(), session=session)
 
     session.close.assert_called_once()
     assert events == ["session_closed", "http_call_started"]

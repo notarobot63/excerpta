@@ -633,6 +633,18 @@ a:hover { text-decoration: underline; }
 
 /* ── Link card: broken state ── */
 .link-broken { border-left: 3px solid var(--btn-danger); }
+
+/* ── Link card: unread state ── */
+.link-unread:not(.link-broken) { border-left: 3px solid var(--btn-primary); }
+.unread-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--btn-primary);
+  flex-shrink: 0;
+}
+.toggle-read-btn.is-read { opacity: 0.45; }
 .link-recovery {
   display: flex; align-items: center; gap: 0.3rem; flex-wrap: wrap;
   margin: 0.25rem 0 0.4rem; font-size: 0.8rem; color: var(--btn-danger);

@@ -72,6 +72,93 @@
     });
   }
 
+  function submitBulkMarkRead() {
+    var n = _selectedIds.size;
+    if (n === 0) return;
+    var ids = Array.from(_selectedIds);
+    var cards = ids.map(function(id) { return resultsEl.querySelector('.link-card[data-link-id="' + id + '"]'); });
+    var form = document.getElementById('bulk-mark-read-form');
+    var csrf = form ? form.querySelector('input[name="csrf_token"]') : null;
+    var fd = new FormData();
+    ids.forEach(function(id) { fd.append('link_ids', id); });
+    fetch('/links/bulk-mark-read', {
+      method: 'POST',
+      headers: { 'X-CSRF-Token': csrf ? csrf.value : '' },
+      body: fd,
+    }).then(function(r) {
+      if (!r.ok) return;
+      cards.forEach(function(c) {
+        if (!c) return;
+        c.classList.remove('link-unread');
+        var dot = c.querySelector('.unread-dot'); if (dot) dot.remove();
+        var btn = c.querySelector('.toggle-read-btn');
+        if (btn) { btn.classList.add('is-read'); }
+      });
+      clearBulkSelect();
+    });
+  }
+
+  function submitBulkMove() {
+    var select = document.getElementById('bulk-move-select');
+    if (!select || !select.value) return;
+    var n = _selectedIds.size;
+    if (n === 0) return;
+    var ids = Array.from(_selectedIds);
+    var folderId = select.value === 'none' ? null : parseInt(select.value, 10);
+    var csrf = document.querySelector('input[name="csrf_token"]');
+    clearBulkSelect();
+    select.value = '';
+    fetch('/links/bulk-move', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf ? csrf.value : '' },
+      body: JSON.stringify({ link_ids: ids, folder_id: folderId }),
+    }).then(function(r) {
+      if (r.ok) swapResults(location.pathname + location.search);
+    });
+  }
+
+  function submitBulkTag() {
+    var input = document.getElementById('bulk-tag-input');
+    var tags = input ? input.value.trim() : '';
+    if (!tags) return;
+    var n = _selectedIds.size;
+    if (n === 0) return;
+    var ids = Array.from(_selectedIds);
+    var csrf = document.querySelector('input[name="csrf_token"]');
+    clearBulkSelect();
+    if (input) input.value = '';
+    fetch('/links/bulk-tag', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf ? csrf.value : '' },
+      body: JSON.stringify({ link_ids: ids, tags: tags }),
+    }).then(function(r) {
+      if (r.ok) swapResults(location.pathname + location.search);
+    });
+  }
+
+  function toggleReadOne(btn) {
+    var card = btn.closest('.link-card');
+    var linkId = btn.dataset.linkId;
+    var csrf = document.querySelector('input[name="csrf_token"]');
+    fetch('/links/' + linkId + '/toggle-read', {
+      method: 'POST',
+      headers: { 'X-CSRF-Token': csrf ? csrf.value : '' },
+    }).then(function(r) { return r.ok ? r.json() : null; }).then(function(data) {
+      if (!data) return;
+      if (card) card.classList.toggle('link-unread', !data.read);
+      btn.classList.toggle('is-read', data.read);
+      if (!data.read && card && !card.querySelector('.unread-dot')) {
+        var dot = document.createElement('span');
+        dot.className = 'unread-dot';
+        var domainEl = card.querySelector('.link-domain');
+        if (domainEl) domainEl.insertAdjacentElement('afterend', dot);
+      } else if (data.read && card) {
+        var existing = card.querySelector('.unread-dot');
+        if (existing) existing.remove();
+      }
+    });
+  }
+
   // ── Délégation : survit aux remplacements AJAX de #results ──────────────
   resultsEl.addEventListener('dragstart', function(e) {
     var card = e.target.closest && e.target.closest('.link-card[data-link-id]');
@@ -93,11 +180,20 @@
 
   resultsEl.addEventListener('change', function(e) {
     if (e.target.classList && e.target.classList.contains('link-select')) onSelectChange(e.target);
+    if (e.target.id === 'bulk-move-select') submitBulkMove();
+  });
+
+  resultsEl.addEventListener('keydown', function(e) {
+    if (e.target.id === 'bulk-tag-input' && e.key === 'Enter') { e.preventDefault(); submitBulkTag(); }
   });
 
   resultsEl.addEventListener('click', function(e) {
     if (e.target.id === 'bulk-delete-btn') { submitBulkDelete(); return; }
+    if (e.target.id === 'bulk-mark-read-btn') { submitBulkMarkRead(); return; }
+    if (e.target.id === 'bulk-tag-btn') { submitBulkTag(); return; }
     if (e.target.id === 'bulk-cancel-btn') { clearBulkSelect(); return; }
+    var toggleBtn = e.target.closest && e.target.closest('.toggle-read-btn');
+    if (toggleBtn) { toggleReadOne(toggleBtn); return; }
     var pag = e.target.closest && e.target.closest('.pagination a');
     if (pag) { e.preventDefault(); navigateTo(pag.getAttribute('href')); }
   });

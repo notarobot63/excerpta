@@ -9,6 +9,7 @@ from ..config import settings
 from ..crypto import encrypt, hmac_key
 from ..database import get_session
 from ..models import User
+from ..ratelimit import rate_limit
 from ..utils import unique_public_slug
 
 router = APIRouter()
@@ -52,13 +53,13 @@ def _maybe_promote_admin(
             user.is_admin = True
 
 
-@router.get("/auth/oidc/start")
+@router.get("/auth/oidc/start", dependencies=[Depends(rate_limit(10, 60))])
 async def oidc_start(request: Request):
     redirect_uri = f"{settings.base_url}/auth/oidc/callback"
     return await _get_client().pocketid.authorize_redirect(request, redirect_uri)
 
 
-@router.get("/auth/oidc/callback")
+@router.get("/auth/oidc/callback", dependencies=[Depends(rate_limit(10, 60))])
 async def oidc_callback(request: Request, session: Session = Depends(get_session)):
     try:
         token = await _get_client().pocketid.authorize_access_token(request)

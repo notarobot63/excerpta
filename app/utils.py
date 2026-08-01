@@ -4,7 +4,25 @@ import unicodedata
 from sqlalchemy import text
 from sqlmodel import Session, select
 
+from .crypto import hmac_key
 from .models import Folder, Link, Tag, User
+
+
+def resolve_api_user(session: Session, x_api_key: str) -> User | None:
+    """Résout un utilisateur à partir d'une clé API (comparaison par HMAC).
+
+    Ne pose aucun rate-limit ici : chaque routeur appelant garde le contrôle
+    du sien (fréquences différentes entre l'API publique et le sync FreshRSS).
+    Retourne None si la clé est absente/invalide ou l'utilisateur inactif —
+    à l'appelant de lever l'HTTPException 401 appropriée.
+    """
+    if not x_api_key:
+        return None
+    computed_hmac = hmac_key(x_api_key)
+    user = session.exec(select(User).where(User.api_key_hmac == computed_hmac)).first()
+    if not user or not user.is_active:
+        return None
+    return user
 
 
 def slugify(value: str) -> str:
@@ -129,6 +147,10 @@ def sidebar_data(session: Session, user_id: int) -> dict:
     total_links = session.execute(
         text("SELECT COUNT(*) FROM links WHERE user_id = :uid"), {"uid": user_id}
     ).scalar_one()
+    unread_count = session.execute(
+        text("SELECT COUNT(*) FROM links WHERE user_id = :uid AND read_at IS NULL"),
+        {"uid": user_id},
+    ).scalar_one()
     tag_counts = {
         row[0]: row[1]
         for row in session.execute(
@@ -159,4 +181,5 @@ def sidebar_data(session: Session, user_id: int) -> dict:
         "tag_counts": tag_counts,
         "folder_counts": folder_counts,
         "total_links": total_links,
+        "unread_count": unread_count,
     }
