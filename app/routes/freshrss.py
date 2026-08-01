@@ -11,13 +11,13 @@ from sqlalchemy import text
 from sqlmodel import Session, select
 
 from ..auth import get_current_user
-from ..crypto import decrypt, encrypt, hmac_key
+from ..crypto import decrypt, encrypt
 from ..database import engine, get_session
 from ..models import Folder, FreshRSSConfig, Link, User
 from ..ratelimit import rate_limit
 from .links import _assert_public_url, _fetch_meta, _safe_url
 from ..templates_cfg import templates
-from ..utils import refresh_link_fts, sidebar_data
+from ..utils import refresh_link_fts, resolve_api_user, sidebar_data
 
 logger = logging.getLogger("excerpta.freshrss")
 
@@ -303,9 +303,8 @@ async def _get_api_user(
     x_api_key = request.headers.get("X-API-Key")
     if not x_api_key:
         raise HTTPException(status_code=401, detail="Authentication required")
-    computed_hmac = hmac_key(x_api_key)
-    user = session.exec(select(User).where(User.api_key_hmac == computed_hmac)).first()
-    if not user or not user.is_active:
+    user = resolve_api_user(session, x_api_key)
+    if not user:
         raise HTTPException(status_code=401, detail="Invalid API key")
     return user
 

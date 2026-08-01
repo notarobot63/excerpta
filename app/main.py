@@ -163,7 +163,7 @@ async def security_headers(request: Request, call_next):
         return response
     csp = (
         "default-src 'self'; "
-        f"script-src 'self' 'nonce-{nonce}' 'unsafe-eval'; "
+        f"script-src 'self' 'nonce-{nonce}'; "
         "style-src 'self' 'unsafe-inline'; "
         "font-src 'self'; "
         "img-src 'self' data: https: http:; "

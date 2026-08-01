@@ -19,7 +19,10 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 import httpx
 import pytest
 
-from app.routes import links as links_mod
+from app.routes.links import net_guard as links_mod
+from app.routes.links import enrichment as enrichment_mod
+from app.routes.links import reader as reader_mod
+from app.routes.links import proxy as proxy_mod
 
 
 # ── Serveurs de test ──────────────────────────────────────────────────────────
@@ -161,7 +164,7 @@ def test_fetch_meta_ne_suit_pas_la_redirection_interne(redirecteur, interne, htt
         lambda host, *a, **k: [(2, 1, 6, "", ("127.0.0.1", redirecteur.server_port))],
     )
 
-    meta = asyncio.run(links_mod._fetch_meta(start))
+    meta = asyncio.run(enrichment_mod._fetch_meta(start))
     assert meta == {"title": "", "description": "", "favicon_url": ""}
     assert TOUCHED == [], f"le service interne a été atteint : {TOUCHED}"
 
@@ -170,12 +173,12 @@ def test_fetch_meta_ne_suit_pas_la_redirection_interne(redirecteur, interne, htt
 
 def test_extract_reader_rejette_ipv4_mapped(interne, http_client):
     url = f"http://[::ffff:127.0.0.1]:{interne.server_port}/secret"
-    assert asyncio.run(links_mod._extract_reader(url)) is None
+    assert asyncio.run(reader_mod._extract_reader(url)) is None
     assert TOUCHED == []
 
 
 def test_extract_reader_rejette_url_privee(interne, http_client):
-    assert asyncio.run(links_mod._extract_reader("http://127.0.0.1/secret")) is None
+    assert asyncio.run(reader_mod._extract_reader("http://127.0.0.1/secret")) is None
     assert TOUCHED == []
 
 
@@ -186,4 +189,4 @@ def test_assert_public_url_rejette_ipv4_mapped(interne, http_client):
 
 def test_svg_refuse_par_le_proxy():
     """Un SVG servi depuis notre origine peut porter du script."""
-    assert "image/svg+xml" in links_mod._FORBIDDEN_IMG_TYPES
+    assert "image/svg+xml" in proxy_mod._FORBIDDEN_IMG_TYPES

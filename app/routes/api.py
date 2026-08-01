@@ -5,12 +5,13 @@ from sqlmodel import Session, select
 from datetime import datetime, timezone
 from typing import List, Optional
 
-from ..crypto import hmac_key
 from ..database import get_session
 from ..models import Folder, Link, LinkTagLink, Tag, User
 from ..ratelimit import rate_limit
-from ..utils import descendant_folder_ids
-from .links import MAX_DESC_LEN, MAX_TAGS_PER_LINK, _extract_reader, _fetch_meta, _fts_escape, _safe_url, create_link
+from ..utils import descendant_folder_ids, resolve_api_user
+from ..demo import demo_active, forbid_in_demo, is_demo_user
+from .links import (MAX_DESC_LEN, MAX_TAGS_PER_LINK, _assert_url_allowed_in_demo,
+                    _extract_reader, _fetch_meta, _fts_escape, _safe_url, create_link)
 
 router = APIRouter(prefix="/api/v1")
 
@@ -25,9 +26,8 @@ async def _get_api_user(
     if not x_api_key:
         raise HTTPException(status_code=401, detail="Authentication required")
     await _api_rate_limit(request)
-    computed_hmac = hmac_key(x_api_key)
-    user = session.exec(select(User).where(User.api_key_hmac == computed_hmac)).first()
-    if not user or not user.is_active:
+    user = resolve_api_user(session, x_api_key)
+    if not user:
         raise HTTPException(status_code=401, detail="Invalid API key")
     return user
 
@@ -91,6 +91,7 @@ async def api_list_links(
     q: Optional[str] = Query(default=None),
     tag: Optional[str] = Query(default=None),
     group_id: Optional[int] = Query(default=None),
+    unread: Optional[bool] = Query(default=None),
     page: int = Query(default=1, ge=1),
     per_page: int = Query(default=30, ge=1, le=100),
     user: User = Depends(_get_api_user),
@@ -113,6 +114,9 @@ async def api_list_links(
         all_fldrs = list(session.exec(select(Folder).where(Folder.user_id == user.id)).all())
         fids = descendant_folder_ids(all_fldrs, group_id)
         stmt = select(Link).where(Link.user_id == user.id, Link.folder_id.in_(fids))
+
+    if unread:
+        stmt = stmt.where(Link.read_at.is_(None))
 
     if q:
         escaped = _fts_escape(q)
@@ -150,6 +154,7 @@ async def api_list_links(
                 "is_broken": lnk.is_broken,
                 "check_status": lnk.check_status,
                 "has_reader": bool(lnk.reader_html) and not lnk.reader_failed,
+                "is_read": lnk.read_at is not None,
                 "created_at": lnk.created_at.isoformat(),
                 "tags": [t.name for t in lnk.tags],
             }
@@ -231,6 +236,7 @@ async def api_list_groups_compat(
 
 class LinkPatch(BaseModel):
     is_public: Optional[bool] = None
+    is_read: Optional[bool] = None
 
 
 @router.patch("/links/{link_id}")
@@ -247,9 +253,11 @@ async def api_patch_link(
         raise HTTPException(status_code=404, detail="Lien introuvable")
     if body.is_public is not None:
         link.is_public = body.is_public
+    if body.is_read is not None:
+        link.read_at = datetime.now(timezone.utc).replace(tzinfo=None) if body.is_read else None
     session.add(link)
     session.commit()
-    return {"id": link.id, "is_public": link.is_public}
+    return {"id": link.id, "is_public": link.is_public, "is_read": link.read_at is not None}
 
 
 @router.get("/links/{link_id}/reader")

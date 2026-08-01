@@ -10,7 +10,9 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlmodel import Session
 
-import app.routes.links as links_mod
+from app.routes.links import archive as archive_mod
+from app.routes.links import net_guard as net_guard_mod
+from app.routes.links import reader as reader_mod
 from app.auth import get_current_user
 from app.database import get_session
 from app.main import app
@@ -40,14 +42,14 @@ def test_extract_reader_sanitizes(monkeypatch):
     def handler(request):
         return httpx.Response(200, content=html, headers={"content-type": "text/html; charset=utf-8"})
 
-    monkeypatch.setattr(links_mod, "_http_client", _mock_client(handler))
+    monkeypatch.setattr(net_guard_mod, "_http_client", _mock_client(handler))
 
     async def _ok(_host):
         return True
 
-    monkeypatch.setattr(links_mod, "_hostname_resolves_public", _ok)
+    monkeypatch.setattr(net_guard_mod, "_hostname_resolves_public", _ok)
 
-    data = asyncio.run(links_mod._extract_reader("https://example.com/article"))
+    data = asyncio.run(reader_mod._extract_reader("https://example.com/article"))
     assert data is not None
     assert "Mon Article" in data["html"]
     assert "<script" not in data["html"]       # script supprimé
@@ -56,8 +58,8 @@ def test_extract_reader_sanitizes(monkeypatch):
 
 def test_extract_reader_rejects_private_url(monkeypatch):
     # URL privée : doit être rejetée par la garde SSRF avant toute requête
-    monkeypatch.setattr(links_mod, "_http_client", _mock_client(lambda r: httpx.Response(200)))
-    assert asyncio.run(links_mod._extract_reader("http://127.0.0.1/secret")) is None
+    monkeypatch.setattr(net_guard_mod, "_http_client", _mock_client(lambda r: httpx.Response(200)))
+    assert asyncio.run(reader_mod._extract_reader("http://127.0.0.1/secret")) is None
 
 
 # ── Archivage Wayback : statut ok / failed (plus d'échec silencieux) ────────────
@@ -74,14 +76,14 @@ def _make_link(engine, sub, url):
 
 
 def test_wayback_archive_ok(monkeypatch, engine):
-    monkeypatch.setattr(links_mod, "db_engine", engine)
+    monkeypatch.setattr(archive_mod, "db_engine", engine)
     lid = _make_link(engine, "arch_ok", "https://example.com/x")
 
     def handler(request):
         return httpx.Response(200, headers={"location": "https://web.archive.org/web/123/https://example.com/x"})
 
-    monkeypatch.setattr(links_mod, "_http_client", _mock_client(handler))
-    asyncio.run(links_mod._wayback_archive(lid))
+    monkeypatch.setattr(net_guard_mod, "_http_client", _mock_client(handler))
+    asyncio.run(archive_mod._wayback_archive(lid))
 
     with Session(engine) as s:
         lk = s.get(Link, lid)
@@ -91,14 +93,14 @@ def test_wayback_archive_ok(monkeypatch, engine):
 
 
 def test_wayback_archive_failed(monkeypatch, engine):
-    monkeypatch.setattr(links_mod, "db_engine", engine)
+    monkeypatch.setattr(archive_mod, "db_engine", engine)
     lid = _make_link(engine, "arch_ko", "https://example.com/y")
 
     def handler(request):
         return httpx.Response(503)
 
-    monkeypatch.setattr(links_mod, "_http_client", _mock_client(handler))
-    asyncio.run(links_mod._wayback_archive(lid))
+    monkeypatch.setattr(net_guard_mod, "_http_client", _mock_client(handler))
+    asyncio.run(archive_mod._wayback_archive(lid))
 
     with Session(engine) as s:
         lk = s.get(Link, lid)

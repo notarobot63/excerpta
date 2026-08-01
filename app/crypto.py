@@ -36,6 +36,11 @@ def decrypt(value: str) -> str:
     try:
         return _fernet().decrypt(value.encode()).decode()
     except InvalidToken:
+        _log.error(
+            "decrypt: échec de déchiffrement (clé invalide ou rotée depuis le "
+            "chiffrement de cette valeur ?) — valeur traitée comme vide",
+            exc_info=True,
+        )
         return ""
 
 
