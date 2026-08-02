@@ -165,7 +165,11 @@ async def security_headers(request: Request, call_next):
         return response
     csp = (
         "default-src 'self'; "
-        f"script-src 'self' 'nonce-{nonce}'; "
+        # 'unsafe-eval' requis par Alpine.js (build standard, non-CSP) : son
+        # évaluateur d'expressions x-data/x-text/:bind repose sur AsyncFunction.
+        # Retiré par erreur le 2026-08-01, ça cassait toute la sidebar (dossiers/
+        # tags/renommage inline) sans lever d'erreur visible côté serveur.
+        f"script-src 'self' 'nonce-{nonce}' 'unsafe-eval'; "
         "style-src 'self' 'unsafe-inline'; "
         "font-src 'self'; "
         "img-src 'self' data: https: http:; "
