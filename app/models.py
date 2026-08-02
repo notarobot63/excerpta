@@ -29,6 +29,8 @@ class User(SQLModel, table=True):
     is_active: bool = Field(default=True)
     public_page_title: str = Field(default="Liens publics")
     public_slug: Optional[str] = Field(default=None, unique=True, index=True)
+    tags_enabled: bool = Field(default=True)
+    folders_enabled: bool = Field(default=True)
     # Langue de l'interface. NULL = pas de choix explicite : on négocie alors
     # depuis l'en-tête Accept-Language du navigateur. Voir docs/i18n.md.
     language: Optional[str] = Field(default=None)

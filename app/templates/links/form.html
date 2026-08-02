@@ -53,6 +53,7 @@
       <div class="form-hint">{{ _("Supports Markdown: **bold**, *italic*, `code`, [link](url)…") }}</div>
     </div>
 
+    {% if user.tags_enabled %}
     <div class="form-group">
       <label class="form-label" for="tags">{{ _("Tags") }}</label>
       <input id="tags" name="tags" type="text" class="form-input"
@@ -60,8 +61,9 @@
              placeholder="{{ _("python, web, tools (comma separated)") }}">
       <div class="form-hint">{{ _("Comma separated. New tags are created automatically.") }}</div>
     </div>
+    {% endif %}
 
-    {% if folder_tree %}
+    {% if user.folders_enabled and folder_tree %}
     <div class="form-group">
       <label class="form-label">{{ _("Folder") }}</label>
       {% set current_folder_id = link.folder_id if link else prefill_folder_id %}

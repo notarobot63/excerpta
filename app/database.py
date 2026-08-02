@@ -142,6 +142,10 @@ def init_db():
         # NULL volontairement : distingue « pas encore choisi », où l'on négocie
         # depuis Accept-Language, de « a choisi l'anglais ».
         con.execute("ALTER TABLE users ADD COLUMN language TEXT")
+    if "tags_enabled" not in ucols:
+        con.execute("ALTER TABLE users ADD COLUMN tags_enabled INTEGER NOT NULL DEFAULT 1")
+    if "folders_enabled" not in ucols:
+        con.execute("ALTER TABLE users ADD COLUMN folders_enabled INTEGER NOT NULL DEFAULT 1")
     # Backfill des slugs manquants (multi-tenant page publique)
     from .utils import slugify
     missing = con.execute(

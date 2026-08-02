@@ -34,14 +34,18 @@
         <span>{{ _("All links") }}</span>
         <span class="sidebar-count">{{ total_links if total_links is defined else '' }}</span>
       </a>
+      {% if user is defined and user.tags_enabled %}
       <a href="/tags" class="sidebar-item {% if request.url.path == '/tags' %}active{% endif %}">
         <svg class="icon-tags" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink:0"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
         <span>{{ _("Manage tags") }}</span>
       </a>
+      {% endif %}
+      {% if user is defined and user.folders_enabled %}
       <a href="/folders" class="sidebar-item {% if request.url.path.startswith('/folders') %}active{% endif %}">
         <svg class="icon-folders" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink:0"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
         <span>{{ _("Manage folders") }}</span>
       </a>
+      {% endif %}
       <a href="/settings" class="sidebar-item {% if request.url.path.startswith('/settings') %}active{% endif %}">
         <svg class="icon-settings" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink:0"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
         <span>{{ _("Settings") }}</span>
@@ -60,6 +64,7 @@
       </a>
       {% endif %}
 
+      {% if user is defined and user.folders_enabled %}
       <div class="sidebar-section" style="display:flex;align-items:center;justify-content:space-between;">
         <span>{{ _("Folders") }}</span>
         <span style="display:flex;align-items:center;gap:0.15rem;">
@@ -113,8 +118,9 @@
         + {{ _("Create a folder") }}
       </a>
       {% endif %}
+      {% endif %}
 
-      {% if all_tags %}
+      {% if user is defined and user.tags_enabled and all_tags %}
       <div class="sidebar-section">{{ _("Tags") }}</div>
       {% for tag in all_tags %}
       <div class="sidebar-item sidebar-tag-item {% if current_tag == tag.name %}active{% endif %}"
