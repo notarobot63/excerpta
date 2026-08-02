@@ -24,7 +24,7 @@ curl https://your-instance.example.com/api/v1/me \
 ```
 
 ```json
-{ "id": 1, "name": "Thomas" }
+{ "id": 1, "name": "Thomas", "tags_enabled": true, "folders_enabled": true }
 ```
 
 ---
