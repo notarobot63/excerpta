@@ -32,6 +32,7 @@
 - **Markdown notes** per link (full rendering)
 - **Multiple tags** per link, with inline rename/delete from the sidebar (automatic merge if the target name already exists)
 - **Hierarchical folders**: collapsible/expandable nested tree (state remembered), recursive subfolder filtering, inline rename from the sidebar and one-click alphabetical (A→Z) sort
+- **Tags and folders can be disabled** individually (Settings → Organization) for anyone who doesn't use either - hides the matching UI without touching existing data
 - **Drag & drop**: move a link to another folder from the sidebar, reorder and reparent folders
 - **Reader view**: clean, readable version of each article (Readability extraction + anti-XSS sanitization), refined typography, adjustable font size, light/dark theme, estimated reading time - extracted on demand then cached
 - **Visibility**: each link can be public or private; a per-user public page (`/u/{slug}`) with an RSS feed (`/u/{slug}/feed.xml`)

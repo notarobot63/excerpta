@@ -157,6 +157,22 @@ async def save_public_page(
     return RedirectResponse(url="/settings?saved=public", status_code=303)
 
 
+# ── Organisation (tags / dossiers) ────────────────────────────────────────────
+
+@router.post("/settings/organization")
+async def save_organization(
+    tags_enabled: Optional[str] = Form(None),
+    folders_enabled: Optional[str] = Form(None),
+    user: User = Depends(get_current_user),
+    session: Session = Depends(get_session),
+):
+    user.tags_enabled = tags_enabled is not None
+    user.folders_enabled = folders_enabled is not None
+    session.add(user)
+    session.commit()
+    return RedirectResponse(url="/settings?saved=organization", status_code=303)
+
+
 # ── QR code Android ───────────────────────────────────────────────────────────
 
 @router.get("/settings/android-qr.png", dependencies=[Depends(forbid_in_demo_dep)])
