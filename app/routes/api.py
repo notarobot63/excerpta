@@ -34,7 +34,12 @@ async def _get_api_user(
 
 @router.get("/me")
 async def api_me(user: User = Depends(_get_api_user)):
-    return {"id": user.id, "name": user.name}
+    return {
+        "id": user.id,
+        "name": user.name,
+        "tags_enabled": user.tags_enabled,
+        "folders_enabled": user.folders_enabled,
+    }
 
 
 class LinkIn(BaseModel):
