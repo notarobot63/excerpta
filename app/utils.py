@@ -147,10 +147,6 @@ def sidebar_data(session: Session, user_id: int) -> dict:
     total_links = session.execute(
         text("SELECT COUNT(*) FROM links WHERE user_id = :uid"), {"uid": user_id}
     ).scalar_one()
-    unread_count = session.execute(
-        text("SELECT COUNT(*) FROM links WHERE user_id = :uid AND read_at IS NULL"),
-        {"uid": user_id},
-    ).scalar_one()
     tag_counts = {
         row[0]: row[1]
         for row in session.execute(
@@ -181,5 +177,4 @@ def sidebar_data(session: Session, user_id: int) -> dict:
         "tag_counts": tag_counts,
         "folder_counts": folder_counts,
         "total_links": total_links,
-        "unread_count": unread_count,
     }

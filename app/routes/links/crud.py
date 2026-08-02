@@ -58,16 +58,12 @@ async def list_links(
     q: Optional[str] = None,
     tag: Optional[str] = None,
     group_id: Optional[int] = None,
-    unread: Optional[int] = None,
     page: int = 1,
     user: User = Depends(get_current_user),
     session: Session = Depends(get_session),
 ):
     stmt = select(Link).where(Link.user_id == user.id)
     fts_link_ids: list[int] = []
-
-    if unread:
-        stmt = stmt.where(Link.read_at.is_(None))
 
     if q:
         escaped = _fts_escape(q)
@@ -131,8 +127,6 @@ async def list_links(
             params["tag"] = tag
         if group_id:
             params["group_id"] = group_id
-        if unread:
-            params["unread"] = 1
         params["page"] = p
         return urlencode(params)
 
@@ -152,7 +146,6 @@ async def list_links(
         **sidebar,
         "current_tag": tag,
         "current_group": group_id,
-        "current_unread": bool(unread),
         "q": q or "",
         "user": user,
         # URL de la vue courante SANS partial=1 : sert de return_to aux formulaires
@@ -450,30 +443,6 @@ async def bulk_delete_links(
     return RedirectResponse(url=redirect_url, status_code=303)
 
 
-# ─── Bulk mark as read ───────────────────────────────────────────────────────
-
-@router.post("/links/bulk-mark-read")
-async def bulk_mark_read(
-    request: Request,
-    user: User = Depends(get_current_user),
-    session: Session = Depends(get_session),
-):
-    form = await request.form()
-    link_ids = [int(v) for v in form.getlist("link_ids") if str(v).isdigit()]
-    return_to = str(form.get("return_to", "/"))
-    if link_ids:
-        now = datetime.now(timezone.utc).replace(tzinfo=None)
-        links = session.exec(select(Link).where(Link.id.in_(link_ids), Link.user_id == user.id)).all()
-        for lk in links:
-            lk.read_at = now
-            session.add(lk)
-        session.commit()
-    if request.headers.get("x-csrf-token"):
-        return Response(status_code=204)
-    redirect_url = return_to if return_to.startswith("/") else "/"
-    return RedirectResponse(url=redirect_url, status_code=303)
-
-
 def _maybe_unstar_on_leave(
     session: Session, user_id: int, item_id: Optional[str],
     old_folder_id: Optional[int], new_folder_id: Optional[int],
@@ -578,23 +547,6 @@ async def bulk_tag_links(
             refresh_link_fts(session, lk, existing_tags + added)
         session.commit()
     return {"ok": True, "tags": tag_names}
-
-
-# ─── Statut lu / non-lu ──────────────────────────────────────────────────────
-
-@router.post("/links/{link_id}/toggle-read")
-async def toggle_read(
-    link_id: int,
-    user: User = Depends(get_current_user),
-    session: Session = Depends(get_session),
-):
-    link = session.get(Link, link_id)
-    if not link or link.user_id != user.id:
-        raise HTTPException(status_code=404)
-    link.read_at = None if link.read_at else datetime.now(timezone.utc).replace(tzinfo=None)
-    session.add(link)
-    session.commit()
-    return {"ok": True, "read": link.read_at is not None}
 
 
 # ─── API metadata fetch ───────────────────────────────────────────────────────

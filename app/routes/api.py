@@ -95,7 +95,6 @@ async def api_list_links(
     q: Optional[str] = Query(default=None),
     tag: Optional[str] = Query(default=None),
     group_id: Optional[int] = Query(default=None),
-    unread: Optional[bool] = Query(default=None),
     page: int = Query(default=1, ge=1),
     per_page: int = Query(default=30, ge=1, le=100),
     user: User = Depends(_get_api_user),
@@ -118,9 +117,6 @@ async def api_list_links(
         all_fldrs = list(session.exec(select(Folder).where(Folder.user_id == user.id)).all())
         fids = descendant_folder_ids(all_fldrs, group_id)
         stmt = select(Link).where(Link.user_id == user.id, Link.folder_id.in_(fids))
-
-    if unread:
-        stmt = stmt.where(Link.read_at.is_(None))
 
     if q:
         escaped = _fts_escape(q)
@@ -158,7 +154,6 @@ async def api_list_links(
                 "is_broken": lnk.is_broken,
                 "check_status": lnk.check_status,
                 "has_reader": bool(lnk.reader_html) and not lnk.reader_failed,
-                "is_read": lnk.read_at is not None,
                 "created_at": lnk.created_at.isoformat(),
                 "tags": [t.name for t in lnk.tags],
             }
@@ -240,7 +235,6 @@ async def api_list_groups_compat(
 
 class LinkPatch(BaseModel):
     is_public: Optional[bool] = None
-    is_read: Optional[bool] = None
 
 
 @router.patch("/links/{link_id}")
@@ -257,11 +251,9 @@ async def api_patch_link(
         raise HTTPException(status_code=404, detail="Lien introuvable")
     if body.is_public is not None:
         link.is_public = body.is_public
-    if body.is_read is not None:
-        link.read_at = datetime.now(timezone.utc).replace(tzinfo=None) if body.is_read else None
     session.add(link)
     session.commit()
-    return {"id": link.id, "is_public": link.is_public, "is_read": link.read_at is not None}
+    return {"id": link.id, "is_public": link.is_public}
 
 
 @router.get("/links/{link_id}/reader")

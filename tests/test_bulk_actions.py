@@ -1,7 +1,7 @@
 """Non-régression sur les actions groupées bulk-move / bulk-tag
-(app/routes/links/crud.py). Style d'appel direct des fonctions, comme
-test_read_status.py : le CSRF qui protège ces routes en pratique est déjà
-couvert séparément par test_csrf.py."""
+(app/routes/links/crud.py). Style d'appel direct des fonctions : le CSRF
+qui protège ces routes en pratique est déjà couvert séparément par
+test_csrf.py."""
 import asyncio
 
 import pytest

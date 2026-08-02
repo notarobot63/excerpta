@@ -181,8 +181,6 @@ def init_db():
         con.execute("ALTER TABLE links ADD COLUMN reader_failed INTEGER NOT NULL DEFAULT 0")
     if "archive_status" not in lcols:
         con.execute("ALTER TABLE links ADD COLUMN archive_status TEXT")
-    if "read_at" not in lcols:
-        con.execute("ALTER TABLE links ADD COLUMN read_at TEXT")
 
     # Chiffrement api_key + ajout api_key_hmac
     ucols = [r[1] for r in con.execute("PRAGMA table_info(users)").fetchall()]
@@ -222,7 +220,6 @@ def init_db():
     con.execute("CREATE INDEX IF NOT EXISTS idx_folders_user_id ON folders(user_id)")
     con.execute("CREATE INDEX IF NOT EXISTS idx_link_tags_tag_id ON link_tags(tag_id)")
     con.execute("CREATE INDEX IF NOT EXISTS idx_links_folder_id ON links(folder_id)")
-    con.execute("CREATE INDEX IF NOT EXISTS idx_links_user_read ON links(user_id, read_at)")
 
     con.commit()
     con.close()

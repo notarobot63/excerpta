@@ -30,13 +30,9 @@
     </div>
 
     <nav style="padding: 0.5rem 0; flex: 1;">
-      <a href="/" class="sidebar-item {% if not current_tag and not current_group and not q and not current_unread %}active{% endif %}">
+      <a href="/" class="sidebar-item {% if not current_tag and not current_group and not q %}active{% endif %}">
         <span>{{ _("All links") }}</span>
         <span class="sidebar-count">{{ total_links if total_links is defined else '' }}</span>
-      </a>
-      <a href="/?unread=1" class="sidebar-item {% if current_unread %}active{% endif %}">
-        <span>{{ _("Unread") }}</span>
-        <span class="sidebar-count">{{ unread_count if unread_count is defined else '' }}</span>
       </a>
       <a href="/tags" class="sidebar-item {% if request.url.path == '/tags' %}active{% endif %}">
         <svg class="icon-tags" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink:0"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
