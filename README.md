@@ -36,8 +36,7 @@
 - **Reader view**: clean, readable version of each article (Readability extraction + anti-XSS sanitization), refined typography, adjustable font size, light/dark theme, estimated reading time - extracted on demand then cached
 - **Visibility**: each link can be public or private; a per-user public page (`/u/{slug}`) with an RSS feed (`/u/{slug}/feed.xml`)
 - **Wayback Machine archiving**: automatic background archiving of every new link, per-link status visible (in progress / archived / failed), on-demand re-archiving and bulk archiving of existing links
-- **Read/unread status**: dedicated sidebar filter, manual toggle or automatic when opening the reader view
-- **Bulk actions** on a multi-selection: delete, mark as read, move to folder, add tags
+- **Bulk actions** on a multi-selection: delete, move to folder, add tags
 
 ### Search and navigation
 - **Real-time search** (search-as-you-type): results filtered as you type, no page reload
@@ -189,7 +188,7 @@ Endpoints:
 | Method | Endpoint | Description |
 |---|---|---|
 | `GET` | `/api/v1/me` | User profile |
-| `GET` | `/api/v1/links` | Paginated list, filter by `?q=`, `?tag=`, `?group_id=`, `?unread=` |
+| `GET` | `/api/v1/links` | Paginated list, filter by `?q=`, `?tag=`, `?group_id=` |
 | `POST` | `/api/v1/links` | Create a link |
 | `PATCH` | `/api/v1/links/{id}` | Update a link |
 | `DELETE` | `/api/v1/links/{id}` | Delete a link |

@@ -86,7 +86,6 @@ class Link(SQLModel, table=True):
     reader_title: Optional[str] = Field(default=None)
     reader_extracted_at: Optional[datetime] = Field(default=None)
     reader_failed: bool = Field(default=False)
-    read_at: Optional[datetime] = Field(default=None)  # None = non lu
     created_at: datetime = Field(default_factory=_utcnow)
     updated_at: datetime = Field(default_factory=_utcnow)
 

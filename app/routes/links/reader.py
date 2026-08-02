@@ -82,14 +82,6 @@ async def read_link(
     if not link or link.user_id != user.id:
         raise HTTPException(status_code=404)
 
-    # Ouvrir la vue lecteur est le signal naturel de lecture : on marque comme
-    # lu si ce n'était pas déjà le cas, sans jamais repasser en non-lu ici
-    # (seul le bouton dédié, toggle_read, fait ce chemin inverse).
-    if link.read_at is None:
-        link.read_at = datetime.now(timezone.utc).replace(tzinfo=None)
-        session.add(link)
-        session.commit()
-
     # En démo, la vue lecteur ne montre que le contenu préparé dans le catalogue :
     # extraire à la demande ferait sortir une requête vers une URL de visiteur.
     # Sans contenu préparé, la page s'affiche avec le message d'échec habituel.
