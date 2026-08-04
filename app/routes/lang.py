@@ -22,25 +22,12 @@ from sqlmodel import Session
 from .. import i18n
 from ..database import get_session
 from ..models import User
+from ..utils import safe_next
 
 router = APIRouter()
 
 # Un an : la préférence d'un visiteur anonyme doit survivre à sa session.
 _COOKIE_MAX_AGE = 365 * 24 * 3600
-
-
-def safe_next(raw: str | None) -> str:
-    """Chemin de retour interne, ou « / ».
-
-    Refuse tout ce qui pourrait sortir du site : URL absolue, `//evil.example`
-    que le navigateur lit comme un hôte, et `/\\evil.example` que certains
-    interprètent de même.
-    """
-    if not raw or not raw.startswith("/"):
-        return "/"
-    if raw.startswith("//") or raw.startswith("/\\"):
-        return "/"
-    return raw
 
 
 @router.get("/lang/{code}")

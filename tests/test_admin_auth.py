@@ -6,9 +6,11 @@ import asyncio
 
 import pytest
 from fastapi import HTTPException
+from sqlalchemy import text
 
 from app.auth import NotAuthenticated, get_admin_user, get_current_user
-from app.models import User
+from app.models import FreshRSSConfig, User
+from app.routes import admin as admin_mod
 
 
 class _FakeRequest:
@@ -70,3 +72,33 @@ def test_get_admin_user_accepte_admin(session):
     user = _make_user(session, is_admin=True)
     result = asyncio.run(get_admin_user(user=user))
     assert result.id == user.id
+
+
+# ── Suppression de compte : cascade complète ──────────────────────────────────
+
+def test_supprimer_un_compte_efface_sa_config_freshrss(session):
+    """La config FreshRSS porte l'URL, l'identifiant et le jeton chiffré du
+    compte, et référence users.id : absente de la cascade, elle survivait à la
+    suppression, en laissant au passage une clé étrangère orpheline."""
+    admin = _make_user(session, oidc_sub="admin", is_admin=True)
+    cible = _make_user(session, oidc_sub="cible")
+    # Capturé avant l'appel : le commit de la route expire les objets de cette
+    # session, et relire `cible.id` ensuite tenterait de recharger une ligne
+    # supprimée (ObjectDeletedError). En production chaque requête a sa session.
+    cible_id = cible.id
+    session.add(FreshRSSConfig(
+        user_id=cible_id, freshrss_url="https://rss.exemple.test",
+        freshrss_user="cible", freshrss_token="jeton-chiffre",
+    ))
+    session.commit()
+
+    asyncio.run(admin_mod.delete_user(uid=cible_id, admin=admin, session=session))
+
+    restant = session.execute(
+        text("SELECT COUNT(*) FROM freshrss_configs WHERE user_id=:id"), {"id": cible_id}
+    ).scalar()
+    assert restant == 0
+    reste_user = session.execute(
+        text("SELECT COUNT(*) FROM users WHERE id=:id"), {"id": cible_id}
+    ).scalar()
+    assert reste_user == 0

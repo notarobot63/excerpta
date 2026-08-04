@@ -35,9 +35,8 @@ from .routes import admin as admin_router
 from .routes import api as api_router
 from .routes.freshrss import settings_router as freshrss_settings_router
 from .routes.freshrss import api_router as freshrss_api_router
-from .routes.freshrss import sync_all_enabled, set_http_client as freshrss_set_client
+from .routes.freshrss import sync_all_enabled
 from .routes.links import warm_img_cache, set_http_client as links_set_client
-from .routes.settings import set_http_client as settings_set_client
 
 logger = logging.getLogger("excerpta")
 
@@ -85,9 +84,10 @@ async def lifespan(app: FastAPI):
         max_redirects=5,
         limits=httpx.Limits(max_connections=50, max_keepalive_connections=20),
     ) as http_client:
+        # Client unique, injecté dans net_guard : freshrss et settings passent
+        # tous deux par ses helpers (safe_request / _safe_stream) et n'ont donc
+        # plus de client à eux.
         links_set_client(http_client)
-        freshrss_set_client(http_client)
-        settings_set_client(http_client)
         init_db()
         cleanup_freshrss_tag()
         task = asyncio.create_task(_freshrss_loop())

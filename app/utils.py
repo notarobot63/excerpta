@@ -25,6 +25,22 @@ def resolve_api_user(session: Session, x_api_key: str) -> User | None:
     return user
 
 
+def safe_next(raw: str | None) -> str:
+    """Chemin de retour interne, ou « / ».
+
+    Refuse tout ce qui pourrait sortir du site : URL absolue, `//evil.example`
+    que le navigateur lit comme un hôte, et `/\\evil.example` que certains
+    interprètent de même. Un simple `startswith("/")` laisse passer les deux
+    dernières formes : toute route qui redirige vers un paramètre doit passer
+    par ici, sans quoi elle devient un redirecteur ouvert.
+    """
+    if not raw or not raw.startswith("/"):
+        return "/"
+    if raw.startswith("//") or raw.startswith("/\\"):
+        return "/"
+    return raw
+
+
 def slugify(value: str) -> str:
     """Normalise une chaîne en slug URL (ASCII, minuscules, tirets)."""
     value = unicodedata.normalize("NFKD", value or "").encode("ascii", "ignore").decode()

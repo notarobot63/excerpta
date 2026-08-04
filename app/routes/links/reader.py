@@ -108,9 +108,9 @@ async def read_link(
         reading_minutes = max(1, round(words / 200))
 
     return templates.TemplateResponse(
+        request,
         "links/reader.html",
         {
-            "request": request,
             "user": user,
             "link": link,
             "reading_minutes": reading_minutes,

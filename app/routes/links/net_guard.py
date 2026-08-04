@@ -23,6 +23,7 @@ def set_http_client(client: httpx.AsyncClient) -> None:
 
 # Plafonds de téléchargement (anti-DoS mémoire)
 _MAX_HTML_BYTES = 5 * 1024 * 1024   # 5 Mo pour le HTML d'une page (extraction meta / reader)
+_MAX_API_BYTES = 10 * 1024 * 1024   # 10 Mo pour une réponse d'API JSON (page d'articles FreshRSS)
 _MAX_REDIRECTS = 5
 
 
@@ -156,13 +157,18 @@ async def _assert_public_url(url: str) -> bool:
 
 
 @asynccontextmanager
-async def _safe_stream(method: str, url: str, **kwargs):
+async def _safe_stream(method: str, url: str, same_host_only: bool = False, **kwargs):
     """Ouvre une requête sortante en validant CHAQUE saut de redirection.
 
     httpx avec follow_redirects=True suit un 302 vers une cible interne et ne
     laisse à l'appelant que l'URL finale : la requête interne a déjà été émise.
     On désactive donc le suivi automatique et on revalide la garde SSRF avant
     de suivre chaque Location.
+
+    `same_host_only` refuse en plus tout changement d'hôte. À utiliser dès que
+    la requête porte des identifiants (httpx rejoue le corps et les en-têtes sur
+    un 307/308) : sans cela, une redirection les livrerait à l'hôte d'arrivée,
+    fût-il public.
 
     L'appelant doit avoir validé `url` via _assert_public_url au préalable.
     """
@@ -177,6 +183,31 @@ async def _safe_stream(method: str, url: str, **kwargs):
         remaining -= 1
         if remaining < 0:
             raise _UnsafeRedirect("trop de redirections")
+        previous = current
         current = str(httpx.URL(current).join(location))
         if not await _assert_public_url(current):
             raise _UnsafeRedirect(f"redirection refusée vers {current}")
+        if same_host_only and httpx.URL(current).host != httpx.URL(previous).host:
+            raise _UnsafeRedirect(f"redirection hors hôte refusée vers {current}")
+
+
+async def safe_request(
+    method: str,
+    url: str,
+    max_bytes: int = _MAX_API_BYTES,
+    same_host_only: bool = False,
+    **kwargs,
+) -> httpx.Response:
+    """Requête sortante complète (corps lu et borné) derrière la garde SSRF.
+
+    Équivalent de `client.request(...)` pour les appels dont on veut le corps
+    d'un coup — API JSON, réponses courtes — là où `_safe_stream` sert les
+    téléchargements. Valide l'URL de départ, revalide chaque redirection, et
+    plafonne la taille lue.
+    """
+    if not await _assert_public_url(url):
+        raise _UnsafeRedirect(f"URL refusée : {url}")
+    async with _safe_stream(method, url, same_host_only=same_host_only, **kwargs) as resp:
+        body = await _read_limited(resp, max_bytes)
+        status, headers, request = resp.status_code, resp.headers, resp.request
+    return httpx.Response(status_code=status, headers=headers, content=body, request=request)

@@ -18,11 +18,38 @@ router = APIRouter()
 
 _IMG_CACHE_TTL = 86400
 _IMG_CACHE_MAX = 1000
+# Le plafond en nombre d'entrées ne borne pas la mémoire : 1000 images de 10 Mo
+# font 10 Go. Un second plafond, en octets cumulés, évince jusqu'à repasser
+# dessous. Les deux servent : l'un limite le nombre d'objets, l'autre l'empreinte.
+_IMG_CACHE_MAX_BYTES = 128 * 1024 * 1024
 _img_cache: OrderedDict = OrderedDict()
+_img_cache_bytes = 0
 _img_cache_lock = asyncio.Lock()
 
 _MAX_IMG_BYTES = 10 * 1024 * 1024   # 10 Mo pour une image proxifiée
 _FORBIDDEN_IMG_TYPES = {"image/svg+xml", "image/svg"}
+
+
+def _cache_store(url: str, expiry: float, content_type: str | None, content: bytes | None) -> None:
+    """Insère une entrée et évince les plus anciennes (appelant : verrou tenu)."""
+    global _img_cache_bytes
+    previous = _img_cache.pop(url, None)
+    if previous and previous[2]:
+        _img_cache_bytes -= len(previous[2])
+    _img_cache[url] = (expiry, content_type, content)
+    _img_cache_bytes += len(content) if content else 0
+    while _img_cache and (len(_img_cache) > _IMG_CACHE_MAX or _img_cache_bytes > _IMG_CACHE_MAX_BYTES):
+        _, evicted = _img_cache.popitem(last=False)
+        if evicted[2]:
+            _img_cache_bytes -= len(evicted[2])
+
+
+def _cache_drop(url: str) -> None:
+    """Retire une entrée (appelant : verrou tenu)."""
+    global _img_cache_bytes
+    entry = _img_cache.pop(url, None)
+    if entry and entry[2]:
+        _img_cache_bytes -= len(entry[2])
 
 
 async def warm_img_cache() -> None:
@@ -57,9 +84,7 @@ async def warm_img_cache() -> None:
                         return
                     content = await _read_limited(resp, _MAX_IMG_BYTES)
                 async with _img_cache_lock:
-                    _img_cache[url] = (time.time() + _IMG_CACHE_TTL, ct, content)
-                    if len(_img_cache) > _IMG_CACHE_MAX:
-                        _img_cache.popitem(last=False)
+                    _cache_store(url, time.time() + _IMG_CACHE_TTL, ct, content)
             except Exception:
                 pass
 
@@ -105,8 +130,7 @@ async def proxy_image(
                 headers={"Cache-Control": "public, max-age=86400", "ETag": etag, "Cross-Origin-Resource-Policy": "cross-origin"},
             )
         async with _img_cache_lock:
-            if url in _img_cache:
-                del _img_cache[url]
+            _cache_drop(url)
 
     if not await _assert_public_url(url):
         raise HTTPException(status_code=400)
@@ -117,9 +141,7 @@ async def proxy_image(
         }, timeout=5) as resp:
             if resp.status_code != 200:
                 async with _img_cache_lock:
-                    _img_cache[url] = (time.time() + 3600, None, None)
-                    if len(_img_cache) > _IMG_CACHE_MAX:
-                        _img_cache.popitem(last=False)
+                    _cache_store(url, time.time() + 3600, None, None)
                 raise HTTPException(status_code=404)
             content_type = resp.headers.get("content-type", "image/jpeg").split(";")[0].strip()
             # SVG exclu : servi depuis notre origine, il peut porter du script.
@@ -130,9 +152,7 @@ async def proxy_image(
             except _TooLarge:
                 raise HTTPException(status_code=413)
         async with _img_cache_lock:
-            _img_cache[url] = (time.time() + _IMG_CACHE_TTL, content_type, content)
-            if len(_img_cache) > _IMG_CACHE_MAX:
-                _img_cache.popitem(last=False)
+            _cache_store(url, time.time() + _IMG_CACHE_TTL, content_type, content)
         return Response(
             content=content,
             media_type=content_type,

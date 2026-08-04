@@ -19,5 +19,5 @@ async def logout(request: Request):
 async def login_page(request: Request, error: Optional[str] = None):
     safe_error = error if error in ("1", "inactive") else None
     return templates.TemplateResponse(
-        "auth/login.html", {"request": request, "error": safe_error}
+        request, "auth/login.html", {"error": safe_error}
     )

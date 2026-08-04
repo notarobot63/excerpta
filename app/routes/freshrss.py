@@ -3,7 +3,6 @@ import logging
 from datetime import datetime, timezone
 from typing import Optional
 
-import httpx
 from bs4 import BeautifulSoup
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
@@ -15,7 +14,7 @@ from ..crypto import decrypt, encrypt
 from ..database import engine, get_session
 from ..models import Folder, FreshRSSConfig, Link, User
 from ..ratelimit import rate_limit
-from .links import _assert_public_url, _fetch_meta, _safe_url
+from .links import _assert_public_url, _fetch_meta, _safe_url, safe_request
 from ..templates_cfg import templates
 from ..utils import refresh_link_fts, resolve_api_user, sidebar_data
 
@@ -24,12 +23,8 @@ logger = logging.getLogger("excerpta.freshrss")
 settings_router = APIRouter()
 api_router = APIRouter(prefix="/api/v1")
 
-_http_client: httpx.AsyncClient | None = None
-
-
-def set_http_client(client: httpx.AsyncClient) -> None:
-    global _http_client
-    _http_client = client
+# Pas de client HTTP propre à ce module : tous les appels sortants passent par
+# `safe_request`, qui utilise le client partagé de net_guard derrière la garde SSRF.
 
 
 # ── Greader API helpers ───────────────────────────────────────────────────────
@@ -38,8 +33,14 @@ def set_http_client(client: httpx.AsyncClient) -> None:
 _MAX_STARRED_ITEMS = 5000
 
 async def _greader_auth(base_url: str, user: str, token: str) -> str:
-    resp = await _http_client.post(
+    # safe_request et non le client brut : ce dernier suit les redirections sans
+    # les revalider (garde SSRF contournable), et rejouerait ces identifiants
+    # vers l'hôte d'arrivée sur un 307/308. `same_host_only` ferme ce second
+    # angle, ici comme sur les trois autres appels Greader.
+    resp = await safe_request(
+        "POST",
         f"{base_url}/api/greader.php/accounts/ClientLogin",
+        same_host_only=True,
         data={"Email": user, "Passwd": token},
         timeout=10,
     )
@@ -52,8 +53,10 @@ async def _greader_auth(base_url: str, user: str, token: str) -> str:
 
 
 async def _greader_token(base_url: str, auth: str) -> str:
-    resp = await _http_client.get(
+    resp = await safe_request(
+        "GET",
         f"{base_url}/api/greader.php/reader/api/0/token",
+        same_host_only=True,
         headers={"Authorization": f"GoogleLogin auth={auth}"},
         timeout=10,
     )
@@ -65,8 +68,10 @@ async def unstar_item(config: "FreshRSSConfig", item_id: str) -> bool:
     try:
         auth = await _greader_auth(config.freshrss_url, config.freshrss_user, decrypt(config.freshrss_token))
         t_token = await _greader_token(config.freshrss_url, auth)
-        resp = await _http_client.post(
+        resp = await safe_request(
+            "POST",
             f"{config.freshrss_url}/api/greader.php/reader/api/0/edit-tag",
+            same_host_only=True,
             headers={"Authorization": f"GoogleLogin auth={auth}"},
             data={"i": item_id, "r": "user/-/state/com.google/starred", "T": t_token},
             timeout=10,
@@ -89,7 +94,9 @@ async def _greader_starred(base_url: str, auth: str) -> list[dict]:
         params: dict = {"output": "json", "n": 200}
         if continuation:
             params["c"] = continuation
-        resp = await _http_client.get(url, headers=headers, params=params, timeout=15)
+        resp = await safe_request(
+            "GET", url, same_host_only=True, headers=headers, params=params, timeout=15
+        )
         if resp.status_code != 200:
             break
         data = resp.json()
@@ -342,9 +349,9 @@ async def freshrss_settings_form(
         select(FreshRSSConfig).where(FreshRSSConfig.user_id == current_user.id)
     ).first()
     return templates.TemplateResponse(
+        request,
         "settings/freshrss.html",
         {
-            "request": request,
             "user": current_user,
             "config": config,
             **sidebar_data(session, current_user.id),

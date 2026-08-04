@@ -138,6 +138,11 @@ GIT_COMMIT=$(git describe --tags --always | sed 's/^v//') docker compose up --bu
 | `OIDC_CLIENT_SECRET` | Yes | OIDC application client secret |
 | `OIDC_ISSUER` | Yes | OIDC issuer URL (e.g. `https://auth.example.com`) |
 | `FRESHRSS_SYNC_INTERVAL` | No | FreshRSS sync interval in minutes (default: 30) |
+| `ENCRYPTION_KEY` | No | Key encrypting the secrets held in the database (API key, FreshRSS token). Derived from `SECRET_KEY` when unset, which means rotating the latter makes those secrets undecryptable |
+| `EXTRA_ALLOWED_HOSTS` | No | Additional accepted hostnames, comma separated |
+| `SESSION_COOKIE_SECURE` | No | `Secure` flag on the session cookie (default: `true`). Set to `false` only for plain-HTTP access on a local network |
+| `REQUIRE_VERIFIED_EMAIL` | No | Only grant the admin role to an email the identity provider reports as verified (default: `true`) |
+| `FORWARDED_ALLOW_IPS` | No | Which source addresses may set the `X-Forwarded-*` headers, read by uvicorn (default: `*`). Narrow it to the reverse proxy address as soon as the container port is exposed on a shared network |
 
 ### Public Docker image
 

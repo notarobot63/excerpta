@@ -77,6 +77,21 @@ docker compose -f docker-compose.prod.yml pull && \
 git pull && GIT_COMMIT=$(git describe --tags --always | sed 's/^v//') docker compose up --build -d
 ```
 
+### Migrating to the unprivileged image (one-off)
+
+The image no longer runs as `root` but under UID `10001`. The volume of an
+instance created before this change still belongs to `root`: without taking
+ownership, the application starts and then exits on
+`attempt to write a readonly database`. With the container stopped:
+
+```bash
+docker compose -f docker-compose.prod.yml down
+docker run --rm -v excerpta_data:/data alpine chown -R 10001:0 /data
+docker compose -f docker-compose.prod.yml up -d
+```
+
+A fresh instance gets the right ownership from the start, nothing to do.
+
 ## Persistent data
 
 Data (SQLite database) is stored in a named Docker volume, `excerpta_data`. To back it up:

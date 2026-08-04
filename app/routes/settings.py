@@ -3,10 +3,8 @@ import io
 import json
 from datetime import datetime, timezone
 from typing import Optional
-from urllib.parse import urljoin, urlparse
-from .links import _safe_url
+from urllib.parse import urlparse
 
-import httpx
 import qrcode
 from bs4 import BeautifulSoup
 from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, Request, UploadFile
@@ -23,21 +21,12 @@ from ..models import Folder, Link, LinkTagLink, Tag, User
 from ..ratelimit import rate_limit
 from ..templates_cfg import templates
 from ..utils import get_or_create_tag, refresh_link_fts, sidebar_data, slugify
-from .links import _archive_many, _assert_public_url, _fetch_meta
+from .links import _archive_many, _assert_public_url, _fetch_meta, _safe_stream, _safe_url
 
 router = APIRouter()
 
-_http_client: httpx.AsyncClient | None = None
-
-
-def set_http_client(client: httpx.AsyncClient) -> None:
-    global _http_client
-    _http_client = client
-
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
-
-
 
 def _parse_netscape(html: str) -> list[dict]:
     soup = BeautifulSoup(html, "html.parser")
@@ -113,9 +102,9 @@ async def settings_page(
         text("SELECT COUNT(*) FROM links WHERE user_id = :uid"), {"uid": user.id}
     ).scalar()
     return templates.TemplateResponse(
+        request,
         "settings/index.html",
         {
-            "request": request,
             "user": user,
             "api_key_plain": decrypt(user.api_key),
             "bookmarklet": bookmarklet,
@@ -123,6 +112,9 @@ async def settings_page(
             "archiving": archiving,
             **sidebar_data(session, user.id),
         },
+        # La clé API figure en clair dans cette page : elle ne doit rester ni
+        # dans le cache du navigateur ni dans celui d'un proxy intermédiaire.
+        headers={"Cache-Control": "no-store"},
     )
 
 
@@ -289,9 +281,9 @@ async def import_form(
     session: Session = Depends(get_session),
 ):
     return templates.TemplateResponse(
+        request,
         "settings/import.html",
         {
-            "request": request,
             "user": user,
             "imported": imported,
             "skipped": skipped,
@@ -464,41 +456,29 @@ _check_jobs: dict[int, dict] = {}  # user_id → {total, done, running}
 
 # Codes ambigus (protection anti-bot probable) - ne pas marquer comme cassé
 _AMBIGUOUS_CODES = {401, 403, 405, 406, 429}
-_MAX_REDIRECTS = 5
 
 
-async def _check_url_safe(url: str) -> bool:
-    """Anti-SSRF : délègue à la garde unique de links.py (_assert_public_url)."""
-    return await _assert_public_url(url)
+async def _check_status(method: str, url: str) -> int:
+    """Code de statut final, redirections revalidées saut par saut.
+
+    Passe par `_safe_stream` plutôt que par une seconde implémentation locale de
+    la même règle : le corps n'est jamais lu, seul le statut compte, et un
+    vérificateur qui parcourt toute une collection n'a pas à télécharger les
+    pages.
+    """
+    if not await _assert_public_url(url):
+        raise ValueError("URL non autorisée (SSRF)")
+    async with _safe_stream(method, url, timeout=10, headers=_CHECKER_HEADERS) as resp:
+        return resp.status_code
 
 
-async def _request_no_private_redirect(client: httpx.AsyncClient, method: str, url: str):
-    """Effectue la requête en suivant les redirections manuellement, en re-validant
-    chaque saut contre la politique SSRF (anti-rebinding/redirection vers IP privée)."""
-    current = url
-    for _ in range(_MAX_REDIRECTS):
-        if not await _check_url_safe(current):
-            raise ValueError("URL non autorisée (SSRF)")
-        resp = await client.request(
-            method, current, follow_redirects=False, timeout=10, headers=_CHECKER_HEADERS
-        )
-        if resp.status_code in (301, 302, 303, 307, 308):
-            location = resp.headers.get("location", "")
-            if not location:
-                return resp
-            current = urljoin(current, location)
-            continue
-        return resp
-    raise ValueError("Trop de redirections")
-
-
-async def _check_url(client: httpx.AsyncClient, url: str) -> dict:
+async def _check_url(url: str) -> dict:
     try:
-        resp = await _request_no_private_redirect(client, "HEAD", url)
-        if resp.status_code in _AMBIGUOUS_CODES or resp.status_code >= 400:
-            resp = await _request_no_private_redirect(client, "GET", url)
-        broken = resp.status_code >= 400 and resp.status_code not in _AMBIGUOUS_CODES
-        return {"status": resp.status_code, "broken": broken, "error": None}
+        status = await _check_status("HEAD", url)
+        if status in _AMBIGUOUS_CODES or status >= 400:
+            status = await _check_status("GET", url)
+        broken = status >= 400 and status not in _AMBIGUOUS_CODES
+        return {"status": status, "broken": broken, "error": None}
     except Exception as e:
         return {"status": None, "broken": True, "error": str(e)[:100]}
 
@@ -519,7 +499,7 @@ async def _run_check_background(user_id: int) -> None:
                 if not url:
                     _check_jobs[user_id]["done"] += 1
                     return
-                result = await _check_url(_http_client, url)
+                result = await _check_url(url)
                 with Session(db_engine) as s:
                     lk2 = s.get(Link, lid)
                     if lk2:
@@ -570,9 +550,9 @@ async def check_links_form(
     checked_count = len(session.exec(select(Link).where(Link.user_id == user.id, Link.last_checked_at != None)).all())
     total_count = len(session.exec(select(Link).where(Link.user_id == user.id)).all())
     return templates.TemplateResponse(
+        request,
         "settings/check_links.html",
         {
-            "request": request,
             "user": user,
             "job": job,
             "broken": broken,

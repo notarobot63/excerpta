@@ -6,10 +6,20 @@ services:
     container_name: excerpta
     restart: unless-stopped
     ports:
+      # Publié sur toutes les interfaces : l'application reste alors joignable en
+      # HTTP direct par quiconque atteint l'hôte, en contournant le reverse proxy
+      # (et donc HSTS, journalisation, filtrage). Si le proxy est sur la machine,
+      # préférer "127.0.0.1:8070:8000".
       - "8070:8000"
     env_file: .env
     volumes:
       - excerpta_data:/app/data
+    # L'image tourne sous l'UID 10001 ; ces deux réglages ferment ce dont un
+    # processus applicatif n'a de toute façon pas l'usage.
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
 
 volumes:
   excerpta_data:

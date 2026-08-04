@@ -39,8 +39,9 @@ async def list_folders(
 ):
     sd = sidebar_data(session, user.id)
     return templates.TemplateResponse(
+        request,
         "folders/list.html",
-        {"request": request, "user": user, **sd},
+        {"user": user, **sd},
     )
 
 
@@ -52,8 +53,9 @@ async def add_form(
 ):
     sd = sidebar_data(session, user.id)
     return templates.TemplateResponse(
+        request,
         "folders/form.html",
-        {"request": request, "folder": None, **sd, "user": user},
+        {"folder": None, **sd, "user": user},
     )
 
 
@@ -95,8 +97,9 @@ async def edit_form(
         raise HTTPException(status_code=404)
     sd = sidebar_data(session, user.id)
     return templates.TemplateResponse(
+        request,
         "folders/form.html",
-        {"request": request, "folder": folder, **sd, "user": user},
+        {"folder": folder, **sd, "user": user},
     )
 
 

@@ -33,8 +33,9 @@ async def demo_home(request: Request):
     if request.session.get("user_id"):
         return RedirectResponse(url="/", status_code=303)
     return templates.TemplateResponse(
+        request,
         "demo/index.html",
-        {"request": request, "catalog_size": len(CATALOG), "app_name": settings.app_name},
+        {"catalog_size": len(CATALOG), "app_name": settings.app_name},
     )
 
 
@@ -64,9 +65,9 @@ async def demo_catalogue(
         for entry in CATALOG
     ]
     return templates.TemplateResponse(
+        request,
         "demo/catalogue.html",
         {
-            "request": request,
             "user": user,
             "entrees": entrees,
             "restants": sum(1 for e in entrees if not e["deja_ajoute"]),
