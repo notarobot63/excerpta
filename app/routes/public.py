@@ -119,9 +119,9 @@ async def public_links(
     all_tags.sort()
 
     return templates.TemplateResponse(
+        request,
         "public/index.html",
         {
-            "request": request,
             "links": links,
             "all_tags": all_tags,
             "current_tag": tag,

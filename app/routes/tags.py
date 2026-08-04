@@ -25,8 +25,9 @@ async def list_tags(
     session: Session = Depends(get_session),
 ):
     return templates.TemplateResponse(
+        request,
         "tags/list.html",
-        {"request": request, "user": user, **sidebar_data(session, user.id)},
+        {"user": user, **sidebar_data(session, user.id)},
     )
 
 

@@ -18,7 +18,8 @@ from ...demo import (CATALOG_BY_URL, demo_active, forbid_in_demo, is_demo_user,
 from ...models import Folder, Link, LinkTagLink, Tag, User
 from ...ratelimit import rate_limit
 from ...templates_cfg import templates
-from ...utils import descendant_folder_ids, get_or_create_tag, refresh_link_fts, sidebar_data
+from ...utils import (descendant_folder_ids, get_or_create_tag, refresh_link_fts,
+                      safe_next, sidebar_data)
 from .archive import _wayback_archive
 from .constants import MAX_DESC_LEN, MAX_NOTE_LEN, MAX_TAGS_PER_LINK, MAX_TITLE_LEN, PER_PAGE
 from .enrichment import _fetch_and_update_meta, _fetch_meta
@@ -133,7 +134,6 @@ async def list_links(
     sidebar = sidebar_data(session, user.id)
 
     context = {
-        "request": request,
         "links": links,
         "total": total,
         "page": page,
@@ -157,7 +157,7 @@ async def list_links(
     # Recherche temps réel / pagination AJAX : fragment seul, sans le layout
     is_partial = request.query_params.get("partial") or request.headers.get("X-Partial")
     template = "links/_results.html" if is_partial else "links/list.html"
-    return templates.TemplateResponse(template, context)
+    return templates.TemplateResponse(request, template, context)
 
 
 # ─── Add ─────────────────────────────────────────────────────────────────────
@@ -174,9 +174,9 @@ async def add_form(
     meta = {"title": title or "", "description": "", "favicon_url": "", "thumbnail_url": ""}
     sidebar = sidebar_data(session, user.id)
     return templates.TemplateResponse(
+        request,
         "links/form.html",
         {
-            "request": request,
             "link": None,
             "prefill_url": url or "",
             "meta": meta,
@@ -315,9 +315,9 @@ async def edit_form(
     sidebar = sidebar_data(session, user.id)
     current_tags = ", ".join(t.name for t in link.tags)
     return templates.TemplateResponse(
+        request,
         "links/form.html",
         {
-            "request": request,
             "link": link,
             "prefill_url": "",
             "meta": {},
@@ -417,7 +417,7 @@ async def delete_link(
     # le client retire la carte du DOM lui-même → évite le rechargement complet.
     if request.headers.get("x-csrf-token"):
         return Response(status_code=204)
-    redirect_url = return_to if return_to.startswith("/") else "/"
+    redirect_url = safe_next(return_to)
     return RedirectResponse(url=redirect_url, status_code=303)
 
 
@@ -439,7 +439,7 @@ async def bulk_delete_links(
         session.commit()
     if request.headers.get("x-csrf-token"):
         return Response(status_code=204)
-    redirect_url = return_to if return_to.startswith("/") else "/"
+    redirect_url = safe_next(return_to)
     return RedirectResponse(url=redirect_url, status_code=303)
 
 

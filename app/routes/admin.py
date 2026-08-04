@@ -65,8 +65,8 @@ async def dashboard(
             ORDER BY l.created_at DESC LIMIT 10
         """)
     ).fetchall()
-    return templates.TemplateResponse("admin/dashboard.html", {
-        "request": request, "user": admin,
+    return templates.TemplateResponse(request, "admin/dashboard.html", {
+        "user": admin,
         "stats": stats, "recent": recent,
         **sidebar_data(session, admin.id),
     })
@@ -91,8 +91,8 @@ async def users_list(
         GROUP BY u.id
         ORDER BY u.created_at
     """)).fetchall()
-    return templates.TemplateResponse("admin/users.html", {
-        "request": request, "user": admin, "rows": rows,
+    return templates.TemplateResponse(request, "admin/users.html", {
+        "user": admin, "rows": rows,
         **sidebar_data(session, admin.id),
     })
 
@@ -120,8 +120,8 @@ async def user_detail(
     ).fetchall()
     bm = _bookmarklet(cfg.base_url)
     admin_count = session.execute(text("SELECT COUNT(*) FROM users WHERE is_admin=1")).scalar()
-    return templates.TemplateResponse("admin/user_detail.html", {
-        "request": request, "user": admin,
+    return templates.TemplateResponse(request, "admin/user_detail.html", {
+        "user": admin,
         "target": target, "stats": stats,
         "recent_links": recent_links,
         "bookmarklet": bm,
@@ -213,6 +213,9 @@ async def delete_user(
     session.execute(text("DELETE FROM links       WHERE user_id=:id"), {"id": uid})
     session.execute(text("DELETE FROM tags        WHERE user_id=:id"), {"id": uid})
     session.execute(text("DELETE FROM folders      WHERE user_id=:id"), {"id": uid})
+    # Contient l'URL, l'identifiant et le jeton (chiffré) FreshRSS du compte, et
+    # référence users.id : oublié ici, il survivait à la suppression du compte.
+    session.execute(text("DELETE FROM freshrss_configs WHERE user_id=:id"), {"id": uid})
     session.execute(text("DELETE FROM users       WHERE id=:id"), {"id": uid})
     session.commit()
     _log.warning("admin#%s deleted user#%s (%s) and all their data", admin.id, uid, target_name)

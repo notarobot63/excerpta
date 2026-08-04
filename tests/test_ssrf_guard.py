@@ -19,6 +19,7 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 import httpx
 import pytest
 
+from app.routes import freshrss as freshrss_mod
 from app.routes.links import net_guard as links_mod
 from app.routes.links import enrichment as enrichment_mod
 from app.routes.links import reader as reader_mod
@@ -42,6 +43,15 @@ class _Interne(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(body)
 
+    # Un 307 rejoue la méthode : sans traiter le POST, le handler répondrait 501
+    # sans rien enregistrer, et TOUCHED resterait vide alors même que la requête
+    # interne serait partie. Le test passerait pour une mauvaise raison.
+    def do_POST(self):
+        length = int(self.headers.get("Content-Length") or 0)
+        if length:
+            self.rfile.read(length)
+        self.do_GET()
+
     def log_message(self, *a):
         pass
 
@@ -55,6 +65,33 @@ class _Redirecteur(BaseHTTPRequestHandler):
         self.send_response(302)
         self.send_header("Location", self.target)
         self.end_headers()
+
+    def do_POST(self):
+        # 307 : httpx rejoue la méthode ET le corps sur la cible, ce qui est
+        # précisément le vecteur de fuite d'identifiants que couvre same_host_only.
+        length = int(self.headers.get("Content-Length") or 0)
+        if length:
+            self.rfile.read(length)
+        self.send_response(307)
+        self.send_header("Location", self.target)
+        self.end_headers()
+
+    def log_message(self, *a):
+        pass
+
+
+class _Externe(BaseHTTPRequestHandler):
+    """Second hôte « externe », cible d'une redirection hors hôte."""
+
+    def do_GET(self):
+        TOUCHED.append("externe" + self.path)
+        self.send_response(200)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Content-Length", "2")
+        self.end_headers()
+        self.wfile.write(b"{}")
+
+    do_POST = do_GET
 
     def log_message(self, *a):
         pass
@@ -83,11 +120,38 @@ def redirecteur(interne):
 
 
 @pytest.fixture
+def externe():
+    TOUCHED.clear()
+    srv = _serve(_Externe)
+    yield srv
+    srv.shutdown()
+
+
+@pytest.fixture
 def http_client():
     client = httpx.AsyncClient(follow_redirects=True, max_redirects=5)
     links_mod.set_http_client(client)
     yield client
     asyncio.run(client.aclose())
+
+
+def _public_host(monkeypatch, port: int, *hostnames: str) -> None:
+    """Fait passer des hôtes de test pour des hôtes publics résolvant en loopback.
+
+    Sans cela, l'URL de départ serait rejetée dès la garde d'entrée et le test
+    n'exercerait jamais le comportement sur redirection.
+    """
+    noms = hostnames or ("excerpta-test.invalid",)
+    real_resolves = links_mod._hostname_resolves_public
+
+    async def fake_resolves(hostname):
+        return True if hostname in noms else await real_resolves(hostname)
+
+    monkeypatch.setattr(links_mod, "_hostname_resolves_public", fake_resolves)
+    monkeypatch.setattr(
+        links_mod.socket, "getaddrinfo",
+        lambda host, *a, **k: [(2, 1, 6, "", ("127.0.0.1", port))],
+    )
 
 
 # ── _is_private_host ──────────────────────────────────────────────────────────
@@ -190,3 +254,54 @@ def test_assert_public_url_rejette_ipv4_mapped(interne, http_client):
 def test_svg_refuse_par_le_proxy():
     """Un SVG servi depuis notre origine peut porter du script."""
     assert "image/svg+xml" in proxy_mod._FORBIDDEN_IMG_TYPES
+
+
+# ── safe_request : la même garde pour les appels d'API ────────────────────────
+
+def test_safe_request_refuse_une_url_privee(interne, http_client):
+    url = f"http://127.0.0.1:{interne.server_port}/api"
+    with pytest.raises(links_mod._UnsafeRedirect):
+        asyncio.run(links_mod.safe_request("GET", url, timeout=5))
+    assert TOUCHED == []
+
+
+def test_safe_request_ne_suit_pas_la_redirection_interne(redirecteur, interne, http_client, monkeypatch):
+    _public_host(monkeypatch, redirecteur.server_port)
+    url = f"http://excerpta-test.invalid:{redirecteur.server_port}/api"
+    with pytest.raises(links_mod._UnsafeRedirect):
+        asyncio.run(links_mod.safe_request("GET", url, timeout=5))
+    assert TOUCHED == [], f"le service interne a été atteint : {TOUCHED}"
+
+
+def test_same_host_only_refuse_le_changement_dhote(externe, http_client, monkeypatch):
+    """Une redirection vers un autre hôte, même public, ne doit pas rejouer les
+    identifiants portés par la requête."""
+    _Redirecteur.target = f"http://excerpta-cible.invalid:{externe.server_port}/x"
+    redir = _serve(_Redirecteur)
+    try:
+        _public_host(monkeypatch, externe.server_port,
+                     "excerpta-test.invalid", "excerpta-cible.invalid")
+        url = f"http://excerpta-test.invalid:{redir.server_port}/api"
+
+        with pytest.raises(links_mod._UnsafeRedirect):
+            asyncio.run(links_mod.safe_request("GET", url, same_host_only=True, timeout=5))
+        assert TOUCHED == [], f"l'hôte de destination a été atteint : {TOUCHED}"
+
+        # Sans le drapeau, la redirection vers un hôte public reste légitime.
+        resp = asyncio.run(links_mod.safe_request("GET", url, timeout=5))
+        assert resp.status_code == 200
+        assert TOUCHED == ["externe/x"]
+    finally:
+        redir.shutdown()
+
+
+def test_greader_auth_ne_livre_pas_les_identifiants_en_interne(
+    redirecteur, interne, http_client, monkeypatch
+):
+    """Bout en bout : le POST ClientLogin ne doit pas atteindre la cible d'un 307."""
+    _public_host(monkeypatch, redirecteur.server_port)
+    base = f"http://excerpta-test.invalid:{redirecteur.server_port}"
+
+    with pytest.raises(links_mod._UnsafeRedirect):
+        asyncio.run(freshrss_mod._greader_auth(base, "utilisateur", "secret"))
+    assert TOUCHED == [], f"les identifiants sont partis vers : {TOUCHED}"

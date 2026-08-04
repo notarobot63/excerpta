@@ -32,7 +32,11 @@ class Settings(BaseSettings):
     demo_mode: bool = False
     demo_ttl_hours: int = 6  # durée de vie d'un espace de démo avant purge
 
-    model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
+    # extra="ignore" : le même .env sert de env_file à docker-compose, il porte
+    # donc aussi des variables d'infrastructure (REGISTRY_IMAGE,
+    # FORWARDED_ALLOW_IPS lue par uvicorn…). Avec le "forbid" par défaut de
+    # pydantic-settings, chacune d'elles empêche l'application de démarrer.
+    model_config = {"env_file": ".env", "env_file_encoding": "utf-8", "extra": "ignore"}
 
     @model_validator(mode="after")
     def validate_secret_key(self) -> "Settings":
