@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Excerpta VERSION\n"
 "Report-Msgid-Bugs-To: https://github.com/notarobot63/excerpta/issues\n"
-"POT-Creation-Date: 2026-08-02 10:05+0200\n"
+"POT-Creation-Date: 2026-08-10 17:46+0200\n"
 "PO-Revision-Date: 2026-07-26 14:53+0200\n"
 "Last-Translator: \n"
 "Language: fr\n"
@@ -35,105 +35,110 @@ msgstr "Gérer les tags"
 msgid "Manage folders"
 msgstr "Gérer les dossiers"
 
-#: app/templates/base.html:51 app/templates/settings/index.html:3
+#: app/templates/base.html:54 app/templates/demo/catalogue.html:3
+#: app/templates/demo/catalogue.html:7
+msgid "Demo catalogue"
+msgstr "Catalogue de démonstration"
+
+#: app/templates/base.html:59 app/templates/settings/index.html:3
 #: app/templates/settings/index.html:7
 msgid "Settings"
 msgstr "Paramètres"
 
-#: app/templates/base.html:57 app/templates/settings/index.html:19
+#: app/templates/base.html:65 app/templates/settings/index.html:19
 msgid "Public page"
 msgstr "Page publique"
 
 #: app/templates/admin/dashboard.html:2 app/templates/admin/dashboard.html:5
 #: app/templates/admin/user_detail.html:2 app/templates/admin/users.html:2
-#: app/templates/base.html:63
+#: app/templates/base.html:71
 msgid "Administration"
 msgstr "Administration"
 
 #: app/templates/admin/dashboard.html:12
-#: app/templates/admin/user_detail.html:23 app/templates/base.html:69
+#: app/templates/admin/user_detail.html:23 app/templates/base.html:77
 #: app/templates/folders/list.html:3 app/templates/folders/list.html:7
 #: app/templates/settings/index.html:127
 msgid "Folders"
 msgstr "Dossiers"
 
-#: app/templates/base.html:72
+#: app/templates/base.html:80
 msgid "Sort A→Z"
 msgstr "Trier A→Z"
 
-#: app/templates/base.html:78 app/templates/folders/form.html:3
+#: app/templates/base.html:86 app/templates/folders/form.html:3
 #: app/templates/folders/form.html:8 app/templates/folders/list.html:8
 msgid "New folder"
 msgstr "Nouveau dossier"
 
-#: app/templates/base.html:94
+#: app/templates/base.html:102
 msgid "Reorder"
 msgstr "Réorganiser"
 
-#: app/templates/base.html:107 app/templates/base.html:145
+#: app/templates/base.html:115 app/templates/base.html:153
 msgid "Rename"
 msgstr "Renommer"
 
-#: app/templates/base.html:110 app/templates/base.html:149
+#: app/templates/base.html:118 app/templates/base.html:157
 msgid "Confirm"
 msgstr "Valider"
 
-#: app/templates/base.html:111 app/templates/base.html:150
+#: app/templates/base.html:119 app/templates/base.html:158
 #: app/templates/folders/form.html:60 app/templates/links/_results.html:30
-#: app/templates/links/form.html:114 app/templates/settings/import.html:30
+#: app/templates/links/form.html:120 app/templates/settings/import.html:30
 msgid "Cancel"
 msgstr "Annuler"
 
-#: app/templates/base.html:118 app/templates/folders/list.html:62
+#: app/templates/base.html:126 app/templates/folders/list.html:62
 msgid "Create a folder"
 msgstr "Créer un dossier"
 
 #: app/templates/admin/dashboard.html:11
 #: app/templates/admin/user_detail.html:22 app/templates/admin/users.html:17
-#: app/templates/base.html:124 app/templates/links/form.html:58
+#: app/templates/base.html:132 app/templates/links/form.html:64
 #: app/templates/settings/index.html:117 app/templates/tags/list.html:3
 #: app/templates/tags/list.html:6
 msgid "Tags"
 msgstr "Tags"
 
-#: app/templates/admin/user_detail.html:90 app/templates/base.html:146
+#: app/templates/admin/user_detail.html:90 app/templates/base.html:154
 #: app/templates/folders/form.html:65 app/templates/folders/list.html:37
 #: app/templates/links/_results.html:29 app/templates/links/_results.html:118
-#: app/templates/links/form.html:137 app/templates/settings/check_links.html:78
+#: app/templates/links/form.html:143 app/templates/settings/check_links.html:78
 #: app/templates/tags/list.html:30
 msgid "Delete"
 msgstr "Supprimer"
 
-#: app/templates/base.html:159 app/templates/settings/index.html:15
+#: app/templates/base.html:167 app/templates/settings/index.html:15
 msgid "Sign out"
 msgstr "Déconnexion"
 
-#: app/templates/base.html:170
+#: app/templates/base.html:178
 msgid "Menu"
 msgstr "Menu"
 
-#: app/templates/base.html:180 app/templates/public/index.html:27
+#: app/templates/base.html:188 app/templates/public/index.html:27
 msgid "Search…"
 msgstr "Rechercher…"
 
-#: app/templates/base.html:182
+#: app/templates/base.html:190
 msgid "Clear the search"
 msgstr "Effacer la recherche"
 
-#: app/templates/base.html:186
+#: app/templates/base.html:194
 msgid "Grid view"
 msgstr "Vue grille"
 
-#: app/templates/base.html:190
+#: app/templates/base.html:198
 msgid "Toggle light/dark"
 msgstr "Basculer clair/sombre"
 
-#: app/templates/base.html:200 app/templates/demo/catalogue.html:31
-#: app/templates/links/form.html:112
+#: app/templates/base.html:206 app/templates/demo/catalogue.html:31
+#: app/templates/links/form.html:118
 msgid "Add"
 msgstr "Ajouter"
 
-#: app/templates/base.html:299
+#: app/templates/base.html:305
 #, python-brace-format
 msgid "Delete the tag #{tag}?"
 msgstr "Supprimer le tag #{tag} ?"
@@ -314,18 +319,13 @@ msgstr "Erreur d’authentification. Veuillez réessayer."
 msgid "Sign in with PocketID"
 msgstr "Se connecter via PocketID"
 
-#: app/templates/demo/catalogue.html:3 app/templates/demo/catalogue.html:7
-msgid "Demo catalogue"
-msgstr "Catalogue de démonstration"
-
 #: app/templates/demo/catalogue.html:10
 msgid ""
-"In this demo, links are added from the list below rather than by typing "
-"an address: the server never fetches a page from the internet."
+"Pages prepared for the demo, ready to add in one click. You can also add "
+"any link of your own with the Add button."
 msgstr ""
-"Dans cette démonstration, les liens s’ajoutent depuis la liste ci-dessous"
-" plutôt qu’en saisissant une adresse : le serveur ne va jamais chercher "
-"une page sur Internet."
+"Des pages préparées pour la démonstration, à ajouter en un clic. Tu peux "
+"aussi ajouter n’importe quel lien à toi avec le bouton Ajouter."
 
 #: app/templates/demo/catalogue.html:11
 #, python-format
@@ -356,27 +356,27 @@ msgid "Search, folders, tags, notes and the reader view are all active."
 msgstr "Recherche, dossiers, étiquettes, notes et vue lecteur sont actifs."
 
 #: app/templates/demo/index.html:29
-#, python-format
 msgid ""
-"Links are added from a catalogue of %(num)d prepared page: the demo never"
-" fetches anything from the internet."
-msgid_plural ""
-"Links are added from a catalogue of %(num)d prepared pages: the demo "
-"never fetches anything from the internet."
-msgstr[0] ""
-"Les liens s’ajoutent depuis un catalogue de %(num)d page préparée : la "
-"démonstration ne va chercher aucune adresse sur Internet."
-msgstr[1] ""
-"Les liens s’ajoutent depuis un catalogue de %(num)d pages préparées : la "
-"démonstration ne va chercher aucune adresse sur Internet."
+"Add your own links, or pick from a catalogue of prepared pages to get "
+"started."
+msgstr ""
+"Ajoute tes propres liens, ou pioche dans un catalogue de pages préparées "
+"pour démarrer."
 
 #: app/templates/demo/index.html:30
+#, python-format
 msgid ""
 "Nothing is published or shared, and the space is deleted automatically "
-"after a few hours."
-msgstr ""
-"Rien n’est publié ni partagé, et l’espace est supprimé automatiquement "
-"après quelques heures."
+"after %(num)d hour."
+msgid_plural ""
+"Nothing is published or shared, and the space is deleted automatically "
+"after %(num)d hours."
+msgstr[0] ""
+"Rien n’est publié ni partagé, et l’espace est supprimé automatiquement au"
+" bout de %(num)d heure."
+msgstr[1] ""
+"Rien n’est publié ni partagé, et l’espace est supprimé automatiquement au"
+" bout de %(num)d heures."
 
 #: app/templates/demo/index.html:36
 msgid "Enter the demo"
@@ -410,7 +410,7 @@ msgstr "Dossier parent"
 msgid "- None (top level) -"
 msgstr "- Aucun (dossier racine) -"
 
-#: app/templates/folders/form.html:58 app/templates/links/form.html:112
+#: app/templates/folders/form.html:58 app/templates/links/form.html:118
 #: app/templates/settings/freshrss.html:46 app/templates/settings/index.html:38
 #: app/templates/settings/index.html:135
 msgid "Save"
@@ -535,7 +535,7 @@ msgstr "Échec archivage, réessayer"
 msgid "Read (reader view)"
 msgstr "Lire (vue lecteur)"
 
-#: app/templates/links/_results.html:114 app/templates/links/form.html:129
+#: app/templates/links/_results.html:114 app/templates/links/form.html:135
 #: app/templates/settings/check_links.html:75
 msgid "Delete this link?"
 msgstr "Supprimer ce lien ?"
@@ -573,71 +573,79 @@ msgstr "Ajouter un lien"
 msgid "This link is already in your collection, you can edit it below."
 msgstr "Ce lien existe déjà dans ta collection, tu peux le modifier ci-dessous."
 
-#: app/templates/links/form.html:29
+#: app/templates/links/form.html:18
+msgid "Out of ideas?"
+msgstr "À court d’idées ?"
+
+#: app/templates/links/form.html:18
+msgid "Pick from the demo catalogue"
+msgstr "Pioche dans le catalogue de démonstration"
+
+#: app/templates/links/form.html:35
 msgid "Metadata"
 msgstr "Métadonnées"
 
-#: app/templates/links/form.html:36 app/templates/settings/index.html:22
+#: app/templates/links/form.html:42 app/templates/settings/index.html:22
 msgid "Title"
 msgstr "Titre"
 
-#: app/templates/links/form.html:39
+#: app/templates/links/form.html:45
 msgid "Link title"
 msgstr "Titre du lien"
 
-#: app/templates/links/form.html:44
+#: app/templates/links/form.html:50
 msgid "Description"
 msgstr "Description"
 
-#: app/templates/links/form.html:46
+#: app/templates/links/form.html:52
 msgid "Short description…"
 msgstr "Description courte…"
 
-#: app/templates/links/form.html:50
+#: app/templates/links/form.html:56
 msgid "Note (Markdown)"
 msgstr "Note (Markdown)"
 
-#: app/templates/links/form.html:52
+#: app/templates/links/form.html:58
 msgid "Personal note… supports Markdown"
 msgstr "Note personnelle… supporte le Markdown"
 
-#: app/templates/links/form.html:53
+#: app/templates/links/form.html:59
 msgid "Supports Markdown: **bold**, *italic*, `code`, [link](url)…"
 msgstr "Supporte le Markdown : **gras**, *italique*, `code`, [lien](url)…"
 
-#: app/templates/links/form.html:61
+#: app/templates/links/form.html:67
 msgid "python, web, tools (comma separated)"
 msgstr "python, web, outils (séparés par des virgules)"
 
-#: app/templates/links/form.html:62
+#: app/templates/links/form.html:68
 msgid "Comma separated. New tags are created automatically."
 msgstr "Séparés par des virgules. Les nouveaux tags sont créés automatiquement."
 
-#: app/templates/links/form.html:68 app/templates/links/list.html:4
+#: app/templates/links/form.html:74 app/templates/links/list.html:4
 msgid "Folder"
 msgstr "Dossier"
 
-#: app/templates/links/form.html:84 app/templates/links/form.html:147
+#: app/templates/links/form.html:90 app/templates/links/form.html:153
 msgid "- No folder -"
 msgstr "- Aucun dossier -"
 
-#: app/templates/links/form.html:105
+#: app/templates/links/form.html:111
 msgid "Public link, shown on your public page"
 msgstr "Lien public, visible sur votre page publique"
 
-#: app/templates/links/form.html:117 app/templates/links/form.html:120
+#: app/templates/links/form.html:123 app/templates/links/form.html:126
 msgid "Re-archive"
 msgstr "Ré-archiver"
 
-#: app/templates/links/form.html:117
+#: app/templates/links/form.html:123
 msgid "Archive on the Wayback Machine"
 msgstr "Archiver sur Wayback Machine"
 
-#: app/templates/links/form.html:120 app/templates/links/form.html:125
+#: app/templates/links/form.html:126 app/templates/links/form.html:131
 msgid "Archive"
 msgstr "Archive"
 
-#: app/templates/links/form.html:134
+#: app/templates/links/form.html:140
 msgid "Unstar in FreshRSS"
 msgstr "Déséttoiler dans FreshRSS"
 
@@ -1103,4 +1111,37 @@ msgstr "Aucun tag pour l’instant."
 #~ "Fais glisser le bouton ci-dessus "
 #~ "dans la barre de favoris de ton"
 #~ " navigateur."
+
+#~ msgid ""
+#~ "In this demo, links are added from"
+#~ " the list below rather than by "
+#~ "typing an address: the server never "
+#~ "fetches a page from the internet."
+#~ msgstr ""
+#~ "Dans cette démonstration, les liens "
+#~ "s’ajoutent depuis la liste ci-dessous"
+#~ " plutôt qu’en saisissant une adresse "
+#~ ": le serveur ne va chercher aucune"
+#~ " page sur Internet."
+
+#~ msgid ""
+#~ "Links are added from a catalogue "
+#~ "of %(num)d prepared page: the demo "
+#~ "never fetches anything from the "
+#~ "internet."
+#~ msgid_plural ""
+#~ "Links are added from a catalogue "
+#~ "of %(num)d prepared pages: the demo "
+#~ "never fetches anything from the "
+#~ "internet."
+#~ msgstr[0] ""
+#~ "Les liens s’ajoutent depuis un catalogue"
+#~ " de %(num)d page préparée : la "
+#~ "démonstration ne va chercher aucune "
+#~ "adresse sur Internet."
+#~ msgstr[1] ""
+#~ "Les liens s’ajoutent depuis un catalogue"
+#~ " de %(num)d pages préparées : la "
+#~ "démonstration ne va chercher aucune "
+#~ "adresse sur Internet."
 

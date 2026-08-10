@@ -13,8 +13,8 @@ from sqlmodel import Session, select
 
 from ...auth import get_current_user
 from ...database import get_session
-from ...demo import (CATALOG_BY_URL, demo_active, forbid_in_demo, is_demo_user,
-                     is_demo_user_id)
+from ...demo import (assert_link_quota, demo_active, demo_rate_limit,
+                     is_demo_user, is_demo_user_id)
 from ...models import Folder, Link, LinkTagLink, Tag, User
 from ...ratelimit import rate_limit
 from ...templates_cfg import templates
@@ -216,9 +216,9 @@ def create_link(
     if existing:
         return existing, False
 
-    # En démo, aucune requête ne doit sortir vers une adresse choisie par un
-    # visiteur, et rien ne doit devenir public : le lien est stocké tel quel,
-    # sans enrichissement ni archivage. Voir app/demo.py pour le contrat complet.
+    # En démo, le lien est enrichi comme en production (la garde SSRF de
+    # net_guard couvre l'URL du visiteur), mais rien ne devient public et rien
+    # n'est poussé chez Wayback. Voir app/demo.py pour le contrat complet.
     demo = demo_active() and is_demo_user_id(session, user_id)
 
     link = Link(
@@ -244,26 +244,13 @@ def create_link(
     refresh_link_fts(session, link, link_tags)
     session.commit()
 
+    background_tasks.add_task(_fetch_and_update_meta, link.id, url)
     if not demo:
-        background_tasks.add_task(_fetch_and_update_meta, link.id, url)
         background_tasks.add_task(_wayback_archive, link.id)
     return link, True
 
 
-def _assert_url_allowed_in_demo(user: User, url: str) -> None:
-    """En démo, seules les URL du catalogue peuvent être enregistrées.
-
-    Cette restriction est ce qui garantit qu'aucune adresse fournie par un
-    inconnu ne soit stockée ni récupérée par le serveur.
-    """
-    if demo_active() and is_demo_user(user) and url not in CATALOG_BY_URL:
-        raise HTTPException(
-            status_code=400,
-            detail="In the demo, only links from the catalogue can be added.",
-        )
-
-
-@router.post("/links/add")
+@router.post("/links/add", dependencies=[Depends(demo_rate_limit(40, 3600))])
 async def add_link(
     request: Request,
     background_tasks: BackgroundTasks,
@@ -279,7 +266,7 @@ async def add_link(
 ):
     if not _safe_url(url):
         raise HTTPException(status_code=400, detail="Invalid URL")
-    _assert_url_allowed_in_demo(user, url)
+    assert_link_quota(session, user.id)
 
     tag_names = [t.strip() for t in tags.split(",") if t.strip()]
     link, created = create_link(
@@ -349,7 +336,6 @@ async def edit_link(
 
     if not _safe_url(url):
         raise HTTPException(status_code=400, detail="Invalid URL")
-    _assert_url_allowed_in_demo(user, url)
 
     demo = demo_active() and is_demo_user(user)
     old_folder_id = link.folder_id
@@ -382,7 +368,7 @@ async def edit_link(
 
     _maybe_unstar_on_leave(session, user.id, fr_item_id, old_folder_id, new_folder_id)
 
-    if url_changed and not demo:
+    if url_changed:
         background_tasks.add_task(_fetch_and_update_meta, link.id, url)
 
     return RedirectResponse(url="/", status_code=303)
@@ -555,9 +541,6 @@ async def bulk_tag_links(
 async def api_fetch_meta(
     url: str, user: User = Depends(get_current_user), session: Session = Depends(get_session)
 ):
-    # Récupère une URL arbitraire : interdit en démo. Le test précède
-    # session.close(), qui détacherait l'objet User.
-    forbid_in_demo(user)
     # Libère la connexion DB avant l'appel HTTP externe (lent) : sinon une rafale
     # de requêtes sature le pool SQLAlchemy (5+10) et affame les autres routes.
     session.close()

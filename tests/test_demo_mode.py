@@ -6,6 +6,7 @@ empêche un visiteur de faire sortir une requête du serveur, de publier quoi qu
 ce soit, ou de laisser des données derrière lui.
 """
 import os
+import re
 
 os.environ.setdefault("TESTING", "1")
 os.environ.setdefault("SECRET_KEY", "test" * 16)
@@ -55,13 +56,17 @@ def test_aucun_archivage_planifie(session, demo_user):
     assert all(link.archive_status is None for link in links)
 
 
-def test_aucune_url_d_image_a_recuperer(session, demo_user):
-    """Favicon et vignette vides : le proxy d'images n'a rien à aller chercher."""
+def test_les_liens_du_catalogue_n_ont_ni_favicon_ni_vignette(session, demo_user):
+    """Le catalogue est figé dans le code : rien n'y est récupéré en ligne. Les
+    liens ajoutés par le visiteur, eux, passent par le chemin d'enrichissement
+    normal."""
     links = session.exec(select(Link).where(Link.user_id == demo_user.id)).all()
     assert all(link.favicon_url == "" and link.thumbnail_url == "" for link in links)
 
 
-def test_ajout_hors_catalogue_refuse(session, demo_user):
+def test_le_chemin_catalogue_refuse_une_url_exterieure(session, demo_user):
+    """`add_catalog_link` sert la page catalogue, dont le contenu est figé : une
+    URL libre passe par /links/add, pas par ici."""
     with pytest.raises(HTTPException) as exc:
         demo.add_catalog_link(session, demo_user, "https://exemple.invalid/page")
     assert exc.value.status_code == 400
@@ -164,16 +169,13 @@ def test_purge_epargne_les_comptes_reels(session, demo_mode):
     assert session.get(User, reel.id) is not None
 
 
-def test_cookie_d_un_espace_purge_ne_boucle_pas(engine, demo_mode):
-    """Après la purge, le cookie du visiteur désigne un compte disparu.
+@pytest.fixture
+def visiteur(engine, demo_mode):
+    """Client HTTP ayant ouvert un espace de démo, comme un visiteur réel.
 
-    Si la session n'est pas vidée, `/` échoue à authentifier et redirige vers
-    `/demo`, qui voit un `user_id` en session et renvoie sur `/` : le navigateur
-    boucle jusqu'à ERR_TOO_MANY_REDIRECTS et la démo est inaccessible sans
-    suppression manuelle des cookies.
+    Le cookie de session porte le flag Secure : sans base_url en https, httpx ne
+    le renverrait pas et chaque requête repartirait déconnectée.
     """
-    import re
-
     from fastapi.testclient import TestClient
 
     from app.database import get_session
@@ -184,24 +186,148 @@ def test_cookie_d_un_espace_purge_ne_boucle_pas(engine, demo_mode):
             yield s
 
     app.dependency_overrides[get_session] = _get_session
-    try:
-        # https:// obligatoire : le cookie de session porte le flag Secure, et
-        # httpx ne le renverrait pas sur une base_url en http.
-        client = TestClient(app, base_url="https://testserver")
-        page = client.get("/demo")
-        assert page.status_code == 200
-        jeton = re.search(r'name="csrf_token" value="([^"]+)"', page.text).group(1)
-        assert client.post("/demo/start", data={"csrf_token": jeton}).status_code == 200
+    client = TestClient(app, base_url="https://testserver")
+    page = client.get("/demo")
+    assert page.status_code == 200
+    client.csrf = re.search(r'name="csrf_token" value="([^"]+)"', page.text).group(1)
+    assert client.post("/demo/start", data={"csrf_token": client.csrf}).status_code == 200
+    yield client
+    app.dependency_overrides.clear()
 
-        with Session(engine) as s:
-            assert demo.purge_expired_demo_users(s, ttl_hours=0) == 1
 
-        # httpx lèverait TooManyRedirects si la boucle était de retour.
-        apres = client.get("/")
-        assert apres.status_code == 200
-        assert apres.url.path == "/demo"
-    finally:
-        app.dependency_overrides.clear()
+@pytest.fixture
+def sorties_reseau(monkeypatch):
+    """Neutralise les tâches de fond sortantes et note ce qui a été planifié.
+
+    Sans ce filet, un test d'ajout de lien déclencherait une vraie requête vers
+    l'URL saisie, puisque TestClient exécute les background tasks.
+    """
+    planifiees: dict[str, list] = {"meta": [], "wayback": []}
+
+    async def _meta(link_id, url, *a, **kw):
+        planifiees["meta"].append(url)
+
+    async def _wayback(link_id, *a, **kw):
+        planifiees["wayback"].append(link_id)
+
+    monkeypatch.setattr("app.routes.links.crud._fetch_and_update_meta", _meta)
+    monkeypatch.setattr("app.routes.links.crud._wayback_archive", _wayback)
+    return planifiees
+
+
+def test_cookie_d_un_espace_purge_ne_boucle_pas(engine, visiteur):
+    """Après la purge, le cookie du visiteur désigne un compte disparu.
+
+    Si la session n'est pas vidée, `/` échoue à authentifier et redirige vers
+    `/demo`, qui voit un `user_id` en session et renvoie sur `/` : le navigateur
+    boucle jusqu'à ERR_TOO_MANY_REDIRECTS et la démo est inaccessible sans
+    suppression manuelle des cookies.
+    """
+    with Session(engine) as s:
+        assert demo.purge_expired_demo_users(s, ttl_hours=0) == 1
+
+    # httpx lèverait TooManyRedirects si la boucle était de retour.
+    apres = visiteur.get("/")
+    assert apres.status_code == 200
+    assert apres.url.path == "/demo"
+
+
+def test_le_visiteur_ajoute_son_propre_lien_et_les_metadonnees_sont_recuperees(
+    engine, visiteur, sorties_reseau
+):
+    """Raison d'être de la démo : montrer l'application telle qu'elle est.
+
+    L'URL vient d'un inconnu, mais elle est récupérée derrière la garde SSRF de
+    net_guard, comme en production.
+    """
+    reponse = visiteur.post("/links/add", data={
+        "csrf_token": visiteur.csrf,
+        "url": "https://exemple.test/article",
+        "title": "",
+        "tags": "",
+    })
+    assert reponse.status_code == 200
+
+    with Session(engine) as s:
+        cree = s.exec(select(Link).where(Link.url == "https://exemple.test/article")).first()
+    assert cree is not None
+    assert sorties_reseau["meta"] == ["https://exemple.test/article"]
+
+
+def test_aucun_lien_de_visiteur_n_est_pousse_vers_wayback(engine, visiteur, sorties_reseau):
+    """L'archivage soumet l'URL à un tiers public au nom de l'application."""
+    visiteur.post("/links/add", data={
+        "csrf_token": visiteur.csrf,
+        "url": "https://exemple.test/archive-moi",
+        "title": "",
+        "tags": "",
+    })
+    assert sorties_reseau["wayback"] == []
+
+    with Session(engine) as s:
+        link = s.exec(select(Link).where(Link.url == "https://exemple.test/archive-moi")).first()
+        link_id = link.id
+        assert link.archive_status is None
+
+    # Et le déclenchement manuel depuis la fiche du lien est fermé.
+    manuel = visiteur.post(f"/links/{link_id}/archive", data={"csrf_token": visiteur.csrf},
+                           follow_redirects=False)
+    assert manuel.status_code == 403
+    assert sorties_reseau["wayback"] == []
+
+
+def test_un_lien_de_visiteur_ne_devient_jamais_public(engine, visiteur, sorties_reseau):
+    visiteur.post("/links/add", data={
+        "csrf_token": visiteur.csrf,
+        "url": "https://exemple.test/prive",
+        "title": "",
+        "tags": "",
+        "is_public": "1",
+    })
+    with Session(engine) as s:
+        link = s.exec(select(Link).where(Link.url == "https://exemple.test/prive")).first()
+    assert link.is_public is False
+
+
+def test_le_formulaire_d_ajout_est_atteignable_et_renvoie_au_catalogue(visiteur):
+    """Le bouton « Ajouter » de la barre du haut mène ici dans les deux modes :
+    en démo il ouvrait le catalogue, et la fonctionnalité principale de
+    l'application restait invisible pour le testeur."""
+    page = visiteur.get("/links/add")
+    assert page.status_code == 200
+    assert 'name="url"' in page.text
+    assert "/demo/catalogue" in page.text
+    # Piège connu : un bloc masqué qui emporte une balise fermante casse la page
+    # sans qu'aucune assertion fonctionnelle ne le voie.
+    assert page.text.count("<div") == page.text.count("</div")
+
+
+def test_quota_de_liens_par_espace(session, demo_user):
+    """Sans plafond, un script remplit la base entre deux passages de la purge."""
+    demo.assert_link_quota(session, demo_user.id)  # ne lève pas
+
+    monkey_links = [
+        Link(user_id=demo_user.id, url=f"https://exemple.test/{i}", title=str(i))
+        for i in range(demo.DEMO_MAX_LINKS)
+    ]
+    for link in monkey_links:
+        session.add(link)
+    session.commit()
+
+    with pytest.raises(HTTPException) as exc:
+        demo.assert_link_quota(session, demo_user.id)
+    assert exc.value.status_code == 400
+
+
+def test_quota_epargne_un_compte_reel(session, demo_mode):
+    reel = User(oidc_sub="pocketid|44", email="g@h.i", name="Réel")
+    session.add(reel)
+    session.commit()
+    for i in range(demo.DEMO_MAX_LINKS + 1):
+        session.add(Link(user_id=reel.id, url=f"https://exemple.test/reel-{i}", title=str(i)))
+    session.commit()
+
+    demo.assert_link_quota(session, reel.id)  # ne lève pas
 
 
 def test_toutes_les_entrees_ont_un_contenu_lecteur():

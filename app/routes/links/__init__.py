@@ -9,7 +9,7 @@ from fastapi import APIRouter
 from .archive import _archive_many, _wayback_archive
 from .archive import router as _archive_router
 from .constants import MAX_DESC_LEN, MAX_TAGS_PER_LINK
-from .crud import _assert_url_allowed_in_demo, _fts_escape, create_link
+from .crud import _fts_escape, create_link
 from .crud import router as _crud_router
 from .enrichment import _fetch_and_update_meta, _fetch_meta
 from .net_guard import (_assert_public_url, _safe_stream, _safe_url, _UnsafeRedirect,

@@ -13,6 +13,12 @@
     {% if link %}{{ _("Edit link") }}{% else %}{{ _("Add link") }}{% endif %}
   </h2>
 
+  {% if demo_mode() and not link %}
+  <p style="margin:-0.75rem 0 1.25rem; font-size:0.875rem; opacity:0.75;">
+    {{ _("Out of ideas?") }} <a href="/demo/catalogue">{{ _("Pick from the demo catalogue") }}</a>
+  </p>
+  {% endif %}
+
   <form method="post"
         action="{% if link %}/links/{{ link.id }}/edit{% else %}/links/add{% endif %}"
         x-data="linkForm()" @submit.prevent="submitForm">

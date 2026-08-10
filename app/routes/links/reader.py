@@ -12,7 +12,6 @@ from sqlmodel import Session
 
 from ...auth import get_current_user
 from ...database import get_session
-from ...demo import demo_active, is_demo_user
 from ...models import Link, User
 from ...ratelimit import rate_limit
 from ...templates_cfg import templates
@@ -82,14 +81,10 @@ async def read_link(
     if not link or link.user_id != user.id:
         raise HTTPException(status_code=404)
 
-    # En démo, la vue lecteur ne montre que le contenu préparé dans le catalogue :
-    # extraire à la demande ferait sortir une requête vers une URL de visiteur.
-    # Sans contenu préparé, la page s'affiche avec le message d'échec habituel.
-    demo_reader = demo_active() and is_demo_user(user)
-    if demo_reader and not link.reader_html:
-        link.reader_failed = True
-
-    if not demo_reader and (refresh or not link.reader_html):
+    # Les liens du catalogue de démo portent déjà un contenu lecteur préparé :
+    # l'extraction ne se déclenche donc que pour les liens ajoutés par le
+    # visiteur, derrière la même garde SSRF qu'en production.
+    if refresh or not link.reader_html:
         data = await _extract_reader(link.url)
         if data and data["html"]:
             link.reader_title = (data["title"] or link.title or "")[:500]

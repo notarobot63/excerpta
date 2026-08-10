@@ -1,14 +1,22 @@
-"""Mode démo : espaces jetables, isolés, alimentés par un catalogue fermé.
+"""Mode démo : espaces jetables et isolés, avec un catalogue pour amorcer.
 
 Contrat de sécurité de ce module, à ne pas assouplir sans y repenser :
 
-1. Le serveur ne récupère JAMAIS une URL choisie par un visiteur. L'ajout de lien
-   est restreint aux entrées de `CATALOG`, dont le titre, la description et le
-   contenu lecteur sont figés ici. Aucune requête sortante n'est donc déclenchée
-   par un inconnu (ni métadonnées, ni vue lecteur, ni archivage Wayback).
-2. Rien de ce qu'un visiteur saisit n'est visible par un autre. Chaque visiteur
+1. Le visiteur ajoute les URL de son choix, et le serveur les récupère comme il
+   le fait en production : uniquement derrière la garde SSRF de
+   `app/routes/links/net_guard.py` (adresses privées refusées, chaque saut de
+   redirection revalidé, corps borné). Sont récupérés les métadonnées, le contenu
+   de la vue lecteur et les vignettes. `CATALOG` reste le point de départ de
+   l'espace et fournit un contenu lecteur préparé, mais n'est plus une limite.
+2. Une sortie réseau reste interdite quand elle amplifie (une action du visiteur
+   déclenchant N requêtes : import, vérification des liens, rafraîchissement en
+   masse) ou quand elle publie chez un tiers au nom de l'application (archivage
+   Wayback). Voir `forbid_in_demo`.
+3. Ce que le visiteur dépose est plafonné : `DEMO_MAX_LINKS` liens par espace, et
+   un débit d'ajout limité par IP côté routes.
+4. Rien de ce qu'un visiteur saisit n'est visible par un autre. Chaque visiteur
    reçoit son propre `User`, et la publication publique est refusée en démo.
-3. Tout est temporaire : les espaces sont purgés après `settings.demo_ttl_hours`.
+5. Tout est temporaire : les espaces sont purgés après `settings.demo_ttl_hours`.
 
 Un utilisateur de démo se reconnaît à son `oidc_sub` préfixé par `demo:`. Ce
 marqueur évite d'ajouter une colonne au schéma : `oidc_sub` est déjà unique et
@@ -23,15 +31,22 @@ import uuid
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 
-from fastapi import Depends, HTTPException
+from fastapi import Depends, HTTPException, Request
+from sqlalchemy import func
 from sqlmodel import Session, select
 
 from .auth import get_current_user
 from .config import settings
 from .models import Folder, Link, LinkTagLink, Tag, User
+from .ratelimit import rate_limit
 from .utils import refresh_link_fts
 
 DEMO_SUB_PREFIX = "demo:"
+
+# Plafond de liens par espace de démo. Le visiteur ajoute désormais ses propres
+# URL : sans plafond, un script remplirait la base et ferait sortir autant de
+# requêtes de récupération, entre deux passages de la purge.
+DEMO_MAX_LINKS = 100
 
 # Dossiers créés dans chaque espace de démo, dans cet ordre.
 DEMO_FOLDERS = ["Veille technique", "À lire plus tard", "Références"]
@@ -270,6 +285,24 @@ def demo_active() -> bool:
     return settings.demo_mode
 
 
+def assert_link_quota(session: Session, user_id: int) -> None:
+    """Refuse un ajout au-delà de `DEMO_MAX_LINKS` liens dans un espace de démo.
+
+    Transparent hors démo et pour un compte réel : c'est le pendant, côté
+    stockage, du débit d'ajout limité par IP sur les routes.
+    """
+    if not demo_active() or not is_demo_user_id(session, user_id):
+        return
+    total = session.exec(
+        select(func.count()).select_from(Link).where(Link.user_id == user_id)
+    ).one()
+    if total >= DEMO_MAX_LINKS:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Demo space limited to {DEMO_MAX_LINKS} links.",
+        )
+
+
 def create_demo_space(session: Session) -> User:
     """Crée un espace de démo isolé : un utilisateur jetable et son jeu de données."""
     user = User(
@@ -403,8 +436,11 @@ def forbid_in_demo(user: User) -> None:
     """Refuse une fonctionnalité indisponible en démo (403).
 
     Utilisé pour tout ce qui expose des données au-delà de l'espace du visiteur
-    ou déclenche une requête sortante : publication publique, synchronisation
-    FreshRSS, administration, vérification et archivage en masse.
+    (publication publique, administration, synchronisation FreshRSS), pour les
+    sorties réseau amplifiantes (import, vérification des liens, rafraîchissement
+    en masse) et pour l'archivage Wayback, qui publierait chez un tiers l'adresse
+    fournie par un inconnu au nom de l'application. La récupération d'une URL
+    pour un seul lien, elle, est autorisée : voir le contrat en tête de module.
     """
     if demo_active() and is_demo_user(user):
         raise HTTPException(
@@ -416,3 +452,19 @@ def forbid_in_demo(user: User) -> None:
 async def forbid_in_demo_dep(user: User = Depends(get_current_user)) -> None:
     """Version dépendance, posable sur une route ou un routeur entier."""
     forbid_in_demo(user)
+
+
+def demo_rate_limit(calls: int, period_seconds: int):
+    """Débit par IP appliqué uniquement en mode démo, transparent ailleurs.
+
+    Chaque ajout de lien déclenche une requête sortante : sur une instance
+    ouverte à des inconnus, le débit se limite ici plutôt que dans les quotas
+    d'une instance normale, où l'utilisateur est authentifié et connu.
+    """
+    limiter = rate_limit(calls, period_seconds)
+
+    async def dependency(request: Request) -> None:
+        if demo_active():
+            await limiter(request)
+
+    return dependency
