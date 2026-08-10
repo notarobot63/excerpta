@@ -1,14 +1,14 @@
-# Translations template for PROJECT.
+# Translations template for Excerpta.
 # Copyright (C) 2026 ORGANIZATION
-# This file is distributed under the same license as the PROJECT project.
+# This file is distributed under the same license as the Excerpta project.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
 #
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: PROJECT VERSION\n"
+"Project-Id-Version: Excerpta VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-08-02 10:05+0200\n"
+"POT-Creation-Date: 2026-08-10 17:51+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -34,105 +34,110 @@ msgstr ""
 msgid "Manage folders"
 msgstr ""
 
-#: app/templates/base.html:51 app/templates/settings/index.html:3
+#: app/templates/base.html:54 app/templates/demo/catalogue.html:3
+#: app/templates/demo/catalogue.html:7
+msgid "Demo catalogue"
+msgstr ""
+
+#: app/templates/base.html:59 app/templates/settings/index.html:3
 #: app/templates/settings/index.html:7
 msgid "Settings"
 msgstr ""
 
-#: app/templates/base.html:57 app/templates/settings/index.html:19
+#: app/templates/base.html:65 app/templates/settings/index.html:19
 msgid "Public page"
 msgstr ""
 
 #: app/templates/admin/dashboard.html:2 app/templates/admin/dashboard.html:5
 #: app/templates/admin/user_detail.html:2 app/templates/admin/users.html:2
-#: app/templates/base.html:63
+#: app/templates/base.html:71
 msgid "Administration"
 msgstr ""
 
 #: app/templates/admin/dashboard.html:12
-#: app/templates/admin/user_detail.html:23 app/templates/base.html:69
+#: app/templates/admin/user_detail.html:23 app/templates/base.html:77
 #: app/templates/folders/list.html:3 app/templates/folders/list.html:7
 #: app/templates/settings/index.html:127
 msgid "Folders"
 msgstr ""
 
-#: app/templates/base.html:72
+#: app/templates/base.html:80
 msgid "Sort A→Z"
 msgstr ""
 
-#: app/templates/base.html:78 app/templates/folders/form.html:3
+#: app/templates/base.html:86 app/templates/folders/form.html:3
 #: app/templates/folders/form.html:8 app/templates/folders/list.html:8
 msgid "New folder"
 msgstr ""
 
-#: app/templates/base.html:94
+#: app/templates/base.html:102
 msgid "Reorder"
 msgstr ""
 
-#: app/templates/base.html:107 app/templates/base.html:145
+#: app/templates/base.html:115 app/templates/base.html:153
 msgid "Rename"
 msgstr ""
 
-#: app/templates/base.html:110 app/templates/base.html:149
+#: app/templates/base.html:118 app/templates/base.html:157
 msgid "Confirm"
 msgstr ""
 
-#: app/templates/base.html:111 app/templates/base.html:150
+#: app/templates/base.html:119 app/templates/base.html:158
 #: app/templates/folders/form.html:60 app/templates/links/_results.html:30
-#: app/templates/links/form.html:114 app/templates/settings/import.html:30
+#: app/templates/links/form.html:120 app/templates/settings/import.html:30
 msgid "Cancel"
 msgstr ""
 
-#: app/templates/base.html:118 app/templates/folders/list.html:62
+#: app/templates/base.html:126 app/templates/folders/list.html:62
 msgid "Create a folder"
 msgstr ""
 
 #: app/templates/admin/dashboard.html:11
 #: app/templates/admin/user_detail.html:22 app/templates/admin/users.html:17
-#: app/templates/base.html:124 app/templates/links/form.html:58
+#: app/templates/base.html:132 app/templates/links/form.html:64
 #: app/templates/settings/index.html:117 app/templates/tags/list.html:3
 #: app/templates/tags/list.html:6
 msgid "Tags"
 msgstr ""
 
-#: app/templates/admin/user_detail.html:90 app/templates/base.html:146
+#: app/templates/admin/user_detail.html:90 app/templates/base.html:154
 #: app/templates/folders/form.html:65 app/templates/folders/list.html:37
 #: app/templates/links/_results.html:29 app/templates/links/_results.html:118
-#: app/templates/links/form.html:137 app/templates/settings/check_links.html:78
+#: app/templates/links/form.html:143 app/templates/settings/check_links.html:78
 #: app/templates/tags/list.html:30
 msgid "Delete"
 msgstr ""
 
-#: app/templates/base.html:159 app/templates/settings/index.html:15
+#: app/templates/base.html:167 app/templates/settings/index.html:15
 msgid "Sign out"
 msgstr ""
 
-#: app/templates/base.html:170
+#: app/templates/base.html:178
 msgid "Menu"
 msgstr ""
 
-#: app/templates/base.html:180 app/templates/public/index.html:27
+#: app/templates/base.html:188 app/templates/public/index.html:27
 msgid "Search…"
 msgstr ""
 
-#: app/templates/base.html:182
+#: app/templates/base.html:190
 msgid "Clear the search"
 msgstr ""
 
-#: app/templates/base.html:186
+#: app/templates/base.html:194
 msgid "Grid view"
 msgstr ""
 
-#: app/templates/base.html:190
+#: app/templates/base.html:198
 msgid "Toggle light/dark"
 msgstr ""
 
-#: app/templates/base.html:200 app/templates/demo/catalogue.html:31
-#: app/templates/links/form.html:112
+#: app/templates/base.html:206 app/templates/demo/catalogue.html:31
+#: app/templates/links/form.html:118
 msgid "Add"
 msgstr ""
 
-#: app/templates/base.html:299
+#: app/templates/base.html:305
 #, python-brace-format
 msgid "Delete the tag #{tag}?"
 msgstr ""
@@ -313,14 +318,10 @@ msgstr ""
 msgid "Sign in with PocketID"
 msgstr ""
 
-#: app/templates/demo/catalogue.html:3 app/templates/demo/catalogue.html:7
-msgid "Demo catalogue"
-msgstr ""
-
 #: app/templates/demo/catalogue.html:10
 msgid ""
-"In this demo, links are added from the list below rather than by typing "
-"an address: the server never fetches a page from the internet."
+"Pages prepared for the demo, ready to add in one click. You can also add "
+"any link of your own with the Add button."
 msgstr ""
 
 #: app/templates/demo/catalogue.html:11
@@ -349,21 +350,21 @@ msgid "Search, folders, tags, notes and the reader view are all active."
 msgstr ""
 
 #: app/templates/demo/index.html:29
-#, python-format
 msgid ""
-"Links are added from a catalogue of %(num)d prepared page: the demo never"
-" fetches anything from the internet."
-msgid_plural ""
-"Links are added from a catalogue of %(num)d prepared pages: the demo "
-"never fetches anything from the internet."
-msgstr[0] ""
-msgstr[1] ""
+"Add your own links, or pick from a catalogue of prepared pages to get "
+"started."
+msgstr ""
 
 #: app/templates/demo/index.html:30
+#, python-format
 msgid ""
 "Nothing is published or shared, and the space is deleted automatically "
-"after a few hours."
-msgstr ""
+"after %(num)d hour."
+msgid_plural ""
+"Nothing is published or shared, and the space is deleted automatically "
+"after %(num)d hours."
+msgstr[0] ""
+msgstr[1] ""
 
 #: app/templates/demo/index.html:36
 msgid "Enter the demo"
@@ -397,7 +398,7 @@ msgstr ""
 msgid "- None (top level) -"
 msgstr ""
 
-#: app/templates/folders/form.html:58 app/templates/links/form.html:112
+#: app/templates/folders/form.html:58 app/templates/links/form.html:118
 #: app/templates/settings/freshrss.html:46 app/templates/settings/index.html:38
 #: app/templates/settings/index.html:135
 msgid "Save"
@@ -522,7 +523,7 @@ msgstr ""
 msgid "Read (reader view)"
 msgstr ""
 
-#: app/templates/links/_results.html:114 app/templates/links/form.html:129
+#: app/templates/links/_results.html:114 app/templates/links/form.html:135
 #: app/templates/settings/check_links.html:75
 msgid "Delete this link?"
 msgstr ""
@@ -560,71 +561,79 @@ msgstr ""
 msgid "This link is already in your collection, you can edit it below."
 msgstr ""
 
-#: app/templates/links/form.html:29
+#: app/templates/links/form.html:18
+msgid "Out of ideas?"
+msgstr ""
+
+#: app/templates/links/form.html:18
+msgid "Pick from the demo catalogue"
+msgstr ""
+
+#: app/templates/links/form.html:35
 msgid "Metadata"
 msgstr ""
 
-#: app/templates/links/form.html:36 app/templates/settings/index.html:22
+#: app/templates/links/form.html:42 app/templates/settings/index.html:22
 msgid "Title"
 msgstr ""
 
-#: app/templates/links/form.html:39
+#: app/templates/links/form.html:45
 msgid "Link title"
 msgstr ""
 
-#: app/templates/links/form.html:44
+#: app/templates/links/form.html:50
 msgid "Description"
 msgstr ""
 
-#: app/templates/links/form.html:46
+#: app/templates/links/form.html:52
 msgid "Short description…"
 msgstr ""
 
-#: app/templates/links/form.html:50
+#: app/templates/links/form.html:56
 msgid "Note (Markdown)"
 msgstr ""
 
-#: app/templates/links/form.html:52
+#: app/templates/links/form.html:58
 msgid "Personal note… supports Markdown"
 msgstr ""
 
-#: app/templates/links/form.html:53
+#: app/templates/links/form.html:59
 msgid "Supports Markdown: **bold**, *italic*, `code`, [link](url)…"
 msgstr ""
 
-#: app/templates/links/form.html:61
+#: app/templates/links/form.html:67
 msgid "python, web, tools (comma separated)"
 msgstr ""
 
-#: app/templates/links/form.html:62
+#: app/templates/links/form.html:68
 msgid "Comma separated. New tags are created automatically."
 msgstr ""
 
-#: app/templates/links/form.html:68 app/templates/links/list.html:4
+#: app/templates/links/form.html:74 app/templates/links/list.html:4
 msgid "Folder"
 msgstr ""
 
-#: app/templates/links/form.html:84 app/templates/links/form.html:147
+#: app/templates/links/form.html:90 app/templates/links/form.html:153
 msgid "- No folder -"
 msgstr ""
 
-#: app/templates/links/form.html:105
+#: app/templates/links/form.html:111
 msgid "Public link, shown on your public page"
 msgstr ""
 
-#: app/templates/links/form.html:117 app/templates/links/form.html:120
+#: app/templates/links/form.html:123 app/templates/links/form.html:126
 msgid "Re-archive"
 msgstr ""
 
-#: app/templates/links/form.html:117
+#: app/templates/links/form.html:123
 msgid "Archive on the Wayback Machine"
 msgstr ""
 
-#: app/templates/links/form.html:120 app/templates/links/form.html:125
+#: app/templates/links/form.html:126 app/templates/links/form.html:131
 msgid "Archive"
 msgstr ""
 
-#: app/templates/links/form.html:134
+#: app/templates/links/form.html:140
 msgid "Unstar in FreshRSS"
 msgstr ""
 
