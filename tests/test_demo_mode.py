@@ -302,6 +302,31 @@ def test_le_formulaire_d_ajout_est_atteignable_et_renvoie_au_catalogue(visiteur)
     assert page.text.count("<div") == page.text.count("</div")
 
 
+def test_l_instance_de_demo_est_fermee_aux_robots(visiteur):
+    """La démo sert le même contenu que www.excerpta.eu : indexée, elle lui
+    prendrait ses positions."""
+    robots = visiteur.get("/robots.txt")
+    assert robots.status_code == 200
+    assert "Disallow: /" in robots.text
+
+    # L'en-tête couvre aussi ce qu'une balise meta ne peut pas marquer.
+    assert visiteur.get("/").headers["X-Robots-Tag"] == "noindex, nofollow"
+
+
+def test_robots_txt_absent_hors_mode_demo(monkeypatch):
+    """Une instance normale héberge des pages publiques que leur propriétaire
+    veut voir indexées : le fichier ne doit pas apparaître."""
+    from fastapi.testclient import TestClient
+
+    from app.main import app
+
+    monkeypatch.setattr(settings, "demo_mode", False)
+    # Pas de context manager : le lifespan ouvrirait la base réelle de l'hôte.
+    reponse = TestClient(app, base_url="https://testserver").get("/robots.txt")
+    assert reponse.status_code == 404
+    assert "X-Robots-Tag" not in reponse.headers
+
+
 def test_quota_de_liens_par_espace(session, demo_user):
     """Sans plafond, un script remplit la base entre deux passages de la purge."""
     demo.assert_link_quota(session, demo_user.id)  # ne lève pas
