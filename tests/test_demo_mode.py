@@ -12,7 +12,7 @@ os.environ.setdefault("SECRET_KEY", "test" * 16)
 
 import pytest
 from fastapi import HTTPException
-from sqlmodel import select
+from sqlmodel import Session, select
 
 from app import demo
 from app.config import settings
@@ -162,6 +162,46 @@ def test_purge_epargne_les_comptes_reels(session, demo_mode):
     demo.purge_expired_demo_users(session, ttl_hours=0)
 
     assert session.get(User, reel.id) is not None
+
+
+def test_cookie_d_un_espace_purge_ne_boucle_pas(engine, demo_mode):
+    """Après la purge, le cookie du visiteur désigne un compte disparu.
+
+    Si la session n'est pas vidée, `/` échoue à authentifier et redirige vers
+    `/demo`, qui voit un `user_id` en session et renvoie sur `/` : le navigateur
+    boucle jusqu'à ERR_TOO_MANY_REDIRECTS et la démo est inaccessible sans
+    suppression manuelle des cookies.
+    """
+    import re
+
+    from fastapi.testclient import TestClient
+
+    from app.database import get_session
+    from app.main import app
+
+    def _get_session():
+        with Session(engine) as s:
+            yield s
+
+    app.dependency_overrides[get_session] = _get_session
+    try:
+        # https:// obligatoire : le cookie de session porte le flag Secure, et
+        # httpx ne le renverrait pas sur une base_url en http.
+        client = TestClient(app, base_url="https://testserver")
+        page = client.get("/demo")
+        assert page.status_code == 200
+        jeton = re.search(r'name="csrf_token" value="([^"]+)"', page.text).group(1)
+        assert client.post("/demo/start", data={"csrf_token": jeton}).status_code == 200
+
+        with Session(engine) as s:
+            assert demo.purge_expired_demo_users(s, ttl_hours=0) == 1
+
+        # httpx lèverait TooManyRedirects si la boucle était de retour.
+        apres = client.get("/")
+        assert apres.status_code == 200
+        assert apres.url.path == "/demo"
+    finally:
+        app.dependency_overrides.clear()
 
 
 def test_toutes_les_entrees_ont_un_contenu_lecteur():

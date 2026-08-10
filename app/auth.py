@@ -14,7 +14,11 @@ async def get_current_user(request: Request, session: Session = Depends(get_sess
     if not user_id:
         raise NotAuthenticated()
     user = session.get(User, user_id)
+    # Un cookie qui désigne un compte disparu (espace de démo purgé) ou désactivé
+    # doit être vidé : sinon /demo croit le visiteur connecté, le renvoie sur /,
+    # qui échoue de nouveau ici, et le navigateur boucle sur les redirections.
     if not user or not user.is_active:
+        request.session.clear()
         raise NotAuthenticated()
     if request.session.get("session_version") != user.session_version:
         request.session.clear()
