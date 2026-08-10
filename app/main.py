@@ -7,7 +7,7 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 import httpx
-from fastapi import Depends, FastAPI, Request
+from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from starlette.datastructures import Headers
@@ -156,6 +156,11 @@ async def security_headers(request: Request, call_next):
     nonce = secrets.token_urlsafe(16)
     request.state.nonce = nonce
     response: Response = await call_next(request)
+    # L'instance de démo ne doit pas être indexée : elle sert le même contenu que
+    # le site du projet et lui prendrait ses positions. En-tête plutôt que balise
+    # meta, pour couvrir aussi les réponses non-HTML.
+    if settings.demo_mode:
+        response.headers["X-Robots-Tag"] = "noindex, nofollow"
     if request.url.path.startswith("/static/"):
         # Asset versionné (?v=) → immuable 1 an ; sinon cache court (favicons, libs)
         if request.query_params.get("v"):
@@ -214,6 +219,19 @@ app.include_router(admin_router.router, dependencies=_csrf + _no_demo)
 app.include_router(api_router.router)  # JSON API - pas de CSRF, auth par X-API-Key
 app.include_router(freshrss_settings_router, dependencies=_csrf + _no_demo)
 app.include_router(freshrss_api_router)  # JSON API FreshRSS - pas de CSRF
+
+
+@app.get("/robots.txt", include_in_schema=False)
+def robots():
+    """Fermé aux robots sur l'instance de démo, absent partout ailleurs.
+
+    Une instance normale héberge des pages publiques `/u/<slug>` que leur
+    propriétaire veut voir indexées : ne rien servir y laisse le comportement
+    par défaut (tout est autorisé), inchangé.
+    """
+    if not settings.demo_mode:
+        raise HTTPException(status_code=404)
+    return PlainTextResponse("User-agent: *\nDisallow: /\n")
 
 
 @app.get("/health")
