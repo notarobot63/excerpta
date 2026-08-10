@@ -9,7 +9,6 @@ from sqlmodel import Session, select
 
 from ...auth import get_current_user
 from ...database import engine as db_engine, get_session
-from ...demo import demo_active, is_demo_user
 from ...models import Link, User
 from ...ratelimit import rate_limit
 from .net_guard import _TooLarge, _assert_public_url, _read_limited, _safe_stream, _safe_url
@@ -101,14 +100,7 @@ async def proxy_image(
     user: User = Depends(get_current_user),
     session: Session = Depends(get_session),
 ):
-    # Ce proxy récupère une URL passée en paramètre : en démo, c'est une sortie
-    # réseau pilotable par un inconnu. Les liens du catalogue n'ont ni favicon ni
-    # vignette, la route n'a donc aucune raison d'être appelée. Le test précède
-    # session.close(), qui détacherait l'objet User.
-    if demo_active() and is_demo_user(user):
-        raise HTTPException(status_code=404)
-
-    # Idem : pas besoin de la DB au-delà de l'auth, et cette route est appelée
+    # Pas besoin de la DB au-delà de l'auth, et cette route est appelée
     # en rafale (une par vignette de lien) au chargement d'une page.
     session.close()
     if not _safe_url(url):

@@ -26,8 +26,8 @@
 
     <ul style="margin:0 0 1.5rem 1.25rem; padding:0; line-height:1.7;">
       <li>{{ _("Search, folders, tags, notes and the reader view are all active.") }}</li>
-      <li>{{ ngettext("Links are added from a catalogue of %(num)d prepared page: the demo never fetches anything from the internet.", "Links are added from a catalogue of %(num)d prepared pages: the demo never fetches anything from the internet.", catalog_size) }}</li>
-      <li>{{ _("Nothing is published or shared, and the space is deleted automatically after a few hours.") }}</li>
+      <li>{{ _("Add your own links, or pick from a catalogue of prepared pages to get started.") }}</li>
+      <li>{{ ngettext("Nothing is published or shared, and the space is deleted automatically after %(num)d hour.", "Nothing is published or shared, and the space is deleted automatically after %(num)d hours.", demo_ttl_hours) }}</li>
     </ul>
 
     <form method="post" action="/demo/start">

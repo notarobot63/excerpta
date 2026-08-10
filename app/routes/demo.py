@@ -35,7 +35,10 @@ async def demo_home(request: Request):
     return templates.TemplateResponse(
         request,
         "demo/index.html",
-        {"catalog_size": len(CATALOG), "app_name": settings.app_name},
+        {
+            "app_name": settings.app_name,
+            "demo_ttl_hours": settings.demo_ttl_hours,
+        },
     )
 
 

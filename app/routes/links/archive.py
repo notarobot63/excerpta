@@ -9,6 +9,7 @@ from sqlmodel import Session
 
 from ...auth import get_current_user
 from ...database import engine as db_engine, get_session
+from ...demo import forbid_in_demo_dep
 from ...models import Link, User
 from ...ratelimit import rate_limit
 from . import net_guard
@@ -66,7 +67,11 @@ async def _wayback_archive(link_id: int) -> None:
         db.commit()
 
 
-@router.post("/links/{link_id}/archive", dependencies=[Depends(rate_limit(10, 60))])
+# L'archivage soumet l'URL à un tiers public au nom de l'application : en démo
+# l'adresse vient d'un inconnu, la route est donc fermée (la création de lien ne
+# planifiait déjà aucun archivage, mais rien ne fermait ce déclenchement manuel).
+@router.post("/links/{link_id}/archive",
+             dependencies=[Depends(rate_limit(10, 60)), Depends(forbid_in_demo_dep)])
 async def archive_link(
     link_id: int,
     background_tasks: BackgroundTasks,

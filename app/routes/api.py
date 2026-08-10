@@ -9,9 +9,9 @@ from ..database import get_session
 from ..models import Folder, Link, LinkTagLink, Tag, User
 from ..ratelimit import rate_limit
 from ..utils import descendant_folder_ids, resolve_api_user
-from ..demo import demo_active, forbid_in_demo, is_demo_user
-from .links import (MAX_DESC_LEN, MAX_TAGS_PER_LINK, _assert_url_allowed_in_demo,
-                    _extract_reader, _fetch_meta, _fts_escape, _safe_url, create_link)
+from ..demo import assert_link_quota
+from .links import (MAX_DESC_LEN, MAX_TAGS_PER_LINK, _extract_reader, _fetch_meta,
+                    _fts_escape, _safe_url, create_link)
 
 router = APIRouter(prefix="/api/v1")
 
@@ -61,7 +61,7 @@ async def api_add_link(
 ):
     if not _safe_url(body.url):
         raise HTTPException(status_code=400, detail="Invalid URL")
-    _assert_url_allowed_in_demo(user, body.url)
+    assert_link_quota(session, user.id)
 
     validated_folder_id: Optional[int] = None
     if body.folder_id is not None:
@@ -89,9 +89,6 @@ async def api_add_link(
 @router.get("/fetch-meta", dependencies=[Depends(rate_limit(30, 60))])
 async def api_fetch_meta(url: str, user: User = Depends(_get_api_user)):
     """Équivalent mobile (auth X-API-Key) de /api/fetch-meta (auth session web)."""
-    # Récupère une URL arbitraire : interdit en démo, où aucune adresse fournie
-    # par un visiteur ne doit être atteinte par le serveur.
-    forbid_in_demo(user)
     return await _fetch_meta(url)
 
 
@@ -274,9 +271,8 @@ async def api_link_reader(
         raise HTTPException(status_code=404, detail="Lien introuvable")
     # Extraction paresseuse : si le reader n'a jamais été généré (lien ajouté
     # avant la feature, ou jamais ouvert côté web), on l'extrait à la volée -
-    # même comportement que la vue lecteur web (links.read_link). En démo,
-    # l'extraction est désactivée : seul le contenu préparé du catalogue est servi.
-    if not link.reader_html and not (demo_active() and is_demo_user(user)):
+    # même comportement que la vue lecteur web (links.read_link).
+    if not link.reader_html:
         data = await _extract_reader(link.url)
         if data and data["html"]:
             link.reader_title = (data["title"] or link.title or "")[:500]
