@@ -11,7 +11,7 @@ from ..auth import get_current_user
 from ..database import get_session
 from ..models import Folder, User
 from ..templates_cfg import templates
-from ..utils import build_folder_tree, folder_alpha_key, sidebar_data
+from ..utils import build_folder_tree, creates_cycle, folder_alpha_key, sidebar_data
 
 router = APIRouter()
 
@@ -20,13 +20,25 @@ class RenameFolderBody(BaseModel):
     name: str
 
 
+def _parent_map(session: Session, user_id: int) -> dict:
+    """id de dossier -> id du parent, pour tous les dossiers d'un utilisateur."""
+    return {
+        f.id: f.parent_id
+        for f in session.exec(select(Folder).where(Folder.user_id == user_id)).all()
+    }
+
+
 def _validate_parent(session: Session, parent_id: Optional[int], user_id: int, exclude_id: Optional[int] = None) -> Optional[int]:
+    """Parent acceptable, ou None : il doit exister, appartenir à l'utilisateur,
+    et ne pas fermer de boucle avec le dossier déplacé."""
     if not parent_id:
         return None
     if parent_id == exclude_id:
         return None
     parent = session.get(Folder, parent_id)
     if not parent or parent.user_id != user_id:
+        return None
+    if exclude_id is not None and creates_cycle(_parent_map(session, user_id), exclude_id, parent_id):
         return None
     return parent_id
 
@@ -196,6 +208,10 @@ async def reorder_folders(
     body = await request.json()
     if not isinstance(body, list):
         raise HTTPException(status_code=400)
+    # Le graphe est tenu à jour au fil des items : chaque rattachement est
+    # validé contre l'état déjà accepté, ce qui interdit qu'une paire d'entrées
+    # du même envoi (A sous B puis B sous A) referme une boucle.
+    parents = _parent_map(session, user.id)
     for item in body:
         fid = item.get("id")
         new_parent = item.get("parent_id")  # None ou int
@@ -206,10 +222,12 @@ async def reorder_folders(
         # Valider le parent si fourni
         if new_parent is not None:
             parent = session.get(Folder, new_parent)
-            if not parent or parent.user_id != user.id or new_parent == fid:
+            if (not parent or parent.user_id != user.id
+                    or creates_cycle(parents, fid, new_parent)):
                 new_parent = None
         folder.parent_id = new_parent
         folder.sort_order = new_order
+        parents[fid] = new_parent
         session.add(folder)
     session.commit()
     return JSONResponse({"ok": True})

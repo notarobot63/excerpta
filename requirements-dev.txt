@@ -1,2 +1,5 @@
 -r requirements.txt
 pytest==8.3.4
+# Analyse statique : détecte les noms non résolus (NameError à l'exécution).
+# Exploité par tests/test_route_imports.py, donc appliqué par la CI.
+pyflakes==3.4.0

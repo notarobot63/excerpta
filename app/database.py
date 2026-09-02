@@ -5,6 +5,8 @@ from sqlmodel import create_engine, Session, SQLModel
 
 from .config import settings
 from .crypto import encrypt, hmac_key, is_encrypted
+from .fts_schema import (FTS_REBUILD_SELECT, FTS_TABLE, FTS_TRIGGERS,
+                         TRIGGER_MARKER, TRIGGER_NAMES)
 
 engine = create_engine(
     settings.database_url,
@@ -28,28 +30,14 @@ def _set_sqlite_pragmas(dbapi_conn, _record):
         cur.close()
 
 
-_FTS_SETUP = [
-    """CREATE VIRTUAL TABLE IF NOT EXISTS fts_links USING fts5(
-        title,
-        description,
-        note,
-        url,
-        tags,
-        tokenize='unicode61 remove_diacritics 1'
-    )""",
-    """CREATE TRIGGER IF NOT EXISTS links_ai AFTER INSERT ON links BEGIN
-        INSERT INTO fts_links(rowid, title, description, note, url, tags)
-        VALUES (new.id, new.title, new.description, new.note, new.url, '');
-    END""",
-    """CREATE TRIGGER IF NOT EXISTS links_au AFTER UPDATE ON links BEGIN
-        DELETE FROM fts_links WHERE rowid = old.id;
-        INSERT INTO fts_links(rowid, title, description, note, url, tags)
-        VALUES (new.id, new.title, new.description, new.note, new.url, '');
-    END""",
-    """CREATE TRIGGER IF NOT EXISTS links_ad AFTER DELETE ON links BEGIN
-        DELETE FROM fts_links WHERE rowid = old.id;
-    END""",
-]
+def _rebuild_fts(con) -> None:
+    """Repeuple `fts_links` depuis `links` et `link_tags`."""
+    con.execute("DELETE FROM fts_links")
+    con.executemany(
+        "INSERT INTO fts_links(rowid, title, description, note, url, tags)"
+        " VALUES (?,?,?,?,?,?)",
+        con.execute(FTS_REBUILD_SELECT).fetchall(),
+    )
 
 
 def init_db():
@@ -65,25 +53,31 @@ def init_db():
     fts_sql = con.execute(
         "SELECT sql FROM sqlite_master WHERE type='table' AND name='fts_links'"
     ).fetchone()
-    if fts_sql and "content=''" in fts_sql[0]:
+    legacy_table = bool(fts_sql) and "content=''" in fts_sql[0]
+    if legacy_table:
         con.execute("DROP TABLE IF EXISTS fts_links")
-        for trigger in ("links_ai", "links_au", "links_ad"):
+        for trigger in TRIGGER_NAMES:
             con.execute(f"DROP TRIGGER IF EXISTS {trigger}")
-    for stmt in _FTS_SETUP:
+    con.execute(FTS_TABLE)
+
+    # Migration des déclencheurs : les anciens réinséraient `tags = ''` à chaque
+    # UPDATE sur `links`, ce qui vidait les étiquettes de l'index dès qu'un lien
+    # était déplacé, archivé ou enrichi. Les nouveaux relisent `link_tags`. La
+    # présence du marqueur dans le SQL stocké rend la migration idempotente.
+    trigger_sql = con.execute(
+        "SELECT sql FROM sqlite_master WHERE type='trigger' AND name='links_au'"
+    ).fetchone()
+    stale_triggers = bool(trigger_sql) and TRIGGER_MARKER not in (trigger_sql[0] or "")
+    if stale_triggers:
+        for trigger in TRIGGER_NAMES:
+            con.execute(f"DROP TRIGGER IF EXISTS {trigger}")
+    for stmt in FTS_TRIGGERS:
         con.execute(stmt)
-    if fts_sql and "content=''" in fts_sql[0]:
-        rows = con.execute("""
-            SELECT l.id, l.title, l.description, l.note, l.url,
-                   COALESCE(GROUP_CONCAT(t.name, ' '), '')
-            FROM links l
-            LEFT JOIN link_tags lt ON lt.link_id = l.id
-            LEFT JOIN tags t ON t.id = lt.tag_id
-            GROUP BY l.id
-        """).fetchall()
-        con.executemany(
-            "INSERT INTO fts_links(rowid, title, description, note, url, tags) VALUES (?,?,?,?,?,?)",
-            rows,
-        )
+
+    # Un index laissé par les anciens déclencheurs a perdu les étiquettes des
+    # liens modifiés depuis leur création : on le reconstruit une fois.
+    if legacy_table or stale_triggers:
+        _rebuild_fts(con)
     # Migrations idempotentes
     cols = {r[1] for r in con.execute("PRAGMA table_info(links)").fetchall()}
     if "freshrss_item_id" not in cols:

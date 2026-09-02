@@ -21,27 +21,11 @@ from sqlmodel import Session, SQLModel, create_engine
 
 from app import models  # noqa: F401 - enregistre les tables sur SQLModel.metadata
 
-# Schéma FTS5 + triggers, identique à app.database._FTS_SETUP. Dupliqué ici
-# pour découpler les tests de la cascade d'imports lourds de app.database
-# (crypto → cryptography). test_fts_uses_rowid_not_link_id garde le schéma honnête.
-_FTS_SETUP = [
-    """CREATE VIRTUAL TABLE IF NOT EXISTS fts_links USING fts5(
-        title, description, note, url, tags,
-        tokenize='unicode61 remove_diacritics 1'
-    )""",
-    """CREATE TRIGGER IF NOT EXISTS links_ai AFTER INSERT ON links BEGIN
-        INSERT INTO fts_links(rowid, title, description, note, url, tags)
-        VALUES (new.id, new.title, new.description, new.note, new.url, '');
-    END""",
-    """CREATE TRIGGER IF NOT EXISTS links_au AFTER UPDATE ON links BEGIN
-        DELETE FROM fts_links WHERE rowid = old.id;
-        INSERT INTO fts_links(rowid, title, description, note, url, tags)
-        VALUES (new.id, new.title, new.description, new.note, new.url, '');
-    END""",
-    """CREATE TRIGGER IF NOT EXISTS links_ad AFTER DELETE ON links BEGIN
-        DELETE FROM fts_links WHERE rowid = old.id;
-    END""",
-]
+# Schéma FTS5 + déclencheurs, importés depuis le module que `app.database`
+# applique en production. `app.fts_schema` est sans dépendance, ce qui préserve
+# la raison d'être de l'ancienne copie (ne pas tirer crypto → cryptography) tout
+# en supprimant la dérive possible entre les deux définitions.
+from app.fts_schema import FTS_SETUP as _FTS_SETUP
 
 
 @pytest.fixture
