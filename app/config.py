@@ -52,8 +52,22 @@ class Settings(BaseSettings):
                 "print(secrets.token_hex(32))') in your .env."
             )
             self.secret_key = secrets.token_hex(32)
+            # crypto.hmac_key dérive de secret_key SEULE, quelle que soit la
+            # valeur d'ENCRYPTION_KEY : les empreintes stockées dans
+            # users.api_key_hmac ne correspondent plus, et toute clé API
+            # existante est refusée en 401. L'avertissement ne portait que sur
+            # le déchiffrement, il ne se déclenchait donc pas quand
+            # ENCRYPTION_KEY était renseignée, alors que les clés API cassaient
+            # tout autant : c'était un échec silencieux, y compris pour
+            # l'application mobile.
+            logger.warning(
+                "SECRET_KEY was just regenerated: existing API keys will be "
+                "rejected (401), because their lookup fingerprint is derived "
+                "from SECRET_KEY. Set a persistent SECRET_KEY, or regenerate "
+                "each API key from the admin panel."
+            )
             if not self.encryption_key:
-                # crypto.py dérive sa clé Fernet de secret_key quand
+                # crypto.py dérive aussi sa clé Fernet de secret_key quand
                 # encryption_key est vide : régénérer secret_key à chaque
                 # redémarrage rend alors indéchiffrables les secrets déjà
                 # chiffrés en base (api_key, freshrss_token).

@@ -10,6 +10,7 @@ from sqlalchemy import text
 from sqlmodel import Session, select
 
 from ..auth import get_current_user
+from ..background import spawn
 from ..crypto import decrypt, encrypt
 from ..database import engine, get_session
 from ..models import Folder, FreshRSSConfig, Link, User
@@ -277,7 +278,7 @@ async def sync_user(config: FreshRSSConfig, session: Session) -> int:
     session.commit()
 
     if new_links:
-        asyncio.create_task(_refresh_new_links_bg([l.id for l in new_links]))
+        spawn(_refresh_new_links_bg([l.id for l in new_links]), name="freshrss-refresh")
 
     return len(new_links)
 
