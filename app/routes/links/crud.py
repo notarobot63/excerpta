@@ -1,5 +1,4 @@
 """CRUD web des liens : liste, ajout, édition, suppression, bulk-delete, move."""
-import asyncio
 import logging
 import re
 from datetime import datetime, timezone
@@ -12,6 +11,7 @@ from sqlalchemy import func, text
 from sqlmodel import Session, select
 
 from ...auth import get_current_user
+from ...background import spawn
 from ...database import get_session
 from ...demo import (assert_link_quota, demo_active, demo_rate_limit,
                      is_demo_user, is_demo_user_id)
@@ -396,7 +396,7 @@ async def delete_link(
         ).first()
         if config and config.freshrss_url:
             item_id = link.freshrss_item_id
-            asyncio.create_task(unstar_item(config, item_id))
+            spawn(unstar_item(config, item_id), name=f"unstar-{item_id}")
     session.delete(link)
     session.commit()
     # Appel AJAX (suppression optimiste depuis la liste) : pas de redirect,
@@ -452,7 +452,7 @@ def _maybe_unstar_on_leave(
         select(Folder).where(Folder.user_id == user_id, Folder.name == config.group_name)
     ).first()
     if fr_folder and old_folder_id == fr_folder.id:
-        asyncio.create_task(unstar_item(config, item_id))
+        spawn(unstar_item(config, item_id), name=f"unstar-{item_id}")
 
 
 # ─── Move (drag & drop sidebar) ──────────────────────────────────────────────

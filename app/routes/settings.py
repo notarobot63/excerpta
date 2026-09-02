@@ -13,6 +13,7 @@ from sqlalchemy import or_, text
 from sqlmodel import Session, select
 
 from ..auth import get_current_user
+from ..background import spawn
 from ..config import settings as cfg
 from ..crypto import decrypt
 from ..database import engine as db_engine, get_session
@@ -568,7 +569,7 @@ async def check_links_run(
     user: User = Depends(get_current_user),
 ):
     if not _check_jobs.get(user.id, {}).get("running", False):
-        asyncio.create_task(_run_check_background(user.id))
+        spawn(_run_check_background(user.id), name=f"check-links-{user.id}")
     return RedirectResponse("/settings/check-links", status_code=303)
 
 

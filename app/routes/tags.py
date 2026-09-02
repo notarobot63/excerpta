@@ -18,6 +18,35 @@ class RenameTagBody(BaseModel):
     name: str
 
 
+def _reindex_links_of_tag(session: Session, tag_id: int, link_ids: list[int] | None = None) -> None:
+    """Réécrit la ligne d'index des liens portant une étiquette.
+
+    La colonne `tags` de l'index n'est recalculée par les déclencheurs qu'à
+    l'écriture d'une ligne de `links` : renommer ou supprimer une étiquette ne
+    touche pas cette table, il faut donc rafraîchir explicitement. Passer
+    `link_ids` sert quand l'association a déjà été défaite et qu'on ne peut plus
+    retrouver les liens concernés.
+    """
+    if link_ids is None:
+        link_ids = [
+            row[0]
+            for row in session.execute(
+                text("SELECT link_id FROM link_tags WHERE tag_id = :tid"), {"tid": tag_id}
+            ).fetchall()
+        ]
+    session.flush()
+    for link_id in link_ids:
+        link = session.get(Link, link_id)
+        if link:
+            # `link.tags` a pu être chargée avant que les lignes de `link_tags`
+            # ne soient retirées en SQL : sans expiration, l'ORM sert sa copie
+            # en cache et on réécrit dans l'index une étiquette qui n'existe
+            # plus. C'est ce qui laissait une étiquette supprimée trouvable par
+            # la recherche.
+            session.expire(link, ["tags"])
+            refresh_link_fts(session, link, list(link.tags))
+
+
 @router.get("/tags", response_class=HTMLResponse)
 async def list_tags(
     request: Request,
@@ -61,15 +90,15 @@ async def rename_tag(
         )
         session.execute(text("DELETE FROM link_tags WHERE tag_id = :id"), {"id": tag_id})
         session.delete(tag)
-        session.flush()
         # Mettre à jour le FTS des liens réassignés
-        for link_id in affected_ids:
-            link = session.get(Link, link_id)
-            if link:
-                refresh_link_fts(session, link, list(link.tags))
+        _reindex_links_of_tag(session, existing.id, affected_ids)
         session.commit()
         return JSONResponse({"ok": True, "merged": True, "new_id": existing.id, "new_name": new_name})
+    # Renommage simple : l'index porte encore l'ancien nom. Sans cette
+    # réécriture, la recherche continuait de trouver le lien par l'étiquette
+    # d'avant et l'ignorait sous la nouvelle.
     tag.name = new_name
+    _reindex_links_of_tag(session, tag_id)
     session.commit()
     return JSONResponse({"ok": True, "merged": False, "new_id": tag_id, "new_name": new_name})
 
@@ -93,10 +122,6 @@ async def delete_tag(
     ]
     session.execute(text("DELETE FROM link_tags WHERE tag_id = :id"), {"id": tag_id})
     session.delete(tag)
-    session.flush()
-    for link_id in affected_ids:
-        link = session.get(Link, link_id)
-        if link:
-            refresh_link_fts(session, link, list(link.tags))
+    _reindex_links_of_tag(session, tag_id, affected_ids)
     session.commit()
     return RedirectResponse(url="/tags", status_code=303)

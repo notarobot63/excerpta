@@ -45,6 +45,14 @@ def decrypt(value: str) -> str:
 
 
 def hmac_key(value: str) -> str:
+    """Empreinte de recherche d'une clé API (users.api_key_hmac).
+
+    Dérive de `secret_key` seule, et non de `encryption_key or secret_key`
+    comme `_fernet` : changer SECRET_KEY invalide donc toutes les clés API
+    existantes, même avec une ENCRYPTION_KEY stable. Aligner les deux
+    demanderait de réécrire les empreintes déjà stockées, ce que `config.py`
+    signale plutôt par un avertissement au démarrage.
+    """
     return hmac.new(
         settings.secret_key.encode(), value.encode(), hashlib.sha256
     ).hexdigest()
