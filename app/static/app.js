@@ -1,5 +1,17 @@
 document.addEventListener('DOMContentLoaded', function () {
 
+  // Libellés traduits côté serveur, cf. templates/_js_strings.html. Le repli
+  // sur la clé évite qu'une chaîne manquante fasse disparaître un libellé.
+  var STRINGS = (function () {
+    var el = document.getElementById('js-strings');
+    if (!el) return {};
+    try { return JSON.parse(el.textContent); } catch (e) { return {}; }
+  })();
+  function t(key, fallback) {
+    return STRINGS[key] || fallback || key;
+  }
+
+
   // Toggle vue liste / grille
   var VIEW_KEY = 'excerpta-view';
   function applyView(v) {
@@ -10,7 +22,7 @@ document.addEventListener('DOMContentLoaded', function () {
     if (!btn) return;
     btn.querySelector('.icon-grid').style.display = v === 'grid' ? 'none' : '';
     btn.querySelector('.icon-list').style.display = v === 'grid' ? '' : 'none';
-    btn.title = v === 'grid' ? 'Vue liste' : 'Vue grille';
+    btn.title = v === 'grid' ? t('list_view') : t('grid_view');
   }
   var currentView = localStorage.getItem(VIEW_KEY) || 'list';
   applyView(currentView);
@@ -43,7 +55,7 @@ document.addEventListener('DOMContentLoaded', function () {
     if (!form || !form.matches || !form.matches('form[data-confirm]')) return;
     if (form._confirmed) return;
     e.preventDefault();
-    if (!window.confirm(form.getAttribute('data-confirm') || 'Supprimer ?')) return;
+    if (!window.confirm(form.getAttribute('data-confirm') || t('confirm_delete'))) return;
     var card = form.closest('.link-card');
     if (!card) { form._confirmed = true; form.submit(); return; } // page édition / check_links : redirect classique
     // Suppression immédiate en AJAX : on retire la carte sans recharger la page
@@ -87,7 +99,7 @@ document.addEventListener('DOMContentLoaded', function () {
   if (copyBtn) {
     copyBtn.addEventListener('click', function () {
       navigator.clipboard.writeText(copyBtn.getAttribute('data-value'))
-        .then(function () { copyBtn.textContent = 'Copié !'; });
+        .then(function () { copyBtn.textContent = t('copied'); });
     });
   }
 
@@ -211,7 +223,7 @@ document.addEventListener('DOMContentLoaded', function () {
           var toggle = document.createElement('button');
           toggle.type = 'button';
           toggle.className = 'folder-toggle';
-          toggle.setAttribute('aria-label', 'Plier ou déplier');
+          toggle.setAttribute('aria-label', t('toggle_folder'));
           toggle.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>';
           if (collapsed.has(fid)) wrapper.classList.add('collapsed');
           toggle.setAttribute('aria-expanded', collapsed.has(fid) ? 'false' : 'true');

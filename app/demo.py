@@ -334,8 +334,11 @@ def create_demo_space(session: Session) -> User:
 def add_catalog_link(session: Session, user: User, url: str) -> Link:
     """Ajoute au visiteur un lien du catalogue. Refuse toute URL extérieure.
 
-    C'est le seul chemin d'ajout ouvert en démo : il garantit qu'aucune adresse
-    fournie par un inconnu ne soit stockée, et encore moins récupérée.
+    Chemin d'ajout distinct du formulaire libre, qui est ouvert aux visiteurs
+    depuis la version 1.2 : celui-ci sert le catalogue et n'accepte donc que ses
+    URL. Ne pas lire ce refus comme une garantie de sécurité globale : c'est
+    `net_guard` qui encadre les adresses fournies par un inconnu, et le contrat
+    en tête de module qui en fixe les limites.
     """
     entry = CATALOG_BY_URL.get(url)
     if entry is None:

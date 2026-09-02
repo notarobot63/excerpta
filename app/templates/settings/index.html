@@ -12,7 +12,7 @@
       {{ _("Account") }}
     </h3>
     <p style="margin:0 0 0.75rem;"><strong>{{ user.name|e }}</strong> - {{ user.email|e }}</p>
-    <p style="margin:0 0 1rem;"><a href="/auth/logout" class="btn btn-ghost btn-sm">{{ _("Sign out") }}</a></p>
+    <form action="/auth/logout" method="post" style="margin:0 0 1rem;">{{ csrf_input(request) }}<button type="submit" class="btn btn-ghost btn-sm">{{ _("Sign out") }}</button></form>
 
     {% if not demo_mode() %}{# démo : la publication exposerait au public le contenu saisi par un visiteur #}
     <div class="settings-row" style="border-top:1px solid var(--border);padding-top:0.9rem;display:block;">
@@ -93,7 +93,7 @@
         <button class="btn btn-ghost btn-sm" data-theme-apply="rosepine">🌹 Moon</button>
       </div>
     </div>
-    <p id="theme-label" style="font-size:0.78rem;color:var(--text-muted);margin:0.5rem 0 0;"></p>
+    <p id="theme-label" data-template="{{ _("Active theme: {name}") }}" style="font-size:0.78rem;color:var(--text-muted);margin:0.5rem 0 0;"></p>
 
     <div class="settings-row" style="border-top:1px solid var(--border);margin-top:1rem;padding-top:1rem;display:block;">
       <p class="settings-row-label" style="font-weight:500;margin:0 0 0.5rem;">{{ _("Language") }}</p>

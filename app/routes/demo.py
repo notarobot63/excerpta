@@ -57,7 +57,11 @@ async def demo_catalogue(
     user: User = Depends(get_current_user),
     session: Session = Depends(get_session),
 ):
-    """Remplace le formulaire d'ajout libre : on ajoute depuis une liste fermée."""
+    """Catalogue de démarrage : ajout en un clic depuis une liste fermée.
+
+    Vient en complément du formulaire d'ajout libre, ouvert aux visiteurs, et
+    ne le remplace plus.
+    """
     _require_demo_mode()
     deja = {
         link.url

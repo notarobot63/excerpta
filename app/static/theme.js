@@ -14,7 +14,9 @@ function applyTheme(t) {
   document.documentElement.setAttribute('data-theme', t);
   localStorage.setItem('theme', t);
   var label = document.getElementById('theme-label');
-  if (label) label.textContent = 'Thème actif : ' + t;
+  // Gabarit traduit porté par l'élément (data-template), le JS n'ayant pas
+  // accès à gettext.
+  if (label) label.textContent = (label.dataset.template || 'Active theme: {name}').replace('{name}', t);
   _updateToggleIcon(t);
 }
 
@@ -37,7 +39,9 @@ document.addEventListener('DOMContentLoaded', function () {
   var sel = document.getElementById('theme-select');
   if (sel) sel.value = t;
   var label = document.getElementById('theme-label');
-  if (label) label.textContent = 'Thème actif : ' + t;
+  // Gabarit traduit porté par l'élément (data-template), le JS n'ayant pas
+  // accès à gettext.
+  if (label) label.textContent = (label.dataset.template || 'Active theme: {name}').replace('{name}', t);
   _updateToggleIcon(t);
 
   document.querySelectorAll('[data-theme-apply]').forEach(function (btn) {

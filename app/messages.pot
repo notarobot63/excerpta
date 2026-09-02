@@ -1,14 +1,14 @@
-# Translations template for Excerpta.
+# Translations template for PROJECT.
 # Copyright (C) 2026 ORGANIZATION
-# This file is distributed under the same license as the Excerpta project.
+# This file is distributed under the same license as the PROJECT project.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
 #
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: Excerpta VERSION\n"
+"Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-08-10 17:51+0200\n"
+"POT-Creation-Date: 2026-09-02 21:47+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -16,6 +16,26 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.18.0\n"
+
+#: app/templates/_js_strings.html:11
+msgid "List view"
+msgstr ""
+
+#: app/templates/_js_strings.html:12 app/templates/base.html:197
+msgid "Grid view"
+msgstr ""
+
+#: app/templates/_js_strings.html:13
+msgid "Delete?"
+msgstr ""
+
+#: app/templates/_js_strings.html:14
+msgid "Copied"
+msgstr ""
+
+#: app/templates/_js_strings.html:15
+msgid "Collapse or expand"
+msgstr ""
 
 #: app/templates/_lang_picker.html:16 app/templates/_lang_picker.html:26
 #: app/templates/settings/index.html:99
@@ -108,36 +128,32 @@ msgstr ""
 msgid "Delete"
 msgstr ""
 
-#: app/templates/base.html:167 app/templates/settings/index.html:15
+#: app/templates/base.html:169 app/templates/settings/index.html:15
 msgid "Sign out"
 msgstr ""
 
-#: app/templates/base.html:178
+#: app/templates/base.html:181
 msgid "Menu"
 msgstr ""
 
-#: app/templates/base.html:188 app/templates/public/index.html:27
+#: app/templates/base.html:191 app/templates/public/index.html:27
 msgid "Search…"
 msgstr ""
 
-#: app/templates/base.html:190
+#: app/templates/base.html:193
 msgid "Clear the search"
 msgstr ""
 
-#: app/templates/base.html:194
-msgid "Grid view"
-msgstr ""
-
-#: app/templates/base.html:198
+#: app/templates/base.html:201
 msgid "Toggle light/dark"
 msgstr ""
 
-#: app/templates/base.html:206 app/templates/demo/catalogue.html:31
+#: app/templates/base.html:209 app/templates/demo/catalogue.html:31
 #: app/templates/links/form.html:118
 msgid "Add"
 msgstr ""
 
-#: app/templates/base.html:305
+#: app/templates/base.html:309
 #, python-brace-format
 msgid "Delete the tag #{tag}?"
 msgstr ""
@@ -913,6 +929,11 @@ msgstr ""
 
 #: app/templates/settings/index.html:57
 msgid "Appearance"
+msgstr ""
+
+#: app/templates/settings/index.html:96
+#, python-brace-format
+msgid "Active theme: {name}"
 msgstr ""
 
 #: app/templates/settings/index.html:102

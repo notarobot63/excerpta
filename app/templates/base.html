@@ -164,7 +164,10 @@
 
     <div class="sidebar-bottom">
       {% if user is defined %}
-      <a href="/auth/logout" class="btn btn-ghost btn-sm" title="{{ _("Sign out") }}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></svg></a>
+      <form action="/auth/logout" method="post" style="display:inline">
+        {{ csrf_input(request) }}
+        <button type="submit" class="btn btn-ghost btn-sm" title="{{ _("Sign out") }}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></svg></button>
+      </form>
       {% endif %}
     </div>
   </aside>
@@ -219,6 +222,7 @@
 {{ csrf_input(request) }}
 <script src="/static/sortable.min.js"></script>
 <script src="/static/theme.js?v={{ static_version }}"></script>
+{% include "_js_strings.html" %}
 <script src="/static/app.js?v={{ static_version }}"></script>
 <script nonce="{{ request.state.nonce }}">
 (function() {

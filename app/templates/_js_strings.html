@@ -1,0 +1,17 @@
+{# Chaînes d'interface utilisées par app.js.
+
+   Le JavaScript n'a pas accès à gettext : les libellés y étaient donc écrits en
+   français en dur, et un visiteur anglophone lisait « Copié ! » ou « Plier ou
+   déplier » au milieu d'une interface anglaise. Elles sont traduites ici, côté
+   serveur, avec la locale de la requête, et lues par `t()` dans app.js.
+
+   Toute chaîne ajoutée au JavaScript passe par ce bloc. #}
+<script type="application/json" id="js-strings">
+{
+  "list_view": {{ _("List view") | tojson }},
+  "grid_view": {{ _("Grid view") | tojson }},
+  "confirm_delete": {{ _("Delete?") | tojson }},
+  "copied": {{ _("Copied") | tojson }},
+  "toggle_folder": {{ _("Collapse or expand") | tojson }}
+}
+</script>

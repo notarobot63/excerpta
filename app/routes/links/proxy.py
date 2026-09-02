@@ -26,6 +26,8 @@ _img_cache_bytes = 0
 _img_cache_lock = asyncio.Lock()
 
 _MAX_IMG_BYTES = 10 * 1024 * 1024   # 10 Mo pour une image proxifiée
+# Liens dont on précharge les images au démarrage (les plus récents)
+_WARMUP_MAX_LINKS = 500
 _FORBIDDEN_IMG_TYPES = {"image/svg+xml", "image/svg"}
 
 
@@ -52,9 +54,20 @@ def _cache_drop(url: str) -> None:
 
 
 async def warm_img_cache() -> None:
+    """Précharge les images des liens les plus récents, tous comptes confondus.
+
+    Borné à _WARMUP_MAX_LINKS : sans plafond, une base un peu fournie faisait
+    sortir des dizaines de milliers de requêtes à chaque démarrage, pour un
+    cache dont la contenance est de toute façon limitée. Les liens récents sont
+    ceux qu'on affiche en premier, donc ceux dont le préchauffage sert.
+    """
     await asyncio.sleep(10)
     with Session(db_engine) as db:
-        rows = db.exec(select(Link.favicon_url, Link.thumbnail_url)).all()
+        rows = db.exec(
+            select(Link.favicon_url, Link.thumbnail_url)
+            .order_by(Link.created_at.desc())
+            .limit(_WARMUP_MAX_LINKS)
+        ).all()
     urls: set = set()
     for row in rows:
         if row.favicon_url:

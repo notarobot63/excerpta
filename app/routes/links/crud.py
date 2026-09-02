@@ -71,12 +71,19 @@ async def list_links(
         try:
             # bm25 pondéré : un match dans le titre pèse plus que dans l'URL.
             # Colonnes fts_links : title, description, note, url, tags.
+            # La jointure restreint à l'utilisateur DANS la requête : sans elle,
+            # une recherche large ramenait en mémoire les identifiants de tous
+            # les comptes avant de les filtrer en Python, et les repassait en
+            # paramètres liés — coûteux, et plafonné par SQLite au-delà d'un
+            # certain nombre de correspondances.
             rows = session.execute(
                 text(
-                    "SELECT rowid FROM fts_links WHERE fts_links MATCH :q "
-                    "ORDER BY bm25(fts_links, 10.0, 2.0, 2.0, 1.0, 4.0)"
+                    "SELECT fts_links.rowid FROM fts_links"
+                    " JOIN links ON links.id = fts_links.rowid"
+                    " WHERE fts_links MATCH :q AND links.user_id = :uid"
+                    " ORDER BY bm25(fts_links, 10.0, 2.0, 2.0, 1.0, 4.0)"
                 ),
-                {"q": escaped},
+                {"q": escaped, "uid": user.id},
             ).fetchall()
             fts_link_ids = [r[0] for r in rows]
             stmt = stmt.where(Link.id.in_(fts_link_ids)) if fts_link_ids else stmt.where(Link.id < 0)
@@ -495,12 +502,15 @@ async def bulk_move_links(
         links = session.exec(
             select(Link).where(Link.id.in_(link_ids), Link.user_id == user.id)
         ).all()
+        # État d'avant relevé en une passe, puis un seul commit : valider dans
+        # la boucle ouvrait une transaction par lien, soit une centaine
+        # d'écritures disque pour une sélection un peu large.
+        moved = [(lk.freshrss_item_id, lk.folder_id) for lk in links]
         for lk in links:
-            old_folder_id = lk.folder_id
-            item_id = lk.freshrss_item_id
             lk.folder_id = new_folder_id
             session.add(lk)
-            session.commit()
+        session.commit()
+        for item_id, old_folder_id in moved:
             _maybe_unstar_on_leave(session, user.id, item_id, old_folder_id, new_folder_id)
     return {"ok": True, "folder_id": new_folder_id}
 
