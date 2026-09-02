@@ -123,9 +123,17 @@ async def api_list_links(
     if q:
         escaped = _fts_escape(q)
         try:
+            # Restriction à l'utilisateur dans la requête, cf. le même motif
+            # dans routes/links/crud.py : filtrer en Python ramenait les
+            # identifiants de tous les comptes.
             fts_rows = session.execute(
-                text("SELECT rowid FROM fts_links WHERE fts_links MATCH :q ORDER BY rank"),
-                {"q": escaped},
+                text(
+                    "SELECT fts_links.rowid FROM fts_links"
+                    " JOIN links ON links.id = fts_links.rowid"
+                    " WHERE fts_links MATCH :q AND links.user_id = :uid"
+                    " ORDER BY rank"
+                ),
+                {"q": escaped, "uid": user.id},
             ).fetchall()
             fts_ids = [r[0] for r in fts_rows]
             stmt = stmt.where(Link.id.in_(fts_ids)) if fts_ids else stmt.where(Link.id < 0)

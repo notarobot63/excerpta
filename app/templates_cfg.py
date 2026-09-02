@@ -95,9 +95,10 @@ templates.env.filters["domain_color"] = _domain_color
 templates.env.filters["domain_initial"] = _domain_initial
 templates.env.filters["proxy_img"] = _proxy_img
 templates.env.globals["csrf_input"] = csrf_input
-# Le mode démo change ce que l'interface propose : le formulaire d'ajout libre
-# est remplacé par le catalogue fermé. Exposé en fonction plutôt qu'en valeur
-# pour rester juste si le réglage est modifié à chaud (tests).
+# Le mode démo change ce que l'interface propose : le catalogue de démarrage
+# s'ajoute au formulaire d'ajout libre, et les fonctions fermées en démo
+# disparaissent. Exposé en fonction plutôt qu'en valeur pour rester juste si le
+# réglage est modifié à chaud (tests).
 templates.env.globals["demo_mode"] = lambda: settings.demo_mode
 # Version affichée dans l'UI : le tag SemVer quand l'image est construite depuis
 # un tag (v1.2.0 -> "1.2.0"), sinon le SHA court du commit. Renseignée par le

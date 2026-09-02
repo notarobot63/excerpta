@@ -5,12 +5,12 @@ from xml.sax.saxutils import escape as xml_escape
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import HTMLResponse, Response
-from sqlalchemy import or_
+from sqlalchemy import or_, text
 from sqlmodel import Session, select
 
 from ..config import settings
 from ..database import get_session
-from ..models import Link, User
+from ..models import Link, LinkTagLink, Tag, User
 from ..ratelimit import rate_limit
 from ..templates_cfg import templates
 
@@ -100,23 +100,38 @@ async def public_links(
                 Link.url.ilike(pattern),
             )
         )
+    if tag:
+        # Filtrage en base et non après coup : appliqué en Python sur la page
+        # déjà tronquée à _PUBLIC_MAX_LINKS, un tag ne figurant qu'au-delà de
+        # cette limite ne renvoyait aucun résultat.
+        stmt = (
+            stmt.join(LinkTagLink, LinkTagLink.link_id == Link.id)
+            .join(Tag, Tag.id == LinkTagLink.tag_id)
+            .where(Tag.user_id == owner.id, Tag.name == tag)
+        )
+
     links = list(
         session.exec(
             stmt.order_by(Link.created_at.desc()).limit(_PUBLIC_MAX_LINKS)
         ).all()
     )
 
-    if tag:
-        links = [lk for lk in links if any(t.name == tag for t in lk.tags)]
-
-    all_tags: list[str] = []
-    seen: set[str] = set()
-    for lk in links:
-        for t in lk.tags:
-            if t.name not in seen:
-                all_tags.append(t.name)
-                seen.add(t.name)
-    all_tags.sort()
+    # Sélecteur bâti sur l'ensemble des liens publics, pas sur la page affichée :
+    # le construire depuis `links` le réduisait aux seuls tags des résultats
+    # courants, si bien qu'un filtre actif empêchait de passer à un autre tag.
+    all_tags = [
+        row[0]
+        for row in session.execute(
+            text(
+                "SELECT DISTINCT t.name FROM tags t"
+                " JOIN link_tags lt ON lt.tag_id = t.id"
+                " JOIN links l ON l.id = lt.link_id"
+                " WHERE l.user_id = :uid AND l.is_public = 1"
+                " ORDER BY t.name"
+            ),
+            {"uid": owner.id},
+        ).fetchall()
+    ]
 
     return templates.TemplateResponse(
         request,
