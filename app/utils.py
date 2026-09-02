@@ -107,46 +107,93 @@ def descendant_folder_ids(all_folders: list[Folder], root_id: int) -> list[int]:
     return result
 
 
+def creates_cycle(parents: dict, child_id: int, new_parent_id) -> bool:
+    """Rattacher `child_id` sous `new_parent_id` fermerait-il une boucle ?
+
+    `parents` associe chaque id de dossier à celui de son parent. Un cycle rend
+    des dossiers inatteignables depuis la racine et faisait diverger le calcul
+    des compteurs cumulés : il doit être refusé à l'écriture, pas rattrapé à la
+    lecture. Le garde-fou existait côté navigateur (`isDescendant` dans app.js),
+    ce qui ne protégeait ni l'API ni un formulaire rejoué.
+    """
+    if new_parent_id is None:
+        return False
+    if new_parent_id == child_id:
+        return True
+    seen: set = set()
+    current = new_parent_id
+    while current is not None:
+        if current == child_id:
+            return True
+        if current in seen:  # boucle déjà présente en base, en amont du parent visé
+            return True
+        seen.add(current)
+        current = parents.get(current)
+    return False
+
+
 def folder_alpha_key(name: str) -> str:
     """Clé de tri dossier : insensible à la casse et aux accents (FR)."""
     return unicodedata.normalize("NFKD", name or "").encode("ascii", "ignore").decode().casefold()
 
 
 def build_folder_tree(folders: list[Folder]) -> list[tuple]:
-    """Retourne [(folder, depth), ...] en ordre arborescent, trié par sort_order puis nom."""
+    """Retourne [(folder, depth), ...] en ordre arborescent, trié par sort_order puis nom.
+
+    Tolère une base incohérente : un dossier pris dans un cycle n'est atteint
+    par aucun chemin depuis la racine et disparaîtrait de l'interface, donc de
+    toute possibilité de correction. Ces dossiers sont rattachés à la racine
+    plutôt que d'être tus. Écrire un cycle est refusé en amont, voir
+    `creates_cycle`.
+    """
     result = []
+    emitted: set = set()
 
     def walk(parent_id, depth):
         children = sorted(
-            [f for f in folders if f.parent_id == parent_id],
+            [f for f in folders if f.parent_id == parent_id and f.id not in emitted],
             key=lambda f: (f.sort_order, f.name),
         )
         for f in children:
+            emitted.add(f.id)
             result.append((f, depth))
             walk(f.id, depth + 1)
 
     walk(None, 0)
+    for f in sorted(folders, key=lambda f: (f.sort_order, f.name)):
+        if f.id not in emitted:
+            emitted.add(f.id)
+            result.append((f, 0))
+            walk(f.id, 1)
     return result
 
 
 def folder_cumulative_counts(all_folders: list[Folder], direct_counts: dict) -> dict:
-    """Calcule les compteurs cumulatifs (dossier + tous ses descendants)."""
-    cumulative = {}
-    tree = build_folder_tree(all_folders)
-    folder_map = {f.id: f for f, _ in tree}
+    """Calcule les compteurs cumulatifs (dossier + tous ses descendants).
 
-    def count(folder_id: int) -> int:
+    `visiting` coupe la récursion sur une base incohérente : la mémoïsation ne
+    s'écrivant qu'au retour, un cycle faisait ici un RecursionError, et donc un
+    500 sur toute page appelant `sidebar_data` — c'est-à-dire presque toutes.
+    """
+    cumulative: dict = {}
+    children_by_parent: dict = {}
+    for f in all_folders:
+        children_by_parent.setdefault(f.parent_id, []).append(f)
+
+    def count(folder_id: int, visiting: frozenset) -> int:
         if folder_id in cumulative:
             return cumulative[folder_id]
+        if folder_id in visiting:
+            return 0
+        deeper = visiting | {folder_id}
         total = direct_counts.get(folder_id, 0)
-        for f in all_folders:
-            if f.parent_id == folder_id:
-                total += count(f.id)
+        for child in children_by_parent.get(folder_id, []):
+            total += count(child.id, deeper)
         cumulative[folder_id] = total
         return total
 
     for f in all_folders:
-        count(f.id)
+        count(f.id, frozenset())
     return cumulative
 
 

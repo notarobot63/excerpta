@@ -17,7 +17,7 @@ from ..config import settings as cfg
 from ..crypto import decrypt
 from ..database import engine as db_engine, get_session
 from ..demo import forbid_in_demo_dep
-from ..models import Folder, Link, LinkTagLink, Tag, User
+from ..models import Folder, FreshRSSConfig, Link, LinkTagLink, Tag, User
 from ..ratelimit import rate_limit
 from ..templates_cfg import templates
 from ..utils import get_or_create_tag, refresh_link_fts, sidebar_data, slugify
