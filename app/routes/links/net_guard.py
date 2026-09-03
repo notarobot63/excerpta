@@ -111,8 +111,47 @@ def _is_private_host(host: str) -> bool:
         return False  # hostname DNS valide - autorisé
 
 
+def _assert_peer_public(resp: httpx.Response, url: str) -> None:
+    """Refuse une réponse dont le pair est une adresse privée.
+
+    Contrôle indispensable en plus de `_hostname_resolves_public` : entre notre
+    résolution et celle qu'httpx fait pour se connecter, un DNS hostile à TTL
+    très court peut renvoyer une adresse publique puis une adresse interne. La
+    validation en amont ne fait que réduire cette fenêtre, elle ne la ferme pas.
+    Ici, on regarde l'adresse réellement contactée, ce qui rend le rebinding
+    inoffensif : le corps n'est jamais lu.
+
+    Limite assumée : la requête est déjà partie quand on arrive ici, httpx
+    n'offrant pas de point d'arrêt entre connexion et envoi. Un service interne
+    peut donc recevoir une requête, mais rien n'en revient à l'appelant.
+
+    Sans `network_stream` (transport de test), le contrôle est sans objet et la
+    réponse passe : le pair y est simulé, pas connecté.
+    """
+    stream = resp.extensions.get("network_stream")
+    if stream is None:
+        return
+    try:
+        server_addr = stream.get_extra_info("server_addr")
+    except Exception:
+        return
+    if not server_addr:
+        return
+    try:
+        peer = ipaddress.ip_address(str(server_addr[0]).strip("[]"))
+    except ValueError:
+        return
+    if _is_private_ip(peer):
+        raise _UnsafeRedirect(f"réponse refusée : {url} a résolu vers {peer}")
+
+
 async def _hostname_resolves_public(hostname: str) -> bool:
-    """Anti-DNS-rebinding : vérifie que le hostname ne résout pas vers une IP privée."""
+    """Vérifie qu'un hostname ne résout pas vers une adresse privée.
+
+    Premier filtre seulement : httpx refait sa propre résolution au moment de
+    se connecter, et rien ne garantit qu'elle donnera le même résultat. C'est
+    `_assert_peer_public`, appliqué à la réponse, qui tranche pour de bon.
+    """
     now = time.time()
     cached = _dns_cache.get(hostname)
     if cached and now < cached[0]:
@@ -176,6 +215,10 @@ async def _safe_stream(method: str, url: str, same_host_only: bool = False, **kw
     current = url
     while True:
         async with _http_client.stream(method, current, follow_redirects=False, **kwargs) as resp:
+            # Adresse réellement contactée, et non celle qu'on avait résolue :
+            # c'est ce qui ferme la fenêtre de rebinding DNS. Contrôlé à chaque
+            # saut, la cible d'une redirection étant tout aussi rebindable.
+            _assert_peer_public(resp, current)
             location = resp.headers.get("location") if resp.is_redirect else None
             if not location:
                 yield resp
