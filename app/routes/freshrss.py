@@ -2,6 +2,7 @@ import asyncio
 import logging
 from datetime import datetime, timezone
 from typing import Optional
+from urllib.parse import urlsplit, urlunsplit
 
 from bs4 import BeautifulSoup
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
@@ -171,6 +172,25 @@ async def _refresh_new_links_bg(link_ids: list[int]) -> None:
                     session.commit()
         except Exception:
             pass
+
+
+def normalise_base_url(raw: str) -> str:
+    """Normalise l'URL de base saisie : schéma et hôte en minuscules.
+
+    Un `HTTPS://RSS.exemple.org` fonctionne — httpx et urlparse normalisent ce
+    qu'ils interprètent — mais la valeur stockée sert aussi à des comparaisons
+    de chaînes et s'affiche telle quelle. La casse du chemin est préservée, elle
+    est significative côté serveur.
+    """
+    candidate = (raw or "").strip().rstrip("/")
+    if not candidate:
+        return ""
+    parsed = urlsplit(candidate)
+    if not parsed.scheme or not parsed.netloc:
+        return candidate  # laissé tel quel, la garde d'URL le refusera
+    return urlunsplit((
+        parsed.scheme.lower(), parsed.netloc.lower(), parsed.path, parsed.query, ""
+    ))
 
 
 async def _assert_safe_freshrss_url(url: str) -> None:
@@ -371,7 +391,7 @@ async def freshrss_settings_save(
     current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session),
 ):
-    url = freshrss_url.strip().rstrip("/")
+    url = normalise_base_url(freshrss_url)
     if url:
         try:
             await _assert_safe_freshrss_url(url)

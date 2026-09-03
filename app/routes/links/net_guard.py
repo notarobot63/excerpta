@@ -6,12 +6,15 @@ sortante, `_safe_stream` revalide chaque saut de redirection.
 """
 import asyncio
 import ipaddress
+import logging
 import socket
 import time
 from contextlib import asynccontextmanager
 from urllib.parse import urlparse
 
 import httpx
+
+logger = logging.getLogger("excerpta.links.net_guard")
 
 _http_client: httpx.AsyncClient | None = None
 
@@ -59,7 +62,14 @@ async def _read_limited(resp: httpx.Response, max_bytes: int) -> bytes:
 
 
 _DNS_CACHE_TTL = 600
+# Attente avant l'unique réessai sur panne temporaire du résolveur.
+_DNS_RETRY_DELAY = 2.0
 _dns_cache: dict[str, tuple[float, bool]] = {}
+
+
+async def _getaddrinfo(hostname: str):
+    loop = asyncio.get_running_loop()
+    return await loop.run_in_executor(None, socket.getaddrinfo, hostname, None)
 
 _PRIVATE_NETS = [
     ipaddress.ip_network("10.0.0.0/8"),
@@ -157,13 +167,28 @@ async def _hostname_resolves_public(hostname: str) -> bool:
     if cached and now < cached[0]:
         return cached[1]
     try:
-        loop = asyncio.get_running_loop()
-        results = await loop.run_in_executor(None, socket.getaddrinfo, hostname, None)
-        result = all(not _is_private_host(r[4][0]) for r in results)
-        _dns_cache[hostname] = (now + _DNS_CACHE_TTL, result)
-        return result
+        results = await _getaddrinfo(hostname)
+    except socket.gaierror as exc:
+        # EAI_AGAIN = panne temporaire du résolveur, pas un nom inconnu. Le cas
+        # se produit au démarrage du conteneur : la boucle FreshRSS part au bout
+        # d'une minute et tombe parfois avant que le DNS ne réponde, ce qui
+        # repousse la synchronisation d'un cycle entier. Un seul réessai suffit,
+        # et il ne coûte rien aux noms réellement invalides, qui échouent avec
+        # EAI_NONAME et sont rejetés immédiatement.
+        if exc.errno != socket.EAI_AGAIN:
+            return False
+        logger.info("Résolution de %s temporairement indisponible, un réessai", hostname)
+        await asyncio.sleep(_DNS_RETRY_DELAY)
+        try:
+            results = await _getaddrinfo(hostname)
+        except OSError:
+            return False
     except OSError:
         return False
+    # Un échec n'est jamais mis en cache : le résolveur peut se rétablir.
+    result = all(not _is_private_host(r[4][0]) for r in results)
+    _dns_cache[hostname] = (now + _DNS_CACHE_TTL, result)
+    return result
 
 
 def _safe_url(url: str) -> bool:
