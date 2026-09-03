@@ -13,6 +13,7 @@ Ces tests exercent les deux vecteurs contre un vrai serveur local : ils
 échouent sur le code d'avant correctif.
 """
 import asyncio
+import socket
 import threading
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
@@ -471,3 +472,80 @@ def test_greader_starred_lit_une_reponse_compressee(
     items = asyncio.run(freshrss_mod._greader_starred(base, "jeton"))
 
     assert items == [{"id": "1"}]
+
+
+# ── Résolution DNS temporairement indisponible ────────────────────────────────
+#
+# Au démarrage du conteneur, la boucle FreshRSS part au bout d'une minute et
+# tombait parfois avant que le résolveur ne réponde. L'échec était traité comme
+# « URL invalide » et la synchronisation repoussée d'un cycle entier, soit
+# trente minutes.
+
+
+def _gaierror(code):
+    err = socket.gaierror(code, "simulé")
+    err.errno = code
+    return err
+
+
+def test_resolution_reessayee_sur_panne_temporaire(monkeypatch):
+    appels = []
+
+    async def resolveur(hostname):
+        appels.append(hostname)
+        if len(appels) == 1:
+            raise _gaierror(socket.EAI_AGAIN)
+        return [(2, 1, 6, "", ("93.184.216.34", 0))]
+
+    monkeypatch.setattr(links_mod, "_getaddrinfo", resolveur)
+    monkeypatch.setattr(links_mod, "_DNS_RETRY_DELAY", 0)
+    links_mod._dns_cache.clear()
+
+    assert asyncio.run(links_mod._hostname_resolves_public("exemple.test")) is True
+    assert len(appels) == 2, "la panne temporaire doit donner lieu à un réessai"
+
+
+def test_nom_inconnu_nest_pas_reessaye(monkeypatch):
+    """Un nom qui n'existe pas doit être rejeté tout de suite : pas de latence
+    ajoutée au refus des URL invalides."""
+    appels = []
+
+    async def resolveur(hostname):
+        appels.append(hostname)
+        raise _gaierror(socket.EAI_NONAME)
+
+    monkeypatch.setattr(links_mod, "_getaddrinfo", resolveur)
+    monkeypatch.setattr(links_mod, "_DNS_RETRY_DELAY", 0)
+    links_mod._dns_cache.clear()
+
+    assert asyncio.run(links_mod._hostname_resolves_public("inexistant.invalid")) is False
+    assert len(appels) == 1, "un nom inconnu ne doit pas être réessayé"
+
+
+def test_panne_persistante_refusee_sans_mise_en_cache(monkeypatch):
+    async def resolveur(hostname):
+        raise _gaierror(socket.EAI_AGAIN)
+
+    monkeypatch.setattr(links_mod, "_getaddrinfo", resolveur)
+    monkeypatch.setattr(links_mod, "_DNS_RETRY_DELAY", 0)
+    links_mod._dns_cache.clear()
+
+    assert asyncio.run(links_mod._hostname_resolves_public("exemple.test")) is False
+    assert "exemple.test" not in links_mod._dns_cache, "un échec ne doit pas être mémorisé"
+
+
+def test_hote_prive_toujours_refuse_apres_reessai(monkeypatch):
+    """Le réessai ne doit pas devenir un contournement de la garde."""
+    appels = []
+
+    async def resolveur(hostname):
+        appels.append(hostname)
+        if len(appels) == 1:
+            raise _gaierror(socket.EAI_AGAIN)
+        return [(2, 1, 6, "", ("192.168.1.10", 0))]
+
+    monkeypatch.setattr(links_mod, "_getaddrinfo", resolveur)
+    monkeypatch.setattr(links_mod, "_DNS_RETRY_DELAY", 0)
+    links_mod._dns_cache.clear()
+
+    assert asyncio.run(links_mod._hostname_resolves_public("interne.test")) is False
