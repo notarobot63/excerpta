@@ -140,6 +140,10 @@ def _public_host(monkeypatch, port: int, *hostnames: str) -> None:
 
     Sans cela, l'URL de départ serait rejetée dès la garde d'entrée et le test
     n'exercerait jamais le comportement sur redirection.
+
+    Neutralise aussi le contrôle de l'adresse du pair : ces serveurs écoutent en
+    loopback, et le simulacre ne tiendrait pas jusqu'à la connexion. Les tests
+    qui visent ce contrôle ne passent donc pas par ce helper.
     """
     noms = hostnames or ("excerpta-test.invalid",)
     real_resolves = links_mod._hostname_resolves_public
@@ -152,6 +156,7 @@ def _public_host(monkeypatch, port: int, *hostnames: str) -> None:
         links_mod.socket, "getaddrinfo",
         lambda host, *a, **k: [(2, 1, 6, "", ("127.0.0.1", port))],
     )
+    monkeypatch.setattr(links_mod, "_assert_peer_public", lambda resp, url: None)
 
 
 # ── _is_private_host ──────────────────────────────────────────────────────────
@@ -305,3 +310,89 @@ def test_greader_auth_ne_livre_pas_les_identifiants_en_interne(
     with pytest.raises(links_mod._UnsafeRedirect):
         asyncio.run(freshrss_mod._greader_auth(base, "utilisateur", "secret"))
     assert TOUCHED == [], f"les identifiants sont partis vers : {TOUCHED}"
+
+
+# ── Rebinding DNS : l'adresse réellement contactée ────────────────────────────
+#
+# `_hostname_resolves_public` valide une résolution, puis httpx en fait une
+# autre pour se connecter. Un DNS hostile à TTL très court peut répondre
+# publiquement à la première et pointer une adresse interne à la seconde. Seule
+# l'adresse du pair, relevée sur la connexion établie, tranche.
+
+
+class _FauxStream:
+    def __init__(self, addr):
+        self._addr = addr
+
+    def get_extra_info(self, name):
+        return self._addr if name == "server_addr" else None
+
+
+def _reponse_depuis(addr):
+    return httpx.Response(
+        200, content=b"secret interne",
+        extensions={"network_stream": _FauxStream(addr)} if addr else {},
+    )
+
+
+@pytest.mark.parametrize("ip", [
+    "127.0.0.1",
+    "10.0.0.5",
+    "192.168.1.254",
+    "169.254.169.254",     # métadonnées cloud
+    "::1",
+    "::ffff:127.0.0.1",    # IPv4-mapped
+])
+def test_pair_prive_refuse(ip):
+    with pytest.raises(links_mod._UnsafeRedirect):
+        links_mod._assert_peer_public(_reponse_depuis((ip, 80)), "http://exemple.test/")
+
+
+@pytest.mark.parametrize("ip", ["93.184.216.34", "1.1.1.1", "2606:4700::1111"])
+def test_pair_public_accepte(ip):
+    links_mod._assert_peer_public(_reponse_depuis((ip, 443)), "http://exemple.test/")
+
+
+def test_pair_inconnu_laisse_passer():
+    """Transport de test : pas de connexion réelle, donc rien à valider."""
+    links_mod._assert_peer_public(_reponse_depuis(None), "http://exemple.test/")
+
+
+def test_rebinding_bloque_avant_toute_lecture(interne, http_client):
+    """Bout en bout, vrai socket : la garde d'entrée a dit « public », la
+    connexion aboutit en loopback, aucun contenu ne doit remonter."""
+    url = f"http://127.0.0.1:{interne.server_port}/admin/secret"
+
+    async def scenario():
+        async with links_mod._safe_stream("GET", url, timeout=5) as resp:
+            return await resp.aread()
+
+    with pytest.raises(links_mod._UnsafeRedirect):
+        asyncio.run(scenario())
+
+
+def test_pair_controle_a_chaque_saut(redirecteur, interne, http_client, monkeypatch):
+    """La cible d'une redirection est tout aussi rebindable que l'URL de départ :
+    le contrôle doit s'exécuter à chaque itération, pas seulement au premier saut."""
+    _public_host(monkeypatch, redirecteur.server_port)
+
+    # La revalidation d'URL refuserait la cible interne avant qu'on y arrive :
+    # on la neutralise pour isoler ce qu'on mesure, le contrôle du pair.
+    async def toujours_public(url):
+        return True
+
+    monkeypatch.setattr(links_mod, "_assert_public_url", toujours_public)
+
+    appels = []
+    monkeypatch.setattr(
+        links_mod, "_assert_peer_public", lambda resp, url: appels.append(url)
+    )
+    url = f"http://excerpta-test.invalid:{redirecteur.server_port}/depart"
+
+    async def scenario():
+        async with links_mod._safe_stream("GET", url, timeout=5) as resp:
+            return resp.status_code
+
+    asyncio.run(scenario())
+    assert len(appels) == 2, f"contrôle exécuté {len(appels)} fois, attendu 2 (départ + cible)"
+    assert appels[1].endswith("/admin/secret"), f"second contrôle sur {appels[1]}"
