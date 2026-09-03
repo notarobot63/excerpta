@@ -20,6 +20,19 @@ class RenameFolderBody(BaseModel):
     name: str
 
 
+def _validate_name(raw: str) -> str:
+    """Nom de dossier non vide, espaces de bordure retirés.
+
+    Le champ porte `required` côté formulaire, mais rien ne validait un envoi
+    direct : on pouvait créer un dossier sans nom, invisible dans la barre
+    latérale, alors que le renommage refusait déjà le vide.
+    """
+    name = (raw or "").strip()
+    if not name:
+        raise HTTPException(status_code=422, detail="Empty name")
+    return name
+
+
 def _parent_map(session: Session, user_id: int) -> dict:
     """id de dossier -> id du parent, pour tous les dossiers d'un utilisateur."""
     return {
@@ -79,6 +92,7 @@ async def add_folder(
     user: User = Depends(get_current_user),
     session: Session = Depends(get_session),
 ):
+    name = _validate_name(name)
     pid = int(parent_id) if parent_id and parent_id.strip().isdigit() else None
     # sort_order = dernier parmi les frères
     siblings = list(session.exec(
@@ -127,8 +141,11 @@ async def edit_folder(
     folder = session.get(Folder, folder_id)
     if not folder or folder.user_id != user.id:
         raise HTTPException(status_code=404)
+    # Validé avant toute écriture, comme à la création : un envoi refusé ne
+    # doit rien laisser derrière lui.
+    new_name = _validate_name(name)
     pid = int(parent_id) if parent_id and parent_id.strip().isdigit() else None
-    folder.name = name
+    folder.name = new_name
     folder.is_public = is_public is not None
     folder.parent_id = _validate_parent(session, pid, user.id, exclude_id=folder_id)
     session.add(folder)
@@ -146,9 +163,7 @@ async def rename_folder(
     folder = session.get(Folder, folder_id)
     if not folder or folder.user_id != user.id:
         raise HTTPException(status_code=404)
-    new_name = body.name.strip()
-    if not new_name:
-        raise HTTPException(status_code=422, detail="Empty name")
+    new_name = _validate_name(body.name)
     folder.name = new_name
     session.add(folder)
     session.commit()

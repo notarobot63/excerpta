@@ -65,23 +65,62 @@ async def _greader_token(base_url: str, auth: str) -> str:
     return resp.text.strip() if resp.status_code == 200 else ""
 
 
-async def unstar_item(config: "FreshRSSConfig", item_id: str) -> bool:
-    """Déséttoile un article FreshRSS. Retourne True si succès."""
+# Désétoilages simultanés lors d'un rattrapage : borne la rafale envoyée au
+# serveur FreshRSS de l'utilisateur, qui est souvent une machine modeste.
+_UNSTAR_CONCURRENCY = 5
+
+
+async def _edit_tag_unstar(config: "FreshRSSConfig", auth: str, t_token: str, item_id: str) -> bool:
+    """Retire l'étoile d'un article, avec une session Greader déjà ouverte."""
+    resp = await safe_request(
+        "POST",
+        f"{config.freshrss_url}/api/greader.php/reader/api/0/edit-tag",
+        same_host_only=True,
+        headers={"Authorization": f"GoogleLogin auth={auth}"},
+        data={"i": item_id, "r": "user/-/state/com.google/starred", "T": t_token},
+        timeout=10,
+    )
+    return resp.status_code == 200
+
+
+async def unstar_items(config: "FreshRSSConfig", item_ids: list[str]) -> int:
+    """Désétoile plusieurs articles en une seule session. Retourne le nombre d'échecs.
+
+    Une authentification pour tout le lot, et non par article : `unstar_item`
+    rouvrait une session complète à chaque appel, soit trois requêtes par
+    article. Sur un rattrapage de cent articles, cela faisait trois cents
+    requêtes là où cent-deux suffisent, toutes émises en même temps faute de
+    borne sur le parallélisme.
+    """
+    if not item_ids:
+        return 0
     try:
         auth = await _greader_auth(config.freshrss_url, config.freshrss_user, decrypt(config.freshrss_token))
         t_token = await _greader_token(config.freshrss_url, auth)
-        resp = await safe_request(
-            "POST",
-            f"{config.freshrss_url}/api/greader.php/reader/api/0/edit-tag",
-            same_host_only=True,
-            headers={"Authorization": f"GoogleLogin auth={auth}"},
-            data={"i": item_id, "r": "user/-/state/com.google/starred", "T": t_token},
-            timeout=10,
-        )
-        return resp.status_code == 200
     except Exception as exc:
-        logger.warning("FreshRSS unstar failed item_id=%s : %s", item_id, exc)
-        return False
+        logger.warning("FreshRSS unstar : session refusée pour %d articles : %s", len(item_ids), exc)
+        return len(item_ids)
+
+    semaphore = asyncio.Semaphore(_UNSTAR_CONCURRENCY)
+
+    async def _one(item_id: str) -> bool:
+        async with semaphore:
+            try:
+                return await _edit_tag_unstar(config, auth, t_token, item_id)
+            except Exception as exc:
+                logger.warning("FreshRSS unstar failed item_id=%s : %s", item_id, exc)
+                return False
+
+    resultats = await asyncio.gather(*(_one(i) for i in item_ids))
+    echecs = sum(1 for ok in resultats if not ok)
+    if echecs:
+        logger.warning("FreshRSS unstar : %d échec(s) sur %d articles", echecs, len(item_ids))
+    return echecs
+
+
+async def unstar_item(config: "FreshRSSConfig", item_id: str) -> bool:
+    """Déséttoile un article FreshRSS. Retourne True si succès."""
+    return await unstar_items(config, [item_id]) == 0
 
 
 async def _greader_starred(base_url: str, auth: str) -> list[dict]:
@@ -249,7 +288,7 @@ async def sync_user(config: FreshRSSConfig, session: Session) -> int:
             if iid:
                 orphan_item_ids.append(iid)
     if orphan_item_ids:
-        await asyncio.gather(*(unstar_item(config, iid) for iid in orphan_item_ids))
+        await unstar_items(config, orphan_item_ids)
 
     new_links: list[Link] = []
     for item in items:
