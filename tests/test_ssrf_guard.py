@@ -396,3 +396,78 @@ def test_pair_controle_a_chaque_saut(redirecteur, interne, http_client, monkeypa
     asyncio.run(scenario())
     assert len(appels) == 2, f"contrôle exécuté {len(appels)} fois, attendu 2 (départ + cible)"
     assert appels[1].endswith("/admin/secret"), f"second contrôle sur {appels[1]}"
+
+
+# ── Réponses compressées ──────────────────────────────────────────────────────
+#
+# `safe_request` lit le corps en streaming, ce qui le décode. Recoller ce corps
+# aux en-têtes d'origine laissait un `Content-Encoding: gzip` mensonger, et la
+# première lecture de `.json()` retentait la décompression. La synchronisation
+# FreshRSS était cassée par ce seul défaut : ClientLogin passait (réponse courte
+# non compressée), la liste des articles étoilés échouait.
+
+
+class _ServeurGzip(BaseHTTPRequestHandler):
+    """Renvoie du JSON compressé, comme le fait un FreshRSS derrière un proxy."""
+
+    def do_GET(self):
+        import gzip as _gzip
+        body = _gzip.compress(b'{"items": [{"id": "1"}], "continuation": null}')
+        self.send_response(200)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Content-Encoding", "gzip")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
+    do_POST = do_GET
+
+    def log_message(self, *a):
+        pass
+
+
+@pytest.fixture
+def serveur_gzip():
+    srv = _serve(_ServeurGzip)
+    yield srv
+    srv.shutdown()
+
+
+def test_safe_request_rend_un_corps_lisible_quand_le_serveur_compresse(
+    serveur_gzip, http_client, monkeypatch
+):
+    _public_host(monkeypatch, serveur_gzip.server_port)
+    url = f"http://excerpta-test.invalid:{serveur_gzip.server_port}/reader/api/0/stream"
+
+    resp = asyncio.run(links_mod.safe_request("GET", url, timeout=5))
+
+    assert resp.json() == {"items": [{"id": "1"}], "continuation": None}
+    assert resp.text.startswith("{")
+
+
+def test_safe_request_nannonce_plus_un_encodage_consomme(
+    serveur_gzip, http_client, monkeypatch
+):
+    """Les en-têtes rendus doivent décrire le corps rendu, pas celui du réseau."""
+    _public_host(monkeypatch, serveur_gzip.server_port)
+    url = f"http://excerpta-test.invalid:{serveur_gzip.server_port}/x"
+
+    resp = asyncio.run(links_mod.safe_request("GET", url, timeout=5))
+
+    assert "content-encoding" not in resp.headers, "encodage déjà consommé, ne pas l'annoncer"
+    # httpx recalcule Content-Length sur le corps qu'on lui donne : il doit
+    # décrire le corps rendu, pas les octets compressés reçus du réseau.
+    assert int(resp.headers["content-length"]) == len(resp.content)
+    assert resp.headers["content-type"] == "application/json"
+
+
+def test_greader_starred_lit_une_reponse_compressee(
+    serveur_gzip, http_client, monkeypatch
+):
+    """Bout en bout sur le chemin réellement cassé en production."""
+    _public_host(monkeypatch, serveur_gzip.server_port)
+    base = f"http://excerpta-test.invalid:{serveur_gzip.server_port}"
+
+    items = asyncio.run(freshrss_mod._greader_starred(base, "jeton"))
+
+    assert items == [{"id": "1"}]
