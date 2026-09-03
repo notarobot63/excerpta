@@ -253,4 +253,13 @@ async def safe_request(
     async with _safe_stream(method, url, same_host_only=same_host_only, **kwargs) as resp:
         body = await _read_limited(resp, max_bytes)
         status, headers, request = resp.status_code, resp.headers, resp.request
+    # `_read_limited` consomme la réponse en streaming, ce qui la décode déjà :
+    # `body` est en clair. Recopier `Content-Encoding` tel quel ferait retenter
+    # la décompression à la première lecture de `.text` ou `.json()`, sur un
+    # contenu qui ne l'est plus — httpx lève alors « Error -3 while
+    # decompressing data: incorrect header check ». `Content-Length` ne décrit
+    # plus le corps rendu non plus.
+    headers = httpx.Headers(headers)
+    headers.pop("content-encoding", None)
+    headers.pop("content-length", None)
     return httpx.Response(status_code=status, headers=headers, content=body, request=request)
