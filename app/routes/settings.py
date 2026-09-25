@@ -558,12 +558,32 @@ async def check_links_run(
 # La route unitaire POST /links/{id}/archive vit désormais dans routes/links.py
 # (co-localisée avec _wayback_archive). Ici : archivage de tous les non-archivés.
 
-@router.post("/settings/archive-all", dependencies=[Depends(forbid_in_demo_dep)])
+# Comptes dont un archivage en masse est en cours. Sans ce garde-fou, chaque
+# clic relançait une série complète en parallèle de la précédente : doublons
+# chez Wayback, qui limite justement l'archivage anonyme.
+_archive_running: set[int] = set()
+
+
+async def _archive_all_job(user_id: int, link_ids: list[int]) -> None:
+    try:
+        await _archive_many(link_ids)
+    finally:
+        _archive_running.discard(user_id)
+
+
+@router.post("/settings/archive-all",
+             dependencies=[Depends(rate_limit(3, 3600)), Depends(forbid_in_demo_dep)])
 async def archive_all(
     background_tasks: BackgroundTasks,
     user: User = Depends(get_current_user),
     session: Session = Depends(get_session),
 ):
+    if user.id in _archive_running:
+        pending = session.execute(
+            text("SELECT COUNT(*) FROM links WHERE user_id = :uid AND archive_status = 'pending'"),
+            {"uid": user.id},
+        ).scalar()
+        return RedirectResponse(url=f"/settings?archiving={pending}", status_code=303)
     links = session.exec(
         select(Link).where(Link.user_id == user.id, Link.archived_url.is_(None))
     ).all()
@@ -573,5 +593,6 @@ async def archive_all(
         session.add(lk)
     session.commit()
     if ids:
-        background_tasks.add_task(_archive_many, ids)
+        _archive_running.add(user.id)
+        background_tasks.add_task(_archive_all_job, user.id, ids)
     return RedirectResponse(url=f"/settings?archiving={len(ids)}", status_code=303)
