@@ -59,3 +59,16 @@ def test_weak_values_are_replaced(weak):
     settings = Settings(secret_key=weak, encryption_key="b" * 44)
     assert settings.secret_key != weak
     assert len(settings.secret_key) >= 32
+
+
+def test_wildcard_proxy_trust_warns(caplog):
+    """`*` laisse le client choisir l'IP vue par la limitation de débit."""
+    with caplog.at_level(logging.WARNING, logger="excerpta"):
+        Settings(secret_key="a" * 64, encryption_key="b" * 44, forwarded_allow_ips="*")
+    assert "FORWARDED_ALLOW_IPS" in _warnings(caplog)
+
+
+def test_explicit_proxy_trust_warns_about_nothing(caplog):
+    with caplog.at_level(logging.WARNING, logger="excerpta"):
+        Settings(secret_key="a" * 64, encryption_key="b" * 44, forwarded_allow_ips="172.18.0.2")
+    assert not caplog.records

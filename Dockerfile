@@ -29,12 +29,19 @@ RUN useradd --system --uid 10001 --gid 0 --no-create-home excerpta \
 ARG GIT_COMMIT=unknown
 ENV APP_VERSION=$GIT_COMMIT
 
-# Confiance aux en-têtes X-Forwarded-* : uvicorn ne s'en sert que pour
-# `request.client.host` et le schéma d'URL. `*` accepte n'importe quelle source,
-# ce qui n'est correct que si le conteneur est joignable uniquement par le
-# reverse proxy. Dès que le port est exposé sur un réseau partagé, restreindre à
-# l'adresse du proxy (voir FORWARDED_ALLOW_IPS dans .env.example).
-ENV FORWARDED_ALLOW_IPS=*
+# Confiance aux en-têtes X-Forwarded-* : uvicorn s'en sert pour
+# `request.client.host`, donc pour la limitation de débit, et pour le schéma
+# d'URL. Il parcourt X-Forwarded-For depuis la droite et retient la première
+# adresse qui n'est PAS dans cette liste : celle que le reverse proxy a ajoutée.
+#
+# Jamais `*` : uvicorn prend alors le PREMIER élément de la liste, c'est-à-dire
+# celui qu'écrit le client. Changer cette valeur à chaque requête suffisait à
+# repartir d'un compteur neuf et annulait toutes les limites de débit.
+#
+# Par défaut : boucle locale et réseaux privés, où se trouvent le proxy et la
+# passerelle Docker. Restreindre à l'adresse exacte du proxy quand elle est
+# connue (voir FORWARDED_ALLOW_IPS dans .env.example).
+ENV FORWARDED_ALLOW_IPS=127.0.0.1,::1,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,fc00::/7
 
 USER 10001
 
