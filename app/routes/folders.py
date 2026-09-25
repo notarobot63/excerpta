@@ -9,9 +9,10 @@ from sqlmodel import Session, select
 
 from ..auth import get_current_user
 from ..database import get_session
-from ..models import Folder, User
+from ..models import Folder, FreshRSSConfig, User
 from ..templates_cfg import templates
 from ..utils import build_folder_tree, creates_cycle, folder_alpha_key, sidebar_data
+from .freshrss import forget_freshrss_folder, freshrss_folder
 
 router = APIRouter()
 
@@ -31,6 +32,22 @@ def _validate_name(raw: str) -> str:
     if not name:
         raise HTTPException(status_code=422, detail="Empty name")
     return name
+
+
+def _rename(session: Session, folder: Folder, new_name: str) -> None:
+    """Renomme un dossier, en reportant le nom sur la config FreshRSS s'il
+    s'agit du dossier d'import : le champ des réglages reste ainsi fidèle, et
+    une config encore repérée par son nom ne perd pas son dossier."""
+    config = session.exec(
+        select(FreshRSSConfig).where(FreshRSSConfig.user_id == folder.user_id)
+    ).first()
+    if config:
+        tracked = freshrss_folder(session, config)
+        if tracked and tracked.id == folder.id:
+            config.group_name = new_name
+            config.folder_id = folder.id
+            session.add(config)
+    folder.name = new_name
 
 
 def _parent_map(session: Session, user_id: int) -> dict:
@@ -145,7 +162,7 @@ async def edit_folder(
     # doit rien laisser derrière lui.
     new_name = _validate_name(name)
     pid = int(parent_id) if parent_id and parent_id.strip().isdigit() else None
-    folder.name = new_name
+    _rename(session, folder, new_name)
     folder.is_public = is_public is not None
     folder.parent_id = _validate_parent(session, pid, user.id, exclude_id=folder_id)
     session.add(folder)
@@ -164,7 +181,7 @@ async def rename_folder(
     if not folder or folder.user_id != user.id:
         raise HTTPException(status_code=404)
     new_name = _validate_name(body.name)
-    folder.name = new_name
+    _rename(session, folder, new_name)
     session.add(folder)
     session.commit()
     return JSONResponse({"ok": True, "new_name": new_name})
@@ -208,6 +225,7 @@ async def delete_folder(
     # Les sous-dossiers remontent à la racine
     session.execute(text("UPDATE folders SET parent_id = NULL WHERE parent_id = :id"),
                     {"id": folder_id})
+    forget_freshrss_folder(session, user.id, {folder_id})
     session.delete(folder)
     session.commit()
     return RedirectResponse(url="/folders", status_code=303)
