@@ -21,7 +21,7 @@ from ..demo import forbid_in_demo_dep
 from ..models import Folder, FreshRSSConfig, Link, LinkTagLink, Tag, User
 from ..ratelimit import rate_limit
 from ..templates_cfg import templates
-from ..utils import get_or_create_tag, refresh_link_fts, sidebar_data, slugify
+from ..utils import get_or_create_tags, refresh_link_fts, sidebar_data, slugify
 from .freshrss import forget_freshrss_folder, freshrss_folder
 from .links import _archive_many, _assert_public_url, _fetch_meta, _safe_stream, _safe_url
 
@@ -339,7 +339,7 @@ async def import_links(
         session.add(link)
         session.flush()
 
-        tags = [get_or_create_tag(session, user.id, n) for n in item["tags"]]
+        tags = get_or_create_tags(session, user.id, item["tags"])
         for t in tags:
             session.add(LinkTagLink(link_id=link.id, tag_id=t.id))
         session.flush()

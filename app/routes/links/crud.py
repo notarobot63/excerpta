@@ -18,7 +18,7 @@ from ...demo import (assert_link_quota, demo_active, demo_rate_limit,
 from ...models import Folder, Link, LinkTagLink, Tag, User
 from ...ratelimit import rate_limit
 from ...templates_cfg import templates
-from ...utils import (descendant_folder_ids, get_or_create_tag, refresh_link_fts,
+from ...utils import (descendant_folder_ids, get_or_create_tags, refresh_link_fts,
                       safe_next, sidebar_data)
 from .archive import _wayback_archive
 from .constants import MAX_DESC_LEN, MAX_NOTE_LEN, MAX_TAGS_PER_LINK, MAX_TITLE_LEN, PER_PAGE
@@ -31,7 +31,7 @@ logger = logging.getLogger("excerpta.links.crud")
 
 
 def _get_or_create_tags(session: Session, user_id: int, names: List[str]) -> List[Tag]:
-    return [get_or_create_tag(session, user_id, n.strip().lower()) for n in names if n.strip()]
+    return get_or_create_tags(session, user_id, names)
 
 
 def _validate_folder_id(session: Session, user_id: int, raw: Optional[str]) -> Optional[int]:
