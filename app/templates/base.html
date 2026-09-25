@@ -328,7 +328,8 @@ function sidebarTag() {
       if (r.ok) {
         var data = await r.json();
         if (data.merged) { this.$el.remove(); return; }
-        this.currentName = name;
+        this.currentName = data.new_name;  // normalisé côté serveur (minuscules)
+        this.editName = data.new_name;
         this.editing = false;
         this.hovered = false;
       }

@@ -104,6 +104,11 @@ class FreshRSSConfig(SQLModel, table=True):
     freshrss_user: str = Field(default="")
     freshrss_token: str = Field(default="")
     group_name: str = Field(default="FreshRSS")
+    # Dossier d'import, suivi par identifiant : le retrouver par son nom
+    # faisait créer un nouveau dossier après un renommage, et la synchro
+    # suivante désétoilait alors tous les articles restés dans l'ancien.
+    # NULL = pas encore rattaché (config antérieure) : repli sur `group_name`.
+    folder_id: Optional[int] = Field(default=None)
     is_enabled: bool = Field(default=False)
     last_sync: Optional[datetime] = Field(default=None)
     synced_count: int = Field(default=0)

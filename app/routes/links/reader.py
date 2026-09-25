@@ -51,12 +51,16 @@ async def _extract_reader(url: str) -> Optional[dict]:
             except _TooLarge:
                 return None
             encoding = resp.encoding or "utf-8"
+            final_url = str(resp.url)
     except Exception:
         return None
 
     try:
         html = body.decode(encoding, errors="replace")
-        doc = Document(html)
+        # `url` fait résoudre les liens et images relatifs contre la page
+        # d'origine (après redirections). Sans lui, `src="/img/a.png"` restait
+        # relatif et visait Excerpta : images et liens cassés dans le lecteur.
+        doc = Document(html, url=final_url)
         title = (doc.short_title() or "").strip()
         summary = doc.summary(html_partial=True)
     except Exception:

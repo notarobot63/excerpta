@@ -3,10 +3,8 @@ import io
 import json
 from datetime import datetime, timezone
 from typing import Optional
-from urllib.parse import urlparse
 
 import qrcode
-from bs4 import BeautifulSoup
 from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, Request, UploadFile
 from fastapi.responses import HTMLResponse, RedirectResponse, Response, StreamingResponse
 from sqlalchemy import or_, text
@@ -19,9 +17,11 @@ from ..crypto import decrypt
 from ..database import engine as db_engine, get_session
 from ..demo import forbid_in_demo_dep
 from ..models import Folder, FreshRSSConfig, Link, LinkTagLink, Tag, User
+from ..netscape import build_bookmarks, parse_bookmarks
 from ..ratelimit import rate_limit
 from ..templates_cfg import templates
-from ..utils import get_or_create_tag, refresh_link_fts, sidebar_data, slugify
+from ..utils import get_or_create_tags, refresh_link_fts, sidebar_data, slugify
+from .freshrss import forget_freshrss_folder, freshrss_folder
 from .links import _archive_many, _assert_public_url, _fetch_meta, _safe_stream, _safe_url
 
 router = APIRouter()
@@ -29,59 +29,32 @@ router = APIRouter()
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
-def _parse_netscape(html: str) -> list[dict]:
-    soup = BeautifulSoup(html, "html.parser")
-    items = []
-    for a in soup.find_all("a"):
-        href = a.get("href", "").strip()
-        if not href.startswith("http"):
+def _import_folder(session: Session, user_id: int, path: tuple, cache: dict) -> Optional[int]:
+    """Identifiant du dossier désigné par `path` (noms de la racine au plus
+    profond), créé au besoin. Un dossier existant de même nom sous le même
+    parent est réutilisé : réimporter un fichier ne duplique pas l'arbre."""
+    parent_id = None
+    for depth in range(1, len(path) + 1):
+        key = path[:depth]
+        if key in cache:
+            parent_id = cache[key]
             continue
-        tags_raw = a.get("tags", "") or a.get("tag", "")
-        # Sépare par virgule puis par espace (tags Linkding parfois multi-mots)
-        tags = []
-        for part in tags_raw.split(","):
-            tags.extend(w.lower() for w in part.split() if w.strip())
-        note = ""
-        parent = a.parent
-        if parent:
-            nxt = parent.find_next_sibling()
-            if nxt and nxt.name == "dd":
-                note = nxt.get_text(" ", strip=True)
-        parsed = urlparse(href)
-        favicon = f"{parsed.scheme}://{parsed.netloc}/favicon.ico"
-        items.append({
-            "url": href,
-            "title": (a.get_text(strip=True) or href)[:500],
-            "tags": tags,
-            "note": note[:50_000],
-            "favicon_url": favicon,
-        })
-    return items
-
-
-def _build_netscape(links: list[Link]) -> str:
-    from html import escape
-    lines = [
-        "<!DOCTYPE NETSCAPE-Bookmark-file-1>",
-        '<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=UTF-8">',
-        "<TITLE>Excerpta Export</TITLE>",
-        "<H1>Bookmarks</H1>",
-        "<DL><p>",
-    ]
-    for lk in links:
-        tags = escape(",".join(t.name for t in lk.tags), quote=True)
-        folder_name = escape(lk.folder.name if lk.folder else "", quote=True)
-        ts = int(lk.created_at.timestamp())
-        title = escape(lk.title)
-        url = escape(lk.url, quote=True)
-        lines.append(
-            f'    <DT><A HREF="{url}" ADD_DATE="{ts}" TAGS="{tags}" FOLDER="{folder_name}">{title}</A>'
-        )
-        body = lk.note or lk.description
-        if body:
-            lines.append(f"    <DD>{escape(body)}")
-    lines.append("</DL><p>")
-    return "\n".join(lines)
+        name = path[depth - 1]
+        folder = session.exec(
+            select(Folder).where(
+                Folder.user_id == user_id, Folder.name == name, Folder.parent_id == parent_id,
+            )
+        ).first()
+        if not folder:
+            siblings = session.exec(
+                select(Folder.sort_order).where(Folder.user_id == user_id, Folder.parent_id == parent_id)
+            ).all()
+            folder = Folder(user_id=user_id, name=name, parent_id=parent_id,
+                            sort_order=max(siblings, default=-1) + 1)
+            session.add(folder)
+            session.flush()
+        cache[key] = parent_id = folder.id
+    return parent_id
 
 
 # ── Settings ──────────────────────────────────────────────────────────────────
@@ -310,7 +283,7 @@ async def import_links(
     if b"<!doctype" not in snippet and b"<html" not in snippet and b"<dl" not in snippet and b"<a href" not in snippet:
         from fastapi import HTTPException
         raise HTTPException(status_code=400, detail="Unrecognised format, a Netscape HTML file is expected")
-    items = _parse_netscape(content.decode("utf-8", errors="replace"))[:10_000]
+    items = parse_bookmarks(content.decode("utf-8", errors="replace"))[:10_000]
 
     imported = skipped = 0
     existing_urls = {
@@ -321,6 +294,7 @@ async def import_links(
     }
 
     new_link_ids = []
+    folder_cache: dict = {}
 
     for item in items:
         if item["url"] in existing_urls or not _safe_url(item["url"]):
@@ -334,11 +308,12 @@ async def import_links(
             note=item["note"],
             description="",
             favicon_url=item["favicon_url"],
+            folder_id=_import_folder(session, user.id, item["folder_path"], folder_cache),
         )
         session.add(link)
         session.flush()
 
-        tags = [get_or_create_tag(session, user.id, n) for n in item["tags"]]
+        tags = get_or_create_tags(session, user.id, item["tags"])
         for t in tags:
             session.add(LinkTagLink(link_id=link.id, tag_id=t.id))
         session.flush()
@@ -365,9 +340,8 @@ async def purge_freshrss(
 ):
     config = session.exec(select(FreshRSSConfig).where(FreshRSSConfig.user_id == user.id)).first()
     if config:
-        folder = session.exec(
-            select(Folder).where(Folder.user_id == user.id, Folder.name == config.group_name)
-        ).first()
+        folder = freshrss_folder(session, config)
+        config.folder_id = None
         if folder:
             session.execute(
                 text("DELETE FROM link_tags WHERE link_id IN "
@@ -425,6 +399,7 @@ async def purge_all(
     session.execute(text("DELETE FROM links WHERE user_id = :uid"), {"uid": user.id})
     session.execute(text("DELETE FROM tags WHERE user_id = :uid"), {"uid": user.id})
     session.execute(text("DELETE FROM folders WHERE user_id = :uid"), {"uid": user.id})
+    forget_freshrss_folder(session, user.id)
     session.commit()
     return RedirectResponse(url="/settings?purged=all", status_code=303)
 
@@ -437,7 +412,8 @@ async def export_links(
     session: Session = Depends(get_session),
 ):
     links = list(session.exec(select(Link).where(Link.user_id == user.id).order_by(Link.created_at.desc())).all())
-    content = _build_netscape(links)
+    folders = list(session.exec(select(Folder).where(Folder.user_id == user.id)).all())
+    content = build_bookmarks(links, folders)
     filename = f"excerpta-export-{datetime.now(timezone.utc).strftime('%Y%m%d')}.html"
     return Response(
         content=content.encode("utf-8"),
@@ -484,41 +460,46 @@ async def _check_url(url: str) -> dict:
         return {"status": None, "broken": True, "error": str(e)[:100]}
 
 
+# Vérifications simultanées, et durée maximale d'une vérification (HEAD puis
+# GET éventuel), comptée à partir du moment où elle commence réellement.
+_CHECK_CONCURRENCY = 5
+_CHECK_TIMEOUT = 30
+
+
 async def _run_check_background(user_id: int) -> None:
     _check_jobs[user_id] = {"total": 0, "done": 0, "running": True}
     try:
         with Session(db_engine) as s:
             link_ids = [lk.id for lk in s.exec(select(Link).where(Link.user_id == user_id)).all()]
         _check_jobs[user_id]["total"] = len(link_ids)
-        sem = asyncio.Semaphore(5)
+        sem = asyncio.Semaphore(_CHECK_CONCURRENCY)
 
         async def _check_one(lid: int):
+            # Le délai ne s'applique qu'une fois le sémaphore obtenu. Posé
+            # autour de l'attente, il comptait aussi le temps passé dans la
+            # file : au-delà d'une centaine de liens, tous les suivants
+            # expiraient sans avoir été vérifiés, et passaient pour faits.
             async with sem:
                 with Session(db_engine) as s:
                     lk = s.get(Link, lid)
                     url = lk.url if lk else None
-                if not url:
-                    _check_jobs[user_id]["done"] += 1
-                    return
-                result = await _check_url(url)
-                with Session(db_engine) as s:
-                    lk2 = s.get(Link, lid)
-                    if lk2:
-                        lk2.is_broken = result["broken"]
-                        lk2.check_status = result["status"]
-                        lk2.last_checked_at = datetime.now(timezone.utc).replace(tzinfo=None)
-                        s.add(lk2)
-                        s.commit()
-                _check_jobs[user_id]["done"] += 1
-                await asyncio.sleep(0.2)
-
-        async def _check_one_safe(lid: int):
-            try:
-                await asyncio.wait_for(_check_one(lid), timeout=30)
-            except asyncio.TimeoutError:
+                if url:
+                    try:
+                        result = await asyncio.wait_for(_check_url(url), timeout=_CHECK_TIMEOUT)
+                    except asyncio.TimeoutError:
+                        result = {"status": None, "broken": True, "error": "timeout"}
+                    with Session(db_engine) as s:
+                        lk2 = s.get(Link, lid)
+                        if lk2:
+                            lk2.is_broken = result["broken"]
+                            lk2.check_status = result["status"]
+                            lk2.last_checked_at = datetime.now(timezone.utc).replace(tzinfo=None)
+                            s.add(lk2)
+                            s.commit()
+                    await asyncio.sleep(0.2)
                 _check_jobs[user_id]["done"] += 1
 
-        await asyncio.gather(*[_check_one_safe(lid) for lid in link_ids])
+        await asyncio.gather(*[_check_one(lid) for lid in link_ids])
     finally:
         _check_jobs[user_id]["running"] = False
 
@@ -577,12 +558,32 @@ async def check_links_run(
 # La route unitaire POST /links/{id}/archive vit désormais dans routes/links.py
 # (co-localisée avec _wayback_archive). Ici : archivage de tous les non-archivés.
 
-@router.post("/settings/archive-all", dependencies=[Depends(forbid_in_demo_dep)])
+# Comptes dont un archivage en masse est en cours. Sans ce garde-fou, chaque
+# clic relançait une série complète en parallèle de la précédente : doublons
+# chez Wayback, qui limite justement l'archivage anonyme.
+_archive_running: set[int] = set()
+
+
+async def _archive_all_job(user_id: int, link_ids: list[int]) -> None:
+    try:
+        await _archive_many(link_ids)
+    finally:
+        _archive_running.discard(user_id)
+
+
+@router.post("/settings/archive-all",
+             dependencies=[Depends(rate_limit(3, 3600)), Depends(forbid_in_demo_dep)])
 async def archive_all(
     background_tasks: BackgroundTasks,
     user: User = Depends(get_current_user),
     session: Session = Depends(get_session),
 ):
+    if user.id in _archive_running:
+        pending = session.execute(
+            text("SELECT COUNT(*) FROM links WHERE user_id = :uid AND archive_status = 'pending'"),
+            {"uid": user.id},
+        ).scalar()
+        return RedirectResponse(url=f"/settings?archiving={pending}", status_code=303)
     links = session.exec(
         select(Link).where(Link.user_id == user.id, Link.archived_url.is_(None))
     ).all()
@@ -592,5 +593,6 @@ async def archive_all(
         session.add(lk)
     session.commit()
     if ids:
-        background_tasks.add_task(_archive_many, ids)
+        _archive_running.add(user.id)
+        background_tasks.add_task(_archive_all_job, user.id, ids)
     return RedirectResponse(url=f"/settings?archiving={len(ids)}", status_code=303)

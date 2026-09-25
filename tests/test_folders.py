@@ -71,3 +71,37 @@ def test_rename_folder_logique(session):
     session.commit()
 
     assert session.get(Folder, f.id).name == "Nouveau"
+
+
+def test_supprimer_un_dossier_avec_des_liens_etiquetes(session):
+    """`link_tags` référence `links` sans cascade : un seul lien étiqueté
+    faisait échouer la suppression du dossier « avec ses liens »."""
+    import asyncio
+
+    from sqlalchemy import text
+
+    from app.models import Folder, Link, LinkTagLink, Tag, User
+    from app.routes import folders as folders_routes
+
+    user = User(oidc_sub="del", public_slug="del")
+    session.add(user)
+    session.commit()
+    folder = Folder(user_id=user.id, name="À jeter")
+    session.add(folder)
+    session.flush()
+    link = Link(user_id=user.id, url="https://e.example", title="Unique", folder_id=folder.id)
+    session.add(link)
+    tag = Tag(user_id=user.id, name="gardee")
+    session.add(tag)
+    session.flush()
+    session.add(LinkTagLink(link_id=link.id, tag_id=tag.id))
+    session.commit()
+    link_id, tag_id = link.id, tag.id
+
+    asyncio.run(folders_routes.delete_folder(folder.id, delete_links="1", user=user, session=session))
+
+    assert session.get(Link, link_id) is None
+    assert session.get(Tag, tag_id) is not None, "l'étiquette survit, seuls les liens partent"
+    assert session.execute(text("SELECT COUNT(*) FROM link_tags")).scalar() == 0
+    hits = session.execute(text("SELECT COUNT(*) FROM fts_links WHERE fts_links MATCH 'Unique'")).scalar()
+    assert hits == 0
