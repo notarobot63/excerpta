@@ -485,41 +485,46 @@ async def _check_url(url: str) -> dict:
         return {"status": None, "broken": True, "error": str(e)[:100]}
 
 
+# Vérifications simultanées, et durée maximale d'une vérification (HEAD puis
+# GET éventuel), comptée à partir du moment où elle commence réellement.
+_CHECK_CONCURRENCY = 5
+_CHECK_TIMEOUT = 30
+
+
 async def _run_check_background(user_id: int) -> None:
     _check_jobs[user_id] = {"total": 0, "done": 0, "running": True}
     try:
         with Session(db_engine) as s:
             link_ids = [lk.id for lk in s.exec(select(Link).where(Link.user_id == user_id)).all()]
         _check_jobs[user_id]["total"] = len(link_ids)
-        sem = asyncio.Semaphore(5)
+        sem = asyncio.Semaphore(_CHECK_CONCURRENCY)
 
         async def _check_one(lid: int):
+            # Le délai ne s'applique qu'une fois le sémaphore obtenu. Posé
+            # autour de l'attente, il comptait aussi le temps passé dans la
+            # file : au-delà d'une centaine de liens, tous les suivants
+            # expiraient sans avoir été vérifiés, et passaient pour faits.
             async with sem:
                 with Session(db_engine) as s:
                     lk = s.get(Link, lid)
                     url = lk.url if lk else None
-                if not url:
-                    _check_jobs[user_id]["done"] += 1
-                    return
-                result = await _check_url(url)
-                with Session(db_engine) as s:
-                    lk2 = s.get(Link, lid)
-                    if lk2:
-                        lk2.is_broken = result["broken"]
-                        lk2.check_status = result["status"]
-                        lk2.last_checked_at = datetime.now(timezone.utc).replace(tzinfo=None)
-                        s.add(lk2)
-                        s.commit()
-                _check_jobs[user_id]["done"] += 1
-                await asyncio.sleep(0.2)
-
-        async def _check_one_safe(lid: int):
-            try:
-                await asyncio.wait_for(_check_one(lid), timeout=30)
-            except asyncio.TimeoutError:
+                if url:
+                    try:
+                        result = await asyncio.wait_for(_check_url(url), timeout=_CHECK_TIMEOUT)
+                    except asyncio.TimeoutError:
+                        result = {"status": None, "broken": True, "error": "timeout"}
+                    with Session(db_engine) as s:
+                        lk2 = s.get(Link, lid)
+                        if lk2:
+                            lk2.is_broken = result["broken"]
+                            lk2.check_status = result["status"]
+                            lk2.last_checked_at = datetime.now(timezone.utc).replace(tzinfo=None)
+                            s.add(lk2)
+                            s.commit()
+                    await asyncio.sleep(0.2)
                 _check_jobs[user_id]["done"] += 1
 
-        await asyncio.gather(*[_check_one_safe(lid) for lid in link_ids])
+        await asyncio.gather(*[_check_one(lid) for lid in link_ids])
     finally:
         _check_jobs[user_id]["running"] = False
 

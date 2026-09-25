@@ -48,7 +48,7 @@
 ### Import / Export
 - **Bookmark import** in Netscape HTML format (Firefox, Chrome, Safari) - folders included
 - **Export** to Netscape HTML format with groups
-- **Broken link checker** (async, 10 checks in parallel) - dead links offer the cached reader copy and/or the Wayback archive
+- **Broken link checker** (async, 5 checks in parallel) - dead links offer the cached reader copy and/or the Wayback archive
 - **Metadata refresh** with real-time progress
 
 ### Integrations
