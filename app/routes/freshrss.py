@@ -232,6 +232,43 @@ def normalise_base_url(raw: str) -> str:
     ))
 
 
+def freshrss_folder(session: Session, config: FreshRSSConfig) -> Optional[Folder]:
+    """Dossier où la synchro range les articles étoilés, ou None.
+
+    Suivi par `config.folder_id` : l'utilisateur peut renommer ou déplacer le
+    dossier sans que la synchro le perde. Le repli par nom ne sert qu'aux
+    configurations antérieures à cette colonne ; `sync_user` enregistre alors
+    l'identifiant trouvé.
+    """
+    if config.folder_id is not None:
+        folder = session.get(Folder, config.folder_id)
+        if folder and folder.user_id == config.user_id:
+            return folder
+    return session.exec(
+        select(Folder).where(
+            Folder.user_id == config.user_id,
+            Folder.name == config.group_name,
+        )
+    ).first()
+
+
+def forget_freshrss_folder(session: Session, user_id: int, folder_ids: Optional[set] = None) -> None:
+    """Oublie le dossier suivi quand il est supprimé (tous si `folder_ids` est None).
+
+    SQLite peut réattribuer l'identifiant d'un dossier supprimé : laissé en
+    place, il désignerait un jour un dossier sans rapport, dont la synchro
+    désétoilerait alors le contenu importé.
+    """
+    config = session.exec(
+        select(FreshRSSConfig).where(FreshRSSConfig.user_id == user_id)
+    ).first()
+    if config and config.folder_id is not None and (
+        folder_ids is None or config.folder_id in folder_ids
+    ):
+        config.folder_id = None
+        session.add(config)
+
+
 async def _assert_safe_freshrss_url(url: str) -> None:
     if not await _assert_public_url(url):
         raise ValueError("URL FreshRSS invalide ou pointant vers une adresse privée")
@@ -246,16 +283,14 @@ async def sync_user(config: FreshRSSConfig, session: Session) -> int:
     auth = await _greader_auth(config.freshrss_url, config.freshrss_user, decrypt(config.freshrss_token))
     items = await _greader_starred(config.freshrss_url, auth)
 
-    folder = session.exec(
-        select(Folder).where(
-            Folder.user_id == config.user_id,
-            Folder.name == config.group_name,
-        )
-    ).first()
+    folder = freshrss_folder(session, config)
     if not folder:
         folder = Folder(user_id=config.user_id, name=config.group_name)
         session.add(folder)
         session.flush()
+    if config.folder_id != folder.id:
+        config.folder_id = folder.id
+        session.add(config)
 
     candidate_urls = [u for u in (_extract_url(i) for i in items) if u]
     if not candidate_urls:
@@ -270,23 +305,29 @@ async def sync_user(config: FreshRSSConfig, session: Session) -> int:
         params,
     ).fetchall()
     existing_urls = {row[1] for row in existing_rows}
-    # Backfill : associer l'ID GReader aux liens déjà importés qui ne l'ont pas encore
     url_to_item_id = {_extract_url(i): i.get("id") for i in items if _extract_url(i) and i.get("id")}
-    # Self-healing : un lien encore étoilé mais sorti du dossier FreshRSS doit
-    # être désétoilé (rattrape les existants + les désétoilages au déplacement
-    # qui auraient échoué). Tous les existing_rows correspondent à des items
-    # actuellement étoilés (URLs issues de items).
+    # Self-healing : un lien importé depuis FreshRSS, encore étoilé mais sorti
+    # du dossier, doit être désétoilé (rattrape les désétoilages au
+    # déplacement qui auraient échoué). Tous les existing_rows correspondent
+    # à des items actuellement étoilés (URLs issues de items).
+    #
+    # « Importé » = porte déjà un freshrss_item_id. Un lien enregistré à la
+    # main ailleurs, puis étoilé dans FreshRSS, n'en a pas : il n'a jamais
+    # quitté le dossier, et le désétoiler effaçait l'étoile que l'utilisateur
+    # venait de poser.
     orphan_item_ids: list[str] = []
     for link_id, url, current_item_id, link_folder_id in existing_rows:
-        if current_item_id is None and url in url_to_item_id:
-            session.execute(
-                text("UPDATE links SET freshrss_item_id = :iid WHERE id = :lid"),
-                {"iid": url_to_item_id[url], "lid": link_id},
-            )
-        if link_folder_id != folder.id:
-            iid = current_item_id or url_to_item_id.get(url)
-            if iid:
-                orphan_item_ids.append(iid)
+        if link_folder_id == folder.id:
+            # Backfill : liens importés avant la colonne freshrss_item_id. Seuls
+            # ceux du dossier sont des imports ; en marquer d'autres les
+            # ferait désétoiler à la synchro suivante.
+            if current_item_id is None and url in url_to_item_id:
+                session.execute(
+                    text("UPDATE links SET freshrss_item_id = :iid WHERE id = :lid"),
+                    {"iid": url_to_item_id[url], "lid": link_id},
+                )
+        elif current_item_id:
+            orphan_item_ids.append(current_item_id)
     if orphan_item_ids:
         await unstar_items(config, orphan_item_ids)
 
@@ -447,7 +488,17 @@ async def freshrss_settings_save(
     config.freshrss_user = freshrss_user.strip()[:200]
     if freshrss_token.strip():  # ne pas écraser avec vide si champ laissé vide
         config.freshrss_token = encrypt(freshrss_token.strip()[:500])
-    config.group_name = group_name.strip()[:200] or "FreshRSS"
+    new_group_name = group_name.strip()[:200] or "FreshRSS"
+    if config.id is not None and new_group_name != config.group_name:
+        # Changer le nom renomme le dossier existant plutôt que d'en faire
+        # créer un autre : la synchro suivante aurait désétoilé tout ce qui
+        # restait dans l'ancien.
+        folder = freshrss_folder(session, config)
+        if folder:
+            folder.name = new_group_name
+            config.folder_id = folder.id
+            session.add(folder)
+    config.group_name = new_group_name
     config.is_enabled = is_enabled is not None
     session.add(config)
     session.commit()

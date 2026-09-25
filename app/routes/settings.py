@@ -22,6 +22,7 @@ from ..models import Folder, FreshRSSConfig, Link, LinkTagLink, Tag, User
 from ..ratelimit import rate_limit
 from ..templates_cfg import templates
 from ..utils import get_or_create_tag, refresh_link_fts, sidebar_data, slugify
+from .freshrss import forget_freshrss_folder, freshrss_folder
 from .links import _archive_many, _assert_public_url, _fetch_meta, _safe_stream, _safe_url
 
 router = APIRouter()
@@ -365,9 +366,8 @@ async def purge_freshrss(
 ):
     config = session.exec(select(FreshRSSConfig).where(FreshRSSConfig.user_id == user.id)).first()
     if config:
-        folder = session.exec(
-            select(Folder).where(Folder.user_id == user.id, Folder.name == config.group_name)
-        ).first()
+        folder = freshrss_folder(session, config)
+        config.folder_id = None
         if folder:
             session.execute(
                 text("DELETE FROM link_tags WHERE link_id IN "
@@ -425,6 +425,7 @@ async def purge_all(
     session.execute(text("DELETE FROM links WHERE user_id = :uid"), {"uid": user.id})
     session.execute(text("DELETE FROM tags WHERE user_id = :uid"), {"uid": user.id})
     session.execute(text("DELETE FROM folders WHERE user_id = :uid"), {"uid": user.id})
+    forget_freshrss_folder(session, user.id)
     session.commit()
     return RedirectResponse(url="/settings?purged=all", status_code=303)
 

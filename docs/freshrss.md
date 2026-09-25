@@ -42,4 +42,6 @@ Moving a link out of its **FreshRSS folder** (via drag & drop in the sidebar or 
 
 Moving a link between two folders that are not the FreshRSS folder has no effect on FreshRSS.
 
-> Self-healing: on every sync, any article still starred in FreshRSS but no longer in the FreshRSS folder on the Excerpta side gets unstarred (catches up on earlier moves and network failures).
+> Self-healing: on every sync, any article imported from FreshRSS, still starred in FreshRSS but no longer in the FreshRSS folder on the Excerpta side gets unstarred (catches up on earlier moves and network failures). An article you had already saved in another folder before starring it in FreshRSS was never imported, so it keeps its star.
+
+The target folder is tracked by identity, not by name: you can rename it (sidebar, folder form, or the *Target folder* field in the FreshRSS settings, which renames the existing folder) or move it without losing anything. Deleting it, on the other hand, counts as moving its links out: the next sync creates a new target folder and unstars the articles you kept.

@@ -443,21 +443,19 @@ def _maybe_unstar_on_leave(
     """Désétoile le lien sur FreshRSS s'il quitte le dossier FreshRSS.
 
     Conditions : le lien a un freshrss_item_id, il était dans le dossier
-    FreshRSS (nommé config.group_name) et il change de dossier.
+    FreshRSS (voir `freshrss_folder`) et il change de dossier.
     Désétoilage fire-and-forget, cohérent avec la suppression.
     """
     from ...models import FreshRSSConfig
-    from ..freshrss import unstar_item
+    from ..freshrss import freshrss_folder, unstar_item
     if not item_id or old_folder_id is None or old_folder_id == new_folder_id:
         return
     config = session.exec(
         select(FreshRSSConfig).where(FreshRSSConfig.user_id == user_id)
     ).first()
-    if not (config and config.freshrss_url and config.group_name):
+    if not (config and config.freshrss_url):
         return
-    fr_folder = session.exec(
-        select(Folder).where(Folder.user_id == user_id, Folder.name == config.group_name)
-    ).first()
+    fr_folder = freshrss_folder(session, config)
     if fr_folder and old_folder_id == fr_folder.id:
         spawn(unstar_item(config, item_id), name=f"unstar-{item_id}")
 
