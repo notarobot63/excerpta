@@ -217,6 +217,12 @@ async def delete_folder(
     if not folder or folder.user_id != user.id:
         raise HTTPException(status_code=404)
     if delete_links == "1":
+        # Associations d'abord : `link_tags` référence `links` sans cascade, et
+        # un seul lien étiqueté faisait échouer la suppression (contrainte de
+        # clé étrangère, erreur 500). L'index FTS suit par le déclencheur.
+        session.execute(text("DELETE FROM link_tags WHERE link_id IN "
+                             "(SELECT id FROM links WHERE folder_id = :id AND user_id = :uid)"),
+                        {"id": folder_id, "uid": user.id})
         session.execute(text("DELETE FROM links WHERE folder_id = :id AND user_id = :uid"),
                         {"id": folder_id, "uid": user.id})
     else:
