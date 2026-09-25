@@ -70,7 +70,10 @@ async def rename_tag(
     tag = session.get(Tag, tag_id)
     if not tag or tag.user_id != user.id:
         raise HTTPException(status_code=404)
-    new_name = body.name.strip()
+    # Minuscules, comme à la création (`get_or_create_tags`) : conserver la
+    # casse faisait coexister « Python » et « python », et le filtre de l'API
+    # (`tag.lower()`) ne trouvait plus l'étiquette renommée.
+    new_name = body.name.strip().lower()
     if not new_name:
         raise HTTPException(status_code=422, detail="Empty name")
     existing = session.exec(
