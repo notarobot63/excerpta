@@ -66,6 +66,15 @@ server {
 
 > The `X-Forwarded-For` header is required for rate limiting to work correctly per client IP.
 
+Which hops are trusted is set by `FORWARDED_ALLOW_IPS`, read by uvicorn. The
+image default trusts loopback and private networks
+(`127.0.0.1,::1,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,fc00::/7`), which covers
+a proxy on the same host or in the same Docker network. If your proxy reaches the
+container from another address (a Tailscale `100.64.0.0/10` address, for
+instance), add it: otherwise every visitor shares the proxy's address and its
+rate limits. Never set `*`: uvicorn then trusts the first `X-Forwarded-For`
+entry, which the client writes, and rate limiting can be bypassed.
+
 ## Updating
 
 ```bash
