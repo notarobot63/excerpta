@@ -549,3 +549,19 @@ def test_hote_prive_toujours_refuse_apres_reessai(monkeypatch):
     links_mod._dns_cache.clear()
 
     assert asyncio.run(links_mod._hostname_resolves_public("interne.test")) is False
+
+
+def test_cache_dns_borne(monkeypatch):
+    """Chaque domaine rencontré restait en cache pour toujours."""
+    monkeypatch.setattr(links_mod, "_DNS_CACHE_MAX", 3)
+    links_mod._dns_cache.clear()
+    try:
+        links_mod._dns_cache_store("expire.test", 5.0, True, now=10.0)
+        for i, host in enumerate(["a.test", "b.test", "c.test", "d.test"]):
+            links_mod._dns_cache_store(host, 100.0 + i, True, now=10.0)
+        assert len(links_mod._dns_cache) == 3
+        assert "expire.test" not in links_mod._dns_cache, "les entrées expirées partent d'abord"
+        assert "a.test" not in links_mod._dns_cache, "puis les plus anciennes"
+        assert "d.test" in links_mod._dns_cache
+    finally:
+        links_mod._dns_cache.clear()
