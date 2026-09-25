@@ -65,6 +65,20 @@ _DNS_CACHE_TTL = 600
 # Attente avant l'unique réessai sur panne temporaire du résolveur.
 _DNS_RETRY_DELAY = 2.0
 _dns_cache: dict[str, tuple[float, bool]] = {}
+# Plafond d'entrées : chaque domaine rencontré (articles FreshRSS, vignettes,
+# vérification des liens) y restait pour toujours, le TTL n'étant contrôlé
+# qu'à la lecture.
+_DNS_CACHE_MAX = 4096
+
+
+def _dns_cache_store(hostname: str, expiry: float, result: bool, now: float) -> None:
+    if hostname not in _dns_cache and len(_dns_cache) >= _DNS_CACHE_MAX:
+        for key in [k for k, (exp, _) in _dns_cache.items() if exp <= now]:
+            del _dns_cache[key]
+        # Encore plein : on évince les plus anciennes insertions.
+        while len(_dns_cache) >= _DNS_CACHE_MAX:
+            del _dns_cache[next(iter(_dns_cache))]
+    _dns_cache[hostname] = (expiry, result)
 
 
 async def _getaddrinfo(hostname: str):
@@ -187,7 +201,7 @@ async def _hostname_resolves_public(hostname: str) -> bool:
         return False
     # Un échec n'est jamais mis en cache : le résolveur peut se rétablir.
     result = all(not _is_private_host(r[4][0]) for r in results)
-    _dns_cache[hostname] = (now + _DNS_CACHE_TTL, result)
+    _dns_cache_store(hostname, now + _DNS_CACHE_TTL, result, now)
     return result
 
 

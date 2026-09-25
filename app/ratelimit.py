@@ -1,5 +1,4 @@
 import asyncio
-import ipaddress
 import time
 from collections import defaultdict
 
@@ -17,32 +16,17 @@ _cleanup_counter = 0
 
 
 def _client_ip(request: Request) -> str:
-    """Retourne l'IP réelle du client.
+    """Retourne l'IP réelle du client, telle qu'uvicorn l'a résolue.
 
-    Derrière un reverse proxy (Traefik, nginx), l'hôte connectant est une IP
-    privée : on fait alors confiance à X-Real-IP / X-Forwarded-For qu'il injecte.
-    Si la connexion vient d'une IP publique directement, ces headers ne sont pas
-    de confiance et on utilise l'IP de connexion brute.
+    Aucun en-tête n'est relu ici. uvicorn (`--proxy-headers`) a déjà remplacé
+    `request.client` par l'adresse extraite de X-Forwarded-For, selon la liste
+    de proxys de confiance FORWARDED_ALLOW_IPS : c'est le seul endroit qui sait
+    quels sauts croire. Relire les en-têtes ici était pire qu'inutile : avec
+    `FORWARDED_ALLOW_IPS=*`, uvicorn prenait déjà le premier élément, écrit par
+    le client, et une adresse privée forgée ouvrait en plus la lecture de
+    X-Real-IP, tout aussi forgeable. Voir le Dockerfile.
     """
-    connecting = request.client.host if request.client else None
-    if connecting:
-        try:
-            if ipaddress.ip_address(connecting).is_private:
-                # X-Forwarded-For est une liste que le proxy *complète* : le
-                # client contrôle les premiers éléments. Le seul saut de
-                # confiance est le DERNIER, ajouté par notre propre proxy.
-                # Prendre [0] laissait un client forger une IP arbitraire et
-                # obtenir un compteur neuf à chaque requête.
-                ip = request.headers.get("X-Real-IP", "").strip()
-                if not ip:
-                    forwarded = request.headers.get("X-Forwarded-For", "")
-                    parts = [p.strip() for p in forwarded.split(",") if p.strip()]
-                    ip = parts[-1] if parts else ""
-                if ip:
-                    return ip
-        except ValueError:
-            pass
-    return connecting or "unknown"
+    return request.client.host if request.client else "unknown"
 
 
 def rate_limit(calls: int, period_seconds: int):

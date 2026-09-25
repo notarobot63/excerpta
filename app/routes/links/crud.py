@@ -18,7 +18,7 @@ from ...demo import (assert_link_quota, demo_active, demo_rate_limit,
 from ...models import Folder, Link, LinkTagLink, Tag, User
 from ...ratelimit import rate_limit
 from ...templates_cfg import templates
-from ...utils import (descendant_folder_ids, get_or_create_tag, refresh_link_fts,
+from ...utils import (descendant_folder_ids, get_or_create_tags, refresh_link_fts,
                       safe_next, sidebar_data)
 from .archive import _wayback_archive
 from .constants import MAX_DESC_LEN, MAX_NOTE_LEN, MAX_TAGS_PER_LINK, MAX_TITLE_LEN, PER_PAGE
@@ -31,7 +31,7 @@ logger = logging.getLogger("excerpta.links.crud")
 
 
 def _get_or_create_tags(session: Session, user_id: int, names: List[str]) -> List[Tag]:
-    return [get_or_create_tag(session, user_id, n.strip().lower()) for n in names if n.strip()]
+    return get_or_create_tags(session, user_id, names)
 
 
 def _validate_folder_id(session: Session, user_id: int, raw: Optional[str]) -> Optional[int]:
@@ -443,21 +443,19 @@ def _maybe_unstar_on_leave(
     """Désétoile le lien sur FreshRSS s'il quitte le dossier FreshRSS.
 
     Conditions : le lien a un freshrss_item_id, il était dans le dossier
-    FreshRSS (nommé config.group_name) et il change de dossier.
+    FreshRSS (voir `freshrss_folder`) et il change de dossier.
     Désétoilage fire-and-forget, cohérent avec la suppression.
     """
     from ...models import FreshRSSConfig
-    from ..freshrss import unstar_item
+    from ..freshrss import freshrss_folder, unstar_item
     if not item_id or old_folder_id is None or old_folder_id == new_folder_id:
         return
     config = session.exec(
         select(FreshRSSConfig).where(FreshRSSConfig.user_id == user_id)
     ).first()
-    if not (config and config.freshrss_url and config.group_name):
+    if not (config and config.freshrss_url):
         return
-    fr_folder = session.exec(
-        select(Folder).where(Folder.user_id == user_id, Folder.name == config.group_name)
-    ).first()
+    fr_folder = freshrss_folder(session, config)
     if fr_folder and old_folder_id == fr_folder.id:
         spawn(unstar_item(config, item_id), name=f"unstar-{item_id}")
 

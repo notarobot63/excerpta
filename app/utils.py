@@ -76,6 +76,24 @@ def get_or_create_tag(session: Session, user_id: int, name: str) -> Tag:
     return tag
 
 
+def get_or_create_tags(session: Session, user_id: int, names) -> list[Tag]:
+    """Étiquettes normalisées (sans espaces de bordure, en minuscules) et sans doublon.
+
+    « Python, python » ou un fichier d'import portant `TAGS="Foo,foo"`
+    donnaient deux fois la même étiquette, donc deux lignes identiques dans
+    `link_tags` : violation de clé primaire, erreur 500, et tout l'import
+    annulé. L'ordre de première apparition est conservé.
+    """
+    seen: set[str] = set()
+    tags: list[Tag] = []
+    for raw in names:
+        name = (raw or "").strip().lower()
+        if name and name not in seen:
+            seen.add(name)
+            tags.append(get_or_create_tag(session, user_id, name))
+    return tags
+
+
 def refresh_link_fts(session: Session, link: Link, tags: list[Tag]):
     tags_str = " ".join(t.name for t in tags)
     session.execute(text("DELETE FROM fts_links WHERE rowid = :id"), {"id": link.id})

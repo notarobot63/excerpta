@@ -7,11 +7,15 @@ Deux pièges couverts :
    les entrées d'un endpoint à 3600 s, sous peine de remettre leurs quotas à
    zéro.
 2. X-Forwarded-For est une liste que le proxy complète : le client contrôle les
-   premiers éléments. Lire [0] laissait forger une IP et repartir d'un compteur
-   neuf à chaque requête.
+   premiers éléments. Avec `FORWARDED_ALLOW_IPS=*`, uvicorn prenait [0], et
+   changer cette valeur à chaque requête donnait un compteur neuf. Le test
+   de bout en bout rejoue la pile réelle : uvicorn, avec la valeur par défaut du
+   Dockerfile, devant l'application.
 """
 import asyncio
+import re
 import time
+from pathlib import Path
 
 import pytest
 from fastapi import HTTPException
@@ -90,24 +94,74 @@ def test_le_balayage_libere_les_cles_reellement_expirees():
     assert key not in ratelimit._calls, "les cles expirees doivent etre liberees"
 
 
-def test_xff_forge_par_le_client_est_ignore():
-    """Derrière un proxy, seul le dernier saut de XFF est de confiance."""
-    req = _FakeRequest(
-        "/x", host="10.0.0.5",
-        headers={"X-Forwarded-For": "1.1.1.1, 203.0.113.7"},
-    )
-    assert ratelimit._client_ip(req) == "203.0.113.7"
-
-
-def test_x_real_ip_prioritaire():
+def test_client_ip_ne_relit_aucun_entete():
+    """L'adresse vient d'uvicorn seul : relire les en-têtes ici rouvrait la
+    porte à X-Real-IP / X-Forwarded-For forgés."""
     req = _FakeRequest(
         "/x", host="10.0.0.5",
         headers={"X-Real-IP": "203.0.113.9", "X-Forwarded-For": "1.1.1.1, 2.2.2.2"},
     )
-    assert ratelimit._client_ip(req) == "203.0.113.9"
+    assert ratelimit._client_ip(req) == "10.0.0.5"
 
 
-def test_ip_publique_directe_ignore_les_entetes():
-    req = _FakeRequest("/x", host="93.184.216.34",
-                       headers={"X-Forwarded-For": "1.1.1.1"})
-    assert ratelimit._client_ip(req) == "93.184.216.34"
+def _dockerfile_trusted_hosts() -> str:
+    dockerfile = Path(__file__).resolve().parent.parent / "Dockerfile"
+    match = re.search(r"^ENV FORWARDED_ALLOW_IPS=(\S+)$", dockerfile.read_text(), re.M)
+    assert match, "FORWARDED_ALLOW_IPS introuvable dans le Dockerfile"
+    return match.group(1)
+
+
+def test_dockerfile_ne_fait_pas_confiance_a_tout():
+    assert "*" not in _dockerfile_trusted_hosts().split(",")
+
+
+def _client_derriere_le_proxy(engine):
+    from fastapi.testclient import TestClient
+    from sqlmodel import Session
+    from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
+
+    from app.database import get_session
+    from app.main import app
+
+    def _get_session():
+        with Session(engine) as s:
+            yield s
+
+    app.dependency_overrides[get_session] = _get_session
+    stack = ProxyHeadersMiddleware(app, trusted_hosts=_dockerfile_trusted_hosts())
+    # La connexion arrive du reverse proxy, sur le réseau Docker.
+    return TestClient(stack, base_url="https://testserver", client=("172.18.0.2", 40000))
+
+
+def test_xff_forge_ne_contourne_pas_la_limite(engine):
+    """Le client réécrit le début de X-Forwarded-For à chaque requête, le proxy
+    ajoute sa vraie adresse à la fin : le compteur doit rester le même."""
+    from app.main import app
+
+    client = _client_derriere_le_proxy(engine)
+    try:
+        codes = [
+            client.get(
+                "/u/inconnu",
+                headers={"X-Forwarded-For": f"198.51.100.{i % 250 + 1}, 203.0.113.7"},
+            ).status_code
+            for i in range(61)
+        ]
+    finally:
+        app.dependency_overrides.clear()
+    assert codes[:60].count(429) == 0
+    assert codes[60] == 429, "une IP forgée en tête de liste a obtenu un compteur neuf"
+
+
+def test_clients_distincts_gardent_des_compteurs_distincts(engine):
+    """Le correctif ne doit pas mettre tous les visiteurs dans le compteur du proxy."""
+    from app.main import app
+
+    client = _client_derriere_le_proxy(engine)
+    try:
+        for _ in range(60):
+            client.get("/u/inconnu", headers={"X-Forwarded-For": "203.0.113.7"})
+        autre = client.get("/u/inconnu", headers={"X-Forwarded-For": "203.0.113.8"})
+    finally:
+        app.dependency_overrides.clear()
+    assert autre.status_code == 404

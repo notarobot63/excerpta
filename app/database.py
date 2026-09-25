@@ -202,6 +202,11 @@ def init_db():
     if con.execute(
         "SELECT name FROM sqlite_master WHERE type='table' AND name='freshrss_configs'"
     ).fetchone():
+        fr_cols = {r[1] for r in con.execute("PRAGMA table_info(freshrss_configs)").fetchall()}
+        if "folder_id" not in fr_cols:
+            # Laissé NULL : la synchro suivante rattache le dossier existant
+            # par son nom, puis le suit par identifiant.
+            con.execute("ALTER TABLE freshrss_configs ADD COLUMN folder_id INTEGER")
         for row_id, token in con.execute(
             "SELECT id, freshrss_token FROM freshrss_configs"
         ).fetchall():

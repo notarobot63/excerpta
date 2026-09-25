@@ -1,7 +1,7 @@
 """Scraping des métadonnées d'une URL (titre, description, favicon, vignette)
 et mise à jour asynchrone d'un lien nouvellement créé."""
 import logging
-from urllib.parse import urlparse
+from urllib.parse import urljoin, urlparse
 
 from bs4 import BeautifulSoup
 from sqlmodel import Session, select
@@ -47,12 +47,11 @@ async def _fetch_meta(url: str) -> dict:
         icon = soup.find("link", rel=lambda r: r and "icon" in r)
         favicon = ""
         if icon and icon.get("href"):
-            href = icon["href"]
-            if href.startswith("//"):
-                href = f"{parsed.scheme}:{href}"
-            elif not href.startswith("http"):
-                href = f"{parsed.scheme}://{parsed.netloc}{href}"
-            if _safe_url(href):  # reject protocol-relative & private IPs in favicon
+            # urljoin résout toutes les formes relatives contre la page finale.
+            # L'ancienne concaténation collait `assets/fav.png` à l'hôte :
+            # « https://example.comassets/fav.png », soit un autre hôte.
+            href = urljoin(final_url, icon["href"].strip())
+            if _safe_url(href):  # schéma http(s) et IP publique uniquement
                 favicon = href
         if not favicon:
             candidate = f"{parsed.scheme}://{parsed.netloc}/favicon.ico"
@@ -63,10 +62,7 @@ async def _fetch_meta(url: str) -> dict:
         thumbnail = ""
         if og_img:
             raw = og_img.get("content", "").strip()
-            if raw.startswith("//"):
-                raw = f"{parsed.scheme}:{raw}"
-            elif raw.startswith("/"):
-                raw = f"{parsed.scheme}://{parsed.netloc}{raw}"
+            raw = urljoin(final_url, raw) if raw else ""
             if _safe_url(raw):
                 thumbnail = raw
         if not thumbnail:
@@ -89,11 +85,8 @@ async def _fetch_meta(url: str) -> dict:
                         continue
                 except ValueError:
                     pass
-                if raw.startswith("//"):
-                    raw = f"{parsed.scheme}:{raw}"
-                elif raw.startswith("/"):
-                    raw = f"{parsed.scheme}://{parsed.netloc}{raw}"
-                if raw.startswith("http") and _safe_url(raw):
+                raw = urljoin(final_url, raw)
+                if _safe_url(raw):
                     thumbnail = raw
                     break
         return {

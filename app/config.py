@@ -31,6 +31,10 @@ class Settings(BaseSettings):
     # base dédiée dont le contenu est destiné à être détruit.
     demo_mode: bool = False
     demo_ttl_hours: int = 6  # durée de vie d'un espace de démo avant purge
+    # Lue par uvicorn, pas par l'application : présente ici pour avertir au
+    # démarrage d'une valeur `*`, qui livre l'IP vue par la limitation de débit
+    # au client (voir le Dockerfile).
+    forwarded_allow_ips: str = ""
 
     # extra="ignore" : le même .env sert de env_file à docker-compose, il porte
     # donc aussi des variables d'infrastructure (REGISTRY_IMAGE,
@@ -77,6 +81,18 @@ class Settings(BaseSettings):
                     "SECRET_KEY (API key, FreshRSS token) will fail to decrypt "
                     "silently. Set a persistent ENCRYPTION_KEY or SECRET_KEY."
                 )
+        return self
+
+    @model_validator(mode="after")
+    def warn_on_wildcard_proxy_trust(self) -> "Settings":
+        if "*" in [h.strip() for h in self.forwarded_allow_ips.split(",")]:
+            logger.warning(
+                "FORWARDED_ALLOW_IPS=* lets any client choose the IP address "
+                "used for rate limiting (uvicorn then reads the first, "
+                "client-written X-Forwarded-For entry). Set it to your reverse "
+                "proxy address, or remove it to use the image default "
+                "(loopback and private networks)."
+            )
         return self
 
 
