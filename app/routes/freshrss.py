@@ -274,8 +274,33 @@ async def _assert_safe_freshrss_url(url: str) -> None:
         raise ValueError("URL FreshRSS invalide ou pointant vers une adresse privée")
 
 
+# Une synchro à la fois par utilisateur. La boucle périodique, « Synchroniser
+# maintenant » et l'API peuvent se chevaucher, et sync_user attend le réseau
+# (désétoilage) entre la lecture des URL existantes et l'insertion des
+# nouvelles : deux passes simultanées inséraient les mêmes liens en double.
+_sync_locks: dict[int, asyncio.Lock] = {}
+
+
+def sync_error_message(exc: Exception) -> str:
+    """Message présentable d'un échec de synchro. Les RuntimeError sont les
+    nôtres et disent ce qui ne va pas ; le reste (réseau, JSON, redirection
+    refusée) est journalisé en détail et résumé."""
+    if isinstance(exc, RuntimeError):
+        return str(exc)
+    return f"FreshRSS unreachable or invalid response ({type(exc).__name__})"
+
+
 async def sync_user(config: FreshRSSConfig, session: Session) -> int:
     """Sync les étoilés FreshRSS d'un utilisateur. Retourne le nombre de liens ajoutés."""
+    lock = _sync_locks.setdefault(config.user_id, asyncio.Lock())
+    async with lock:
+        # Une passe concurrente a pu écrire pendant l'attente (synced_count,
+        # folder_id) : repartir de l'état en base.
+        session.refresh(config)
+        return await _sync_user(config, session)
+
+
+async def _sync_user(config: FreshRSSConfig, session: Session) -> int:
     try:
         await _assert_safe_freshrss_url(config.freshrss_url)
     except ValueError as exc:
@@ -430,7 +455,11 @@ async def api_freshrss_sync(
             status_code=404,
             detail="No active FreshRSS configuration for this user",
         )
-    added = await sync_user(config, session)
+    try:
+        added = await sync_user(config, session)
+    except Exception as exc:
+        logger.warning("FreshRSS sync (API) failed user_id=%d", user.id, exc_info=True)
+        raise HTTPException(status_code=502, detail=sync_error_message(exc))
     return {
         "added": added,
         "total": config.synced_count,
@@ -519,6 +548,9 @@ async def freshrss_sync_now(
         raise HTTPException(status_code=400, detail="Missing FreshRSS configuration")
     try:
         added = await sync_user(config, session)
-    except RuntimeError as exc:
-        raise HTTPException(status_code=502, detail=str(exc))
+    except Exception as exc:
+        # Seules les RuntimeError étaient attrapées : une panne réseau ou une
+        # réponse illisible finissait en erreur 500.
+        logger.warning("FreshRSS sync failed user_id=%d", current_user.id, exc_info=True)
+        raise HTTPException(status_code=502, detail=sync_error_message(exc))
     return RedirectResponse(url=f"/settings/freshrss?synced={added}", status_code=303)
