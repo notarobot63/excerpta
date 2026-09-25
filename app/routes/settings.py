@@ -3,10 +3,8 @@ import io
 import json
 from datetime import datetime, timezone
 from typing import Optional
-from urllib.parse import urlparse
 
 import qrcode
-from bs4 import BeautifulSoup
 from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, Request, UploadFile
 from fastapi.responses import HTMLResponse, RedirectResponse, Response, StreamingResponse
 from sqlalchemy import or_, text
@@ -19,6 +17,7 @@ from ..crypto import decrypt
 from ..database import engine as db_engine, get_session
 from ..demo import forbid_in_demo_dep
 from ..models import Folder, FreshRSSConfig, Link, LinkTagLink, Tag, User
+from ..netscape import build_bookmarks, parse_bookmarks
 from ..ratelimit import rate_limit
 from ..templates_cfg import templates
 from ..utils import get_or_create_tags, refresh_link_fts, sidebar_data, slugify
@@ -30,59 +29,32 @@ router = APIRouter()
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
-def _parse_netscape(html: str) -> list[dict]:
-    soup = BeautifulSoup(html, "html.parser")
-    items = []
-    for a in soup.find_all("a"):
-        href = a.get("href", "").strip()
-        if not href.startswith("http"):
+def _import_folder(session: Session, user_id: int, path: tuple, cache: dict) -> Optional[int]:
+    """Identifiant du dossier désigné par `path` (noms de la racine au plus
+    profond), créé au besoin. Un dossier existant de même nom sous le même
+    parent est réutilisé : réimporter un fichier ne duplique pas l'arbre."""
+    parent_id = None
+    for depth in range(1, len(path) + 1):
+        key = path[:depth]
+        if key in cache:
+            parent_id = cache[key]
             continue
-        tags_raw = a.get("tags", "") or a.get("tag", "")
-        # Sépare par virgule puis par espace (tags Linkding parfois multi-mots)
-        tags = []
-        for part in tags_raw.split(","):
-            tags.extend(w.lower() for w in part.split() if w.strip())
-        note = ""
-        parent = a.parent
-        if parent:
-            nxt = parent.find_next_sibling()
-            if nxt and nxt.name == "dd":
-                note = nxt.get_text(" ", strip=True)
-        parsed = urlparse(href)
-        favicon = f"{parsed.scheme}://{parsed.netloc}/favicon.ico"
-        items.append({
-            "url": href,
-            "title": (a.get_text(strip=True) or href)[:500],
-            "tags": tags,
-            "note": note[:50_000],
-            "favicon_url": favicon,
-        })
-    return items
-
-
-def _build_netscape(links: list[Link]) -> str:
-    from html import escape
-    lines = [
-        "<!DOCTYPE NETSCAPE-Bookmark-file-1>",
-        '<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=UTF-8">',
-        "<TITLE>Excerpta Export</TITLE>",
-        "<H1>Bookmarks</H1>",
-        "<DL><p>",
-    ]
-    for lk in links:
-        tags = escape(",".join(t.name for t in lk.tags), quote=True)
-        folder_name = escape(lk.folder.name if lk.folder else "", quote=True)
-        ts = int(lk.created_at.timestamp())
-        title = escape(lk.title)
-        url = escape(lk.url, quote=True)
-        lines.append(
-            f'    <DT><A HREF="{url}" ADD_DATE="{ts}" TAGS="{tags}" FOLDER="{folder_name}">{title}</A>'
-        )
-        body = lk.note or lk.description
-        if body:
-            lines.append(f"    <DD>{escape(body)}")
-    lines.append("</DL><p>")
-    return "\n".join(lines)
+        name = path[depth - 1]
+        folder = session.exec(
+            select(Folder).where(
+                Folder.user_id == user_id, Folder.name == name, Folder.parent_id == parent_id,
+            )
+        ).first()
+        if not folder:
+            siblings = session.exec(
+                select(Folder.sort_order).where(Folder.user_id == user_id, Folder.parent_id == parent_id)
+            ).all()
+            folder = Folder(user_id=user_id, name=name, parent_id=parent_id,
+                            sort_order=max(siblings, default=-1) + 1)
+            session.add(folder)
+            session.flush()
+        cache[key] = parent_id = folder.id
+    return parent_id
 
 
 # ── Settings ──────────────────────────────────────────────────────────────────
@@ -311,7 +283,7 @@ async def import_links(
     if b"<!doctype" not in snippet and b"<html" not in snippet and b"<dl" not in snippet and b"<a href" not in snippet:
         from fastapi import HTTPException
         raise HTTPException(status_code=400, detail="Unrecognised format, a Netscape HTML file is expected")
-    items = _parse_netscape(content.decode("utf-8", errors="replace"))[:10_000]
+    items = parse_bookmarks(content.decode("utf-8", errors="replace"))[:10_000]
 
     imported = skipped = 0
     existing_urls = {
@@ -322,6 +294,7 @@ async def import_links(
     }
 
     new_link_ids = []
+    folder_cache: dict = {}
 
     for item in items:
         if item["url"] in existing_urls or not _safe_url(item["url"]):
@@ -335,6 +308,7 @@ async def import_links(
             note=item["note"],
             description="",
             favicon_url=item["favicon_url"],
+            folder_id=_import_folder(session, user.id, item["folder_path"], folder_cache),
         )
         session.add(link)
         session.flush()
@@ -438,7 +412,8 @@ async def export_links(
     session: Session = Depends(get_session),
 ):
     links = list(session.exec(select(Link).where(Link.user_id == user.id).order_by(Link.created_at.desc())).all())
-    content = _build_netscape(links)
+    folders = list(session.exec(select(Folder).where(Folder.user_id == user.id)).all())
+    content = build_bookmarks(links, folders)
     filename = f"excerpta-export-{datetime.now(timezone.utc).strftime('%Y%m%d')}.html"
     return Response(
         content=content.encode("utf-8"),
