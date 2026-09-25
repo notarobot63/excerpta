@@ -65,7 +65,7 @@ If you try to add a URL that's already in your collection (via the form or the b
 
 ## Link checking
 
-`Settings → Check links` runs an asynchronous check of all links (10 in parallel). Broken links (4xx, 5xx, timeout) are flagged with their HTTP status.
+`Settings → Check links` runs an asynchronous check of all links (5 in parallel). Broken links (4xx, 5xx, timeout) are flagged with their HTTP status.
 
 When a link is broken, its card directly offers a **recovery** option: *read the cached copy* (if the reader content has been cached) and/or *view the archive* (Wayback capture), instead of a dead link.
 
