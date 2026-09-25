@@ -182,3 +182,58 @@ def test_migration_ajoute_la_colonne_folder_id(tmp_path, monkeypatch):
     cols = {r[1] for r in con.execute("PRAGMA table_info(freshrss_configs)")}
     con.close()
     assert "folder_id" in cols
+
+
+def test_deux_synchros_simultanees_n_inserent_pas_de_doublon(session, engine, env, monkeypatch):
+    """La seconde passe attend la première au lieu d'insérer les mêmes liens.
+
+    La fenêtre de course est le désétoilage des liens sortis du dossier : seul
+    `await` entre la lecture des URL existantes et l'insertion des nouvelles.
+    """
+    from sqlmodel import Session
+
+    user, config, state = env
+    _import_three(session, config, state)
+    other = Folder(user_id=user.id, name="Archives")
+    session.add(other)
+    session.commit()
+    moved = session.exec(select(Link).where(Link.url == "https://a0.example")).one()
+    moved.folder_id = other.id
+    session.add(moved)
+    session.commit()
+    state["starred"] = [_item(i) for i in range(6)]
+
+    async def _slow_unstar(cfg, ids):
+        await asyncio.sleep(0.05)
+        state["unstarred"].extend(ids)
+        return 0
+
+    monkeypatch.setattr(fr, "unstar_items", _slow_unstar)
+
+    async def _both():
+        # Deux requêtes, deux sessions : comme la boucle et « sync now ».
+        with Session(engine) as s1, Session(engine) as s2:
+            c1, c2 = s1.get(FreshRSSConfig, config.id), s2.get(FreshRSSConfig, config.id)
+            return await asyncio.gather(fr.sync_user(c1, s1), fr.sync_user(c2, s2))
+
+    assert sorted(asyncio.run(_both())) == [0, 3]
+    session.expire_all()
+    urls = [lk.url for lk in session.exec(select(Link).where(Link.user_id == user.id)).all()]
+    assert len(urls) == len(set(urls)) == 6
+    assert session.get(FreshRSSConfig, config.id).synced_count == 6
+
+
+def test_panne_reseau_pendant_sync_now_donne_502(session, env, monkeypatch):
+    import httpx
+    from fastapi import HTTPException
+
+    user, config, state = env
+
+    async def _down(*args):
+        raise httpx.ConnectError("refused")
+
+    monkeypatch.setattr(fr, "_greader_auth", _down)
+    with pytest.raises(HTTPException) as exc:
+        asyncio.run(fr.freshrss_sync_now(request=None, current_user=user, session=session))
+    assert exc.value.status_code == 502
+    assert "ConnectError" in exc.value.detail
