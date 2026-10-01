@@ -16,7 +16,7 @@ from .net_guard import (_assert_public_url, _safe_stream, _safe_url, _UnsafeRedi
                         safe_request, set_http_client)
 from .proxy import warm_img_cache
 from .proxy import router as _proxy_router
-from .reader import _extract_reader, _READER_ATTRS, _READER_TAGS
+from .reader import _extract_reader, _READER_ATTRS, _READER_TAGS, extract_and_store_reader
 from .reader import router as _reader_router
 
 router = APIRouter()

@@ -237,3 +237,32 @@ def test_panne_reseau_pendant_sync_now_donne_502(session, env, monkeypatch):
         asyncio.run(fr.freshrss_sync_now(request=None, current_user=user, session=session))
     assert exc.value.status_code == 502
     assert "ConnectError" in exc.value.detail
+
+
+def test_desetoilage_des_orphelins_hors_transaction_d_ecriture(session, env, monkeypatch):
+    """La synchro valide avant d'attendre le réseau des désétoilages.
+
+    Le dossier venait d'être créé (écriture en cours) quand `unstar_items`
+    était attendu : la transaction d'écriture SQLite restait ouverte pendant
+    les appels réseau, et toute autre écriture tombait en « database is locked ».
+    """
+    user, config, state = env
+    other = Folder(user_id=user.id, name="Lectures")
+    session.add(other)
+    session.commit()
+    # Lien importé (freshrss_item_id) sorti du dossier, encore étoilé : orphelin.
+    session.add(Link(user_id=user.id, url="https://a1.example", folder_id=other.id,
+                     freshrss_item_id="tag:1"))
+    session.commit()
+
+    seen = []
+
+    async def _unstar(cfg, ids):
+        seen.append(session.in_transaction())
+        return 0
+
+    monkeypatch.setattr(fr, "unstar_items", _unstar)
+    state["starred"] = [_item(1)]
+    _sync(session, config)  # premier passage : crée le dossier FreshRSS
+
+    assert seen == [False]

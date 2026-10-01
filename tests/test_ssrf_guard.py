@@ -301,6 +301,21 @@ def test_same_host_only_refuse_le_changement_dhote(externe, http_client, monkeyp
         redir.shutdown()
 
 
+def test_same_host_only_refuse_le_changement_de_port_ou_de_schema(externe, http_client, monkeypatch):
+    """Même nom d'hôte mais autre port (ou https vers http) : c'est une autre
+    origine, les identifiants ne doivent pas la suivre."""
+    redir = _serve(_Redirecteur)
+    _Redirecteur.target = f"http://excerpta-test.invalid:{externe.server_port}/x"
+    try:
+        _public_host(monkeypatch, externe.server_port, "excerpta-test.invalid")
+        url = f"http://excerpta-test.invalid:{redir.server_port}/api"
+        with pytest.raises(links_mod._UnsafeRedirect):
+            asyncio.run(links_mod.safe_request("GET", url, same_host_only=True, timeout=5))
+        assert TOUCHED == [], f"l'autre port a été atteint : {TOUCHED}"
+    finally:
+        redir.shutdown()
+
+
 def test_greader_auth_ne_livre_pas_les_identifiants_en_interne(
     redirecteur, interne, http_client, monkeypatch
 ):

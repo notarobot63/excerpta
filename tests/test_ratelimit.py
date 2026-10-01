@@ -165,3 +165,24 @@ def test_clients_distincts_gardent_des_compteurs_distincts(engine):
     finally:
         app.dependency_overrides.clear()
     assert autre.status_code == 404
+
+
+def test_quota_partage_entre_identifiants_d_une_meme_route():
+    """`/r/1` et `/r/2` relèvent du même quota : la clé est le gabarit de route.
+
+    Avec le chemin réel en clé, changer d'identifiant suffisait à repartir d'un
+    compteur neuf (archivage Wayback, vue lecteur, API par lien).
+    """
+    from fastapi import Depends, FastAPI
+    from starlette.testclient import TestClient
+
+    app = FastAPI()
+
+    @app.get("/r/{item_id}", dependencies=[Depends(ratelimit.rate_limit(2, 60))])
+    def _route(item_id: int):
+        return {"ok": item_id}
+
+    client = TestClient(app)
+    assert client.get("/r/1").status_code == 200
+    assert client.get("/r/2").status_code == 200
+    assert client.get("/r/3").status_code == 429

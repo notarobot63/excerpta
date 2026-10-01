@@ -107,7 +107,7 @@ async def public_links(
         stmt = (
             stmt.join(LinkTagLink, LinkTagLink.link_id == Link.id)
             .join(Tag, Tag.id == LinkTagLink.tag_id)
-            .where(Tag.user_id == owner.id, Tag.name == tag)
+            .where(Tag.user_id == owner.id, Tag.name == tag.strip().lower())
         )
 
     links = list(

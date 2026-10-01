@@ -121,6 +121,10 @@ if settings.testing:
 # donc le DERNIER ajouté s'exécute en PREMIER. StrictHostMiddleware doit rester
 # le dernier appel de ce bloc pour rejeter un Host invalide avant que la session
 # ne soit déchiffrée et que la réponse ne soit compressée.
+# Les deux `@app.middleware("http")` plus bas sont ajoutés après lui, donc
+# s'exécutent AVANT : la réponse 400 d'un Host refusé porte ainsi les en-têtes
+# de sécurité. Ils ne lisent que `request.url.path`, sans danger sur un Host
+# malformé (vérifié par tests/test_strict_host.py).
 # LocaleMiddleware est ajouté en premier, donc s'exécute en dernier : il lit la
 # préférence de langue dans la session, qui doit déjà avoir été déchiffrée.
 app.add_middleware(LocaleMiddleware)

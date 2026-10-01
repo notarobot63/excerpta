@@ -269,8 +269,12 @@ async def _safe_stream(method: str, url: str, same_host_only: bool = False, **kw
         current = str(httpx.URL(current).join(location))
         if not await _assert_public_url(current):
             raise _UnsafeRedirect(f"redirection refusée vers {current}")
-        if same_host_only and httpx.URL(current).host != httpx.URL(previous).host:
-            raise _UnsafeRedirect(f"redirection hors hôte refusée vers {current}")
+        if same_host_only:
+            # Schéma et port comptent autant que l'hôte : une redirection de
+            # https vers http sur le même nom renverrait les identifiants en clair.
+            cur, prev = httpx.URL(current), httpx.URL(previous)
+            if (cur.scheme, cur.host, cur.port) != (prev.scheme, prev.host, prev.port):
+                raise _UnsafeRedirect(f"redirection hors hôte refusée vers {current}")
 
 
 async def safe_request(

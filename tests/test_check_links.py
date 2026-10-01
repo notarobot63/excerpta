@@ -60,3 +60,15 @@ def test_un_site_qui_ne_repond_pas_est_marque_casse(session, user_with_links, mo
     session.expire_all()
     links = session.query(Link).filter(Link.user_id == user_with_links.id).all()
     assert all(lk.is_broken and lk.check_status is None for lk in links)
+
+
+def test_deux_lancements_rapproches_ne_lancent_qu_une_verification(monkeypatch):
+    """La place est réservée avant le lancement : la tâche ne marquait son état
+    qu'à son premier passage, et un second POST en lançait une seconde."""
+    spawned = []
+    monkeypatch.setattr(st, "spawn", lambda coro, name=None: (spawned.append(name), coro.close()))
+    monkeypatch.setattr(st, "_check_jobs", {})
+    user = User(id=4242, oidc_sub="c")
+    asyncio.run(st.check_links_run(user=user))
+    asyncio.run(st.check_links_run(user=user))
+    assert spawned == ["check-links-4242"]

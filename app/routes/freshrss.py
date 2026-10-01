@@ -354,6 +354,12 @@ async def _sync_user(config: FreshRSSConfig, session: Session) -> int:
         elif current_item_id:
             orphan_item_ids.append(current_item_id)
     if orphan_item_ids:
+        # Valider avant d'attendre le réseau : la création du dossier et le
+        # backfill ci-dessus ont ouvert une transaction d'écriture, et SQLite
+        # n'admet qu'un écrivain. Tenue pendant les désétoilages (plusieurs
+        # secondes), elle faisait échouer toute autre écriture en « database is
+        # locked » au bout du busy_timeout.
+        session.commit()
         await unstar_items(config, orphan_item_ids)
 
     new_links: list[Link] = []

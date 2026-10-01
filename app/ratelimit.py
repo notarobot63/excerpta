@@ -29,12 +29,24 @@ def _client_ip(request: Request) -> str:
     return request.client.host if request.client else "unknown"
 
 
+def _route_key(request: Request) -> str:
+    """Gabarit de la route (`/links/{link_id}/archive`), pas le chemin réel.
+
+    Le chemin réel porte l'identifiant : `/links/42/archive` et
+    `/links/43/archive` avaient chacun leur compteur, si bien qu'un compte de
+    500 liens pouvait envoyer 500 fois le quota par minute en changeant
+    simplement d'identifiant. Repli sur le chemin hors routage (tests unitaires).
+    """
+    route = getattr(request, "scope", {}).get("route")
+    return getattr(route, "path", None) or request.url.path
+
+
 def rate_limit(calls: int, period_seconds: int):
     """Dépendance FastAPI : max `calls` appels par `period_seconds` et par endpoint."""
     async def dependency(request: Request) -> None:
         global _cleanup_counter
         client_ip = _client_ip(request)
-        key = f"{client_ip}:{request.url.path}"
+        key = f"{client_ip}:{_route_key(request)}"
         now = time.monotonic()
         do_cleanup = False
         async with _lock:
