@@ -88,3 +88,22 @@ def test_renommage_normalise_la_casse(session):
     crud.create_link(session, BackgroundTasks(), user_id=user.id,
                      url="https://e.example", tag_names=["Python"])
     assert [t.name for t in session.exec(select(Tag)).all()] == ["python"]
+
+
+def test_github_saisi_rejoint_l_etiquette_github_existante(session):
+    """« GitHub » saisi sur un nouveau lien est la même étiquette que « github »,
+    et le filtre par « GitHub » retrouve les deux liens."""
+    from app.routes import api
+
+    user = _user(session)
+    crud.create_link(session, BackgroundTasks(), user_id=user.id,
+                     url="https://a.example", tag_names=["github"])
+    crud.create_link(session, BackgroundTasks(), user_id=user.id,
+                     url="https://b.example", tag_names=["GitHub"])
+
+    tags = session.exec(select(Tag).where(Tag.user_id == user.id)).all()
+    assert [t.name for t in tags] == ["github"]
+
+    out = asyncio.run(api.api_list_links(q=None, tag="GitHub", group_id=None, page=1,
+                                         per_page=30, user=user, session=session))
+    assert sorted(lk["url"] for lk in out["links"]) == ["https://a.example", "https://b.example"]
