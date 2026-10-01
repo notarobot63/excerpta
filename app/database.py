@@ -1,3 +1,4 @@
+import logging
 import sqlite3
 from sqlalchemy import event
 from sqlalchemy.engine import Engine
@@ -7,6 +8,8 @@ from .config import settings
 from .crypto import encrypt, hmac_key, is_encrypted
 from .fts_schema import (FTS_REBUILD_SELECT, FTS_TABLE, FTS_TRIGGERS,
                          TRIGGER_MARKER, TRIGGER_NAMES)
+
+logger = logging.getLogger("excerpta.database")
 
 engine = create_engine(
     settings.database_url,
@@ -38,6 +41,65 @@ def _rebuild_fts(con) -> None:
         " VALUES (?,?,?,?,?,?)",
         con.execute(FTS_REBUILD_SELECT).fetchall(),
     )
+
+
+def _merge_tag_case_duplicates(con) -> bool:
+    """Passe les étiquettes en minuscules et fusionne celles qui ne diffèrent que
+    par la casse ou les espaces. Retourne True si quelque chose a changé.
+
+    Les noms sont normalisés à la création depuis le 2026-09-25
+    (`get_or_create_tags`), mais les étiquettes plus anciennes (saisies, import
+    Linkding) gardaient leur casse : « Python » existant, le lien suivant tagué
+    Python créait une seconde étiquette « python » à côté. Normalisation en
+    Python et non en SQL : `lower()` de SQLite ignore tout ce qui n'est pas ASCII
+    (« Été » resterait « Été »).
+    """
+    groups: dict[tuple, list] = {}
+    for tag_id, user_id, name in con.execute("SELECT id, user_id, name FROM tags ORDER BY id"):
+        norm = (name or "").strip().lower()
+        if norm:
+            groups.setdefault((user_id, norm), []).append((tag_id, name))
+    changed = False
+    for (_user_id, norm), tags in groups.items():
+        # On garde de préférence l'étiquette déjà normalisée, sinon la plus ancienne.
+        keep = next((t for t in tags if t[1] == norm), tags[0])[0]
+        for tag_id, _name in tags:
+            if tag_id == keep:
+                continue
+            con.execute(
+                "INSERT OR IGNORE INTO link_tags (link_id, tag_id)"
+                " SELECT link_id, ? FROM link_tags WHERE tag_id = ?",
+                (keep, tag_id),
+            )
+            con.execute("DELETE FROM link_tags WHERE tag_id = ?", (tag_id,))
+            con.execute("DELETE FROM tags WHERE id = ?", (tag_id,))
+            changed = True
+        if next(n for i, n in tags if i == keep) != norm:
+            con.execute("UPDATE tags SET name = ? WHERE id = ?", (norm, keep))
+            changed = True
+    if changed:
+        logger.info("Étiquettes : casse normalisée et doublons fusionnés")
+    return changed
+
+
+def _create_unique_index(con, name: str, table: str, cols: str) -> None:
+    """Pose un index unique, ou avertit si des doublons existants l'empêchent.
+
+    Une base où des doublons ont déjà été écrits ne doit pas empêcher le
+    démarrage : l'avertissement dit quoi nettoyer, et la création est retentée
+    à chaque démarrage.
+    """
+    try:
+        con.execute(f"CREATE UNIQUE INDEX IF NOT EXISTS {name} ON {table}({cols})")
+    except sqlite3.IntegrityError:
+        dups = con.execute(
+            f"SELECT COUNT(*) FROM (SELECT 1 FROM {table} GROUP BY {cols} HAVING COUNT(*) > 1)"
+        ).fetchone()[0]
+        logger.warning(
+            "Index unique %s non posé : %d valeur(s) en double dans %s(%s). "
+            "Supprimer les doublons, l'index sera créé au prochain démarrage.",
+            name, dups, table, cols,
+        )
 
 
 def init_db():
@@ -215,6 +277,12 @@ def init_db():
                     "UPDATE freshrss_configs SET freshrss_token = ? WHERE id = ?",
                     (encrypt(token), row_id),
                 )
+
+    # Étiquettes : normalisation de la casse avant de poser l'unicité.
+    if _merge_tag_case_duplicates(con):
+        _rebuild_fts(con)
+    _create_unique_index(con, "ux_tags_user_name", "tags", "user_id, name")
+    _create_unique_index(con, "ux_links_user_url", "links", "user_id, url")
 
     # Index de performance
     con.execute("CREATE INDEX IF NOT EXISTS idx_links_user_url ON links(user_id, url)")

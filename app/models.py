@@ -2,6 +2,7 @@ from datetime import datetime, timezone
 from typing import Optional, List
 import secrets
 
+from sqlalchemy import Index
 from sqlmodel import SQLModel, Field, Relationship
 # LinkGroupLink supprimé - remplacé par folder_id FK directe sur Link
 
@@ -44,6 +45,10 @@ class User(SQLModel, table=True):
 
 class Tag(SQLModel, table=True):
     __tablename__ = "tags"
+    # Une étiquette par nom et par compte, noms en minuscules (voir
+    # `get_or_create_tags`). Sur une base existante, l'index est posé par
+    # `init_db` après la fusion des doublons de casse.
+    __table_args__ = (Index("ux_tags_user_name", "user_id", "name", unique=True),)
     id: Optional[int] = Field(default=None, primary_key=True)
     user_id: int = Field(foreign_key="users.id")
     name: str
@@ -67,6 +72,10 @@ class Folder(SQLModel, table=True):
 
 class Link(SQLModel, table=True):
     __tablename__ = "links"
+    # Une URL par compte. Sans contrainte, l'édition d'un lien vers une URL déjà
+    # enregistrée, ou deux ajouts simultanés, créaient des doublons. Sur une
+    # base existante, l'index est posé par `init_db` (s'il n'y a pas de doublon).
+    __table_args__ = (Index("ux_links_user_url", "user_id", "url", unique=True),)
     id: Optional[int] = Field(default=None, primary_key=True)
     user_id: int = Field(foreign_key="users.id")
     url: str

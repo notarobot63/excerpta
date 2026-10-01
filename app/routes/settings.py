@@ -550,6 +550,10 @@ async def check_links_run(
     user: User = Depends(get_current_user),
 ):
     if not _check_jobs.get(user.id, {}).get("running", False):
+        # Réservé avant le lancement, comme `archive-all` : la tâche ne marque
+        # elle-même son état qu'à son premier passage dans la boucle, et deux
+        # POST rapprochés en lançaient deux.
+        _check_jobs[user.id] = {"total": 0, "done": 0, "running": True}
         spawn(_run_check_background(user.id), name=f"check-links-{user.id}")
     return RedirectResponse("/settings/check-links", status_code=303)
 

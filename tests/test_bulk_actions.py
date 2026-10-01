@@ -135,3 +135,73 @@ def test_bulk_tag_sans_tags_ne_fait_rien(session):
     result = asyncio.run(crud_mod.bulk_tag_links(req, user=user, session=session))
     assert result == {"ok": True, "tags": []}
     assert _tag_names(session, link.id) == set()
+
+
+# ── bulk-move hors du dossier FreshRSS ───────────────────────────────────────
+
+def test_bulk_move_hors_freshrss_desetoile_en_un_seul_lot(session, monkeypatch):
+    """Un déplacement en masse ne lance qu'un désétoilage, pour tout le lot.
+
+    Une tâche par lien ouvrait chacune sa session Greader : deux cents articles
+    déplacés faisaient six cents requêtes simultanées vers FreshRSS.
+    """
+    import app.routes.freshrss as fr
+    from app.models import FreshRSSConfig
+
+    user = _make_user(session)
+    fr_folder = Folder(user_id=user.id, name="FreshRSS")
+    autre = Folder(user_id=user.id, name="Lectures")
+    session.add(fr_folder)
+    session.add(autre)
+    session.commit()
+    session.add(FreshRSSConfig(user_id=user.id, freshrss_url="https://rss.example",
+                               folder_id=fr_folder.id, is_enabled=True))
+    session.commit()
+    importes = []
+    for i in range(20):
+        lk = _make_link(session, user, f"https://example.com/{i}", folder_id=fr_folder.id)
+        lk.freshrss_item_id = f"tag:{i}"
+        session.add(lk)
+        importes.append(lk)
+    manuel = _make_link(session, user, "https://example.com/manuel", folder_id=autre.id)
+    session.commit()
+
+    lots = []
+
+    async def _unstar(config, item_ids):
+        lots.append(list(item_ids))
+        return 0
+
+    monkeypatch.setattr(fr, "unstar_items", _unstar)
+    spawned = []
+    monkeypatch.setattr(crud_mod, "spawn", lambda coro, name=None: spawned.append(coro))
+
+    ids = [lk.id for lk in importes] + [manuel.id]
+    req = _FakeRequest({"link_ids": ids, "folder_id": autre.id})
+    asyncio.run(crud_mod.bulk_move_links(req, user=user, session=session))
+
+    assert len(spawned) == 1
+    asyncio.run(spawned[0])
+    assert len(lots) == 1
+    assert sorted(lots[0]) == sorted(f"tag:{i}" for i in range(20))
+
+
+def test_bulk_move_dans_le_dossier_freshrss_ne_desetoile_rien(session, monkeypatch):
+    from app.models import FreshRSSConfig
+
+    user = _make_user(session)
+    fr_folder = Folder(user_id=user.id, name="FreshRSS")
+    session.add(fr_folder)
+    session.commit()
+    session.add(FreshRSSConfig(user_id=user.id, freshrss_url="https://rss.example",
+                               folder_id=fr_folder.id, is_enabled=True))
+    lk = _make_link(session, user, "https://example.com/x", folder_id=fr_folder.id)
+    lk.freshrss_item_id = "tag:x"
+    session.add(lk)
+    session.commit()
+
+    spawned = []
+    monkeypatch.setattr(crud_mod, "spawn", lambda coro, name=None: spawned.append(coro))
+    req = _FakeRequest({"link_ids": [lk.id], "folder_id": fr_folder.id})
+    asyncio.run(crud_mod.bulk_move_links(req, user=user, session=session))
+    assert spawned == []

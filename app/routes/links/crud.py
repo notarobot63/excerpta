@@ -8,6 +8,7 @@ from urllib.parse import urlencode
 from fastapi import APIRouter, BackgroundTasks, Depends, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from sqlalchemy import func, text
+from sqlalchemy.exc import IntegrityError
 from sqlmodel import Session, select
 
 from ...auth import get_current_user
@@ -96,7 +97,7 @@ async def list_links(
 
     if tag:
         tag_obj = session.exec(
-            select(Tag).where(Tag.user_id == user.id, Tag.name == tag)
+            select(Tag).where(Tag.user_id == user.id, Tag.name == tag.strip().lower())
         ).first()
         if tag_obj:
             stmt = stmt.join(LinkTagLink, LinkTagLink.link_id == Link.id).where(
@@ -241,7 +242,16 @@ def create_link(
         archive_status=None if demo else "pending",
     )
     session.add(link)
-    session.flush()
+    try:
+        session.flush()
+    except IntegrityError:
+        # Deux ajouts simultanés de la même URL (double clic, bookmarklet et
+        # appli en même temps) : le second perd la course sur l'index unique
+        # et rejoint le premier, comme le ferait le contrôle ci-dessus.
+        session.rollback()
+        return session.exec(
+            select(Link).where(Link.user_id == user_id, Link.url == url)
+        ).one(), False
 
     link_tags = _get_or_create_tags(session, user_id, (tag_names or [])[:MAX_TAGS_PER_LINK])
     for t in link_tags:
@@ -344,6 +354,16 @@ async def edit_link(
     if not _safe_url(url):
         raise HTTPException(status_code=400, detail="Invalid URL")
 
+    if url != link.url:
+        # Même règle qu'à l'ajout : une URL par compte. Sans ce contrôle, éditer
+        # un lien vers une URL déjà enregistrée créait un doublon, que l'index
+        # unique `ux_links_user_url` refuse désormais (erreur 500).
+        other = session.exec(
+            select(Link).where(Link.user_id == user.id, Link.url == url, Link.id != link_id)
+        ).first()
+        if other:
+            return RedirectResponse(url=f"/links/{other.id}/edit?duplicate=1", status_code=303)
+
     demo = demo_active() and is_demo_user(user)
     old_folder_id = link.folder_id
     fr_item_id = link.freshrss_item_id
@@ -373,7 +393,7 @@ async def edit_link(
     refresh_link_fts(session, link, link_tags)
     session.commit()
 
-    _maybe_unstar_on_leave(session, user.id, fr_item_id, old_folder_id, new_folder_id)
+    _unstar_leaving_freshrss(session, user.id, [(fr_item_id, old_folder_id)], new_folder_id)
 
     if url_changed:
         background_tasks.add_task(_fetch_and_update_meta, link.id, url)
@@ -436,19 +456,26 @@ async def bulk_delete_links(
     return RedirectResponse(url=redirect_url, status_code=303)
 
 
-def _maybe_unstar_on_leave(
-    session: Session, user_id: int, item_id: Optional[str],
-    old_folder_id: Optional[int], new_folder_id: Optional[int],
+def _unstar_leaving_freshrss(
+    session: Session, user_id: int,
+    moves: list[tuple[Optional[str], Optional[int]]], new_folder_id: Optional[int],
 ) -> None:
-    """Désétoile le lien sur FreshRSS s'il quitte le dossier FreshRSS.
+    """Désétoile sur FreshRSS les liens qui quittent le dossier FreshRSS.
 
-    Conditions : le lien a un freshrss_item_id, il était dans le dossier
-    FreshRSS (voir `freshrss_folder`) et il change de dossier.
-    Désétoilage fire-and-forget, cohérent avec la suppression.
+    `moves` liste, pour chaque lien déplacé, son freshrss_item_id et son dossier
+    d'avant. Seuls comptent ceux qui ont un freshrss_item_id, étaient dans le
+    dossier FreshRSS (voir `freshrss_folder`) et en sortent.
+
+    Un seul appel `unstar_items` pour tout le lot, fire-and-forget comme la
+    suppression : une tâche `unstar_item` par lien ouvrait une session Greader
+    complète (trois requêtes) pour chacun, toutes en même temps. Déplacer deux
+    cents articles d'un coup envoyait six cents requêtes simultanées au serveur
+    FreshRSS de l'utilisateur.
     """
     from ...models import FreshRSSConfig
-    from ..freshrss import freshrss_folder, unstar_item
-    if not item_id or old_folder_id is None or old_folder_id == new_folder_id:
+    from ..freshrss import freshrss_folder, unstar_items
+    candidates = [(i, old) for i, old in moves if i and old is not None and old != new_folder_id]
+    if not candidates:
         return
     config = session.exec(
         select(FreshRSSConfig).where(FreshRSSConfig.user_id == user_id)
@@ -456,8 +483,11 @@ def _maybe_unstar_on_leave(
     if not (config and config.freshrss_url):
         return
     fr_folder = freshrss_folder(session, config)
-    if fr_folder and old_folder_id == fr_folder.id:
-        spawn(unstar_item(config, item_id), name=f"unstar-{item_id}")
+    if not fr_folder:
+        return
+    item_ids = list(dict.fromkeys(i for i, old in candidates if old == fr_folder.id))
+    if item_ids:
+        spawn(unstar_items(config, item_ids), name=f"unstar-leave-{user_id}")
 
 
 # ─── Move (drag & drop sidebar) ──────────────────────────────────────────────
@@ -480,7 +510,7 @@ async def move_link(
     link.folder_id = new_folder_id
     session.add(link)
     session.commit()
-    _maybe_unstar_on_leave(session, user.id, item_id, old_folder_id, new_folder_id)
+    _unstar_leaving_freshrss(session, user.id, [(item_id, old_folder_id)], new_folder_id)
     return {"ok": True, "folder_id": new_folder_id}
 
 
@@ -508,8 +538,7 @@ async def bulk_move_links(
             lk.folder_id = new_folder_id
             session.add(lk)
         session.commit()
-        for item_id, old_folder_id in moved:
-            _maybe_unstar_on_leave(session, user.id, item_id, old_folder_id, new_folder_id)
+        _unstar_leaving_freshrss(session, user.id, moved, new_folder_id)
     return {"ok": True, "folder_id": new_folder_id}
 
 

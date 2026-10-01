@@ -72,6 +72,34 @@ async def _extract_reader(url: str) -> Optional[dict]:
     return {"title": title, "html": clean}
 
 
+async def extract_and_store_reader(session: Session, link: Link) -> Link:
+    """Extrait la vue lecteur de `link`, l'enregistre et renvoie le lien rechargé.
+
+    La session est fermée pendant l'extraction (jusqu'à 10 s de réseau par
+    saut) : gardée ouverte, chaque vue lecteur en cours immobilisait une
+    connexion du pool SQLAlchemy (5+10), et une quinzaine d'ouvertures
+    simultanées suffisait à faire attendre toutes les autres routes. Même
+    correctif que `/api/fetch-meta`.
+    """
+    link_id, url = link.id, link.url
+    session.close()
+    data = await _extract_reader(url)
+    fresh = session.get(Link, link_id)
+    if fresh is None:  # supprimé pendant l'extraction
+        raise HTTPException(status_code=404)
+    if data and data["html"]:
+        fresh.reader_title = (data["title"] or fresh.title or "")[:500]
+        fresh.reader_html = data["html"]
+        fresh.reader_failed = False
+    else:
+        fresh.reader_failed = True
+    fresh.reader_extracted_at = datetime.now(timezone.utc).replace(tzinfo=None)
+    session.add(fresh)
+    session.commit()
+    session.refresh(fresh)
+    return fresh
+
+
 @router.get("/links/{link_id}/read", response_class=HTMLResponse,
             dependencies=[Depends(rate_limit(30, 60))])
 async def read_link(
@@ -89,18 +117,7 @@ async def read_link(
     # l'extraction ne se déclenche donc que pour les liens ajoutés par le
     # visiteur, derrière la même garde SSRF qu'en production.
     if refresh or not link.reader_html:
-        data = await _extract_reader(link.url)
-        if data and data["html"]:
-            link.reader_title = (data["title"] or link.title or "")[:500]
-            link.reader_html = data["html"]
-            link.reader_failed = False
-        else:
-            link.reader_failed = True
-        link.reader_extracted_at = datetime.now(timezone.utc).replace(tzinfo=None)
-        session.add(link)
-        session.commit()
-        session.refresh(link)
-
+        link = await extract_and_store_reader(session, link)
     reading_minutes = 0
     if link.reader_html:
         words = len(re.sub(r"<[^>]+>", " ", link.reader_html).split())
