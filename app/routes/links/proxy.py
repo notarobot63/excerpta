@@ -91,7 +91,7 @@ async def warm_img_cache() -> None:
                 }, timeout=5) as resp:
                     if resp.status_code != 200:
                         return
-                    ct = resp.headers.get("content-type", "image/jpeg").split(";")[0].strip()
+                    ct = resp.headers.get("content-type", "image/jpeg").split(";")[0].strip().lower()
                     if not ct.startswith("image/") or ct in _FORBIDDEN_IMG_TYPES:
                         return
                     content = await _read_limited(resp, _MAX_IMG_BYTES)
@@ -148,8 +148,10 @@ async def proxy_image(
                 async with _img_cache_lock:
                     _cache_store(url, time.time() + 3600, None, None)
                 raise HTTPException(status_code=404)
-            content_type = resp.headers.get("content-type", "image/jpeg").split(";")[0].strip()
+            content_type = resp.headers.get("content-type", "image/jpeg").split(";")[0].strip().lower()
             # SVG exclu : servi depuis notre origine, il peut porter du script.
+            # Minuscules d'abord : le navigateur lit `image/SVG+xml` comme un
+            # SVG, alors que la comparaison exacte le laissait passer.
             if not content_type.startswith("image/") or content_type in _FORBIDDEN_IMG_TYPES:
                 raise HTTPException(status_code=415)
             try:

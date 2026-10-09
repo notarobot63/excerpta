@@ -80,15 +80,15 @@ async def users_list(
     admin: User = Depends(get_admin_user),
     session: Session = Depends(get_session),
 ):
+    # Sous-requêtes et non deux LEFT JOIN : joindre liens et étiquettes au même
+    # utilisateur multipliait les lignes (liens × étiquettes) avant le
+    # COUNT(DISTINCT), soit des millions pour une collection fournie.
     rows = session.execute(text("""
         SELECT u.id, u.name, u.email, u.is_admin, u.is_active, u.created_at,
-               COUNT(DISTINCT l.id) AS link_count,
-               COUNT(DISTINCT t.id) AS tag_count,
-               MAX(l.created_at)    AS last_link_at
+               (SELECT COUNT(*) FROM links l WHERE l.user_id = u.id) AS link_count,
+               (SELECT COUNT(*) FROM tags t WHERE t.user_id = u.id) AS tag_count,
+               (SELECT MAX(l.created_at) FROM links l WHERE l.user_id = u.id) AS last_link_at
         FROM users u
-        LEFT JOIN links l ON l.user_id = u.id
-        LEFT JOIN tags  t ON t.user_id = u.id
-        GROUP BY u.id
         ORDER BY u.created_at
     """)).fetchall()
     return templates.TemplateResponse(request, "admin/users.html", {
@@ -206,8 +206,8 @@ async def delete_user(
     if target.id == admin.id:
         raise HTTPException(status_code=400, detail="You cannot delete your own account")
     target_name = target.name
-    # Cascade manuelle dans l'ordre des dépendances FK
-    session.execute(text("DELETE FROM fts_links   WHERE rowid IN (SELECT id FROM links WHERE user_id=:id)"), {"id": uid})
+    # Cascade manuelle dans l'ordre des dépendances FK. L'index FTS suit par
+    # le déclencheur `links_ad`.
     session.execute(text("DELETE FROM link_tags   WHERE link_id IN (SELECT id FROM links WHERE user_id=:id)"), {"id": uid})
     session.execute(text("UPDATE links SET folder_id = NULL WHERE user_id=:id"), {"id": uid})
     session.execute(text("DELETE FROM links       WHERE user_id=:id"), {"id": uid})

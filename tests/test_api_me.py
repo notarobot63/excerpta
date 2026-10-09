@@ -62,3 +62,13 @@ def test_me_reflects_disabled_prefs(client_disabled):
 def test_me_requires_api_key(client_default):
     r = client_default.get("/api/v1/me")
     assert r.status_code == 401
+
+
+def test_synchro_freshrss_meme_controle_de_cle_que_l_api(client_default):
+    """`/api/v1/freshrss/sync` partage la dépendance d'authentification de l'API."""
+    assert client_default.post("/api/v1/freshrss/sync").status_code == 401
+    assert client_default.post("/api/v1/freshrss/sync",
+                               headers={"X-API-Key": "mauvaise"}).status_code == 401
+    # Clé valide, aucune configuration FreshRSS : la route est bien atteinte.
+    assert client_default.post("/api/v1/freshrss/sync",
+                               headers={"X-API-Key": _PLAIN_KEY}).status_code == 404

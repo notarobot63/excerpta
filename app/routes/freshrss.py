@@ -16,9 +16,10 @@ from ..crypto import decrypt, encrypt
 from ..database import engine, get_session
 from ..models import Folder, FreshRSSConfig, Link, User
 from ..ratelimit import rate_limit
-from .links import _assert_public_url, _fetch_meta, _safe_url, safe_request
+from .api import _get_api_user
+from .links import _assert_public_url, _safe_url, refresh_links_meta, safe_request
 from ..templates_cfg import templates
-from ..utils import refresh_link_fts, resolve_api_user, sidebar_data
+from ..utils import sidebar_data
 
 logger = logging.getLogger("excerpta.freshrss")
 
@@ -180,38 +181,6 @@ def _extract_thumbnail(item: dict) -> str:
 
 
 # ── Sync core ─────────────────────────────────────────────────────────────────
-
-async def _refresh_new_links_bg(link_ids: list[int]) -> None:
-    """Complète favicon/thumbnail/description sur les liens nouvellement importés."""
-    from ..database import engine as db_engine
-    for link_id in link_ids:
-        try:
-            with Session(db_engine) as session:
-                link = session.get(Link, link_id)
-                if not link:
-                    continue
-                url = link.url
-            meta = await _fetch_meta(url)
-            with Session(db_engine) as session:
-                link = session.get(Link, link_id)
-                if not link:
-                    continue
-                changed = False
-                if not link.thumbnail_url and meta.get("thumbnail_url"):
-                    link.thumbnail_url = meta["thumbnail_url"]
-                    changed = True
-                if not link.description and meta.get("description"):
-                    link.description = meta["description"]
-                    changed = True
-                if not link.favicon_url and meta.get("favicon_url"):
-                    link.favicon_url = meta["favicon_url"]
-                    changed = True
-                if changed:
-                    session.add(link)
-                    session.commit()
-        except Exception:
-            pass
-
 
 def normalise_base_url(raw: str) -> str:
     """Normalise l'URL de base saisie : schéma et hôte en minuscules.
@@ -399,9 +368,9 @@ async def _sync_user(config: FreshRSSConfig, session: Session) -> int:
         existing_urls.add(url)
 
     if new_links:
-        session.flush()  # un seul flush pour assigner tous les IDs
-        for link in new_links:
-            refresh_link_fts(session, link, [])
+        # Un seul flush pour assigner tous les IDs. L'index FTS est alimenté
+        # par le déclencheur `links_ai` (ces liens n'ont pas d'étiquette).
+        session.flush()
 
     config.last_sync = datetime.now(timezone.utc).replace(tzinfo=None)
     config.synced_count += len(new_links)
@@ -409,7 +378,7 @@ async def _sync_user(config: FreshRSSConfig, session: Session) -> int:
     session.commit()
 
     if new_links:
-        spawn(_refresh_new_links_bg([l.id for l in new_links]), name="freshrss-refresh")
+        spawn(refresh_links_meta([(l.id, l.url) for l in new_links]), name="freshrss-refresh")
 
     return len(new_links)
 
@@ -434,19 +403,6 @@ async def sync_all_enabled() -> None:
 
 
 # ── API endpoint (pour cron ou appel externe) ─────────────────────────────────
-
-async def _get_api_user(
-    request: Request,
-    session: Session = Depends(get_session),
-) -> User:
-    x_api_key = request.headers.get("X-API-Key")
-    if not x_api_key:
-        raise HTTPException(status_code=401, detail="Authentication required")
-    user = resolve_api_user(session, x_api_key)
-    if not user:
-        raise HTTPException(status_code=401, detail="Invalid API key")
-    return user
-
 
 @api_router.post("/freshrss/sync", dependencies=[Depends(rate_limit(10, 60))])
 async def api_freshrss_sync(

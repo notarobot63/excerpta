@@ -136,3 +136,30 @@ def test_aller_retour_export_import(session):
     assert a["note"] == "Ma note"
     assert a["tags"] == ["web"]
     assert items["https://b.example"]["folder_path"] == ()
+    assert a["created_at"] == now, "la date d'ajout doit survivre à l'aller-retour"
+
+
+def test_import_conserve_add_date(session):
+    """ADD_DATE était ignoré : tout l'import prenait la date du jour."""
+    user = _user(session)
+    _import(session, user, '<DL><p><DT><A HREF="https://a.example" ADD_DATE="1700000000">A</A>'
+                           '<DT><A HREF="https://b.example" ADD_DATE="n/a">B</A></DL>')
+    links = {lk.url: lk for lk in session.exec(select(Link).where(Link.user_id == user.id)).all()}
+    assert links["https://a.example"].created_at == datetime(2023, 11, 14, 22, 13, 20)
+    assert links["https://b.example"].created_at.year >= 2026, "date illisible : date du jour"
+
+
+def test_export_add_date_independant_du_fuseau(monkeypatch):
+    """`created_at` est de l'UTC naïf : l'export ne doit pas dépendre de TZ."""
+    import time
+    link = Link(id=1, user_id=1, url="https://a.example", title="A",
+                created_at=datetime(2023, 11, 14, 22, 13, 20))
+    link.tags = []
+    monkeypatch.setenv("TZ", "Europe/Paris")
+    time.tzset()
+    try:
+        html = build_bookmarks([link], [])
+    finally:
+        monkeypatch.delenv("TZ")
+        time.tzset()
+    assert 'ADD_DATE="1700000000"' in html

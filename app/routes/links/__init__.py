@@ -11,7 +11,7 @@ from .archive import router as _archive_router
 from .constants import MAX_DESC_LEN, MAX_TAGS_PER_LINK
 from .crud import _fts_escape, create_link
 from .crud import router as _crud_router
-from .enrichment import _fetch_and_update_meta, _fetch_meta
+from .enrichment import _fetch_and_update_meta, _fetch_meta, refresh_links_meta
 from .net_guard import (_assert_public_url, _safe_stream, _safe_url, _UnsafeRedirect,
                         safe_request, set_http_client)
 from .proxy import warm_img_cache

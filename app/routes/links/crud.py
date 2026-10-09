@@ -119,10 +119,15 @@ async def list_links(
     total_pages = max(1, (total + PER_PAGE - 1) // PER_PAGE)
 
     if fts_link_ids:
-        all_matches = list(session.exec(stmt).all())
-        rank_map = {id_: i for i, id_ in enumerate(fts_link_ids)}
-        all_matches.sort(key=lambda l: rank_map.get(l.id, len(fts_link_ids)))
-        links = all_matches[(page - 1) * PER_PAGE : page * PER_PAGE]
+        # Tri par pertinence, mais seuls les identifiants des correspondances
+        # sont lus : charger les liens complets (lecteur, étiquettes) de toutes
+        # les correspondances pour n'en garder que trente coûtait toute la
+        # collection à chaque frappe d'une recherche large.
+        matching = set(session.execute(select(stmt.subquery().c.id)).scalars())
+        ranked = [i for i in fts_link_ids if i in matching]
+        page_ids = ranked[(page - 1) * PER_PAGE : page * PER_PAGE]
+        by_id = {lk.id: lk for lk in session.exec(select(Link).where(Link.id.in_(page_ids)))}
+        links = [by_id[i] for i in page_ids if i in by_id]
     else:
         links = list(session.exec(
             stmt.order_by(Link.created_at.desc()).offset((page - 1) * PER_PAGE).limit(PER_PAGE)
