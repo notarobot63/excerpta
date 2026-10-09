@@ -14,6 +14,7 @@ un `<H3>` nomme le `<DL>` qui le suit, chaque `<DL>` ouvre un niveau, et un
 from __future__ import annotations
 
 from collections import defaultdict
+from datetime import datetime, timezone
 from html import escape
 from html.parser import HTMLParser
 from urllib.parse import urlparse
@@ -21,6 +22,22 @@ from urllib.parse import urlparse
 from .utils import build_folder_tree
 
 MAX_FOLDER_NAME_LEN = 200
+
+
+def _parse_add_date(raw: str) -> datetime | None:
+    """`ADD_DATE` (secondes Unix) en datetime UTC naïf, comme `Link.created_at`.
+
+    Ignoré à l'import jusqu'ici : tous les favoris prenaient la date de l'import,
+    et la liste, triée par date, perdait l'ordre d'origine. Valeur absente ou
+    illisible : None, l'appelant garde alors la date du jour.
+    """
+    try:
+        ts = int(raw.strip())
+        if ts <= 0:
+            return None
+        return datetime.fromtimestamp(ts, tz=timezone.utc).replace(tzinfo=None)
+    except (ValueError, OverflowError, OSError):
+        return None
 
 
 class _BookmarkParser(HTMLParser):
@@ -111,6 +128,7 @@ class _BookmarkParser(HTMLParser):
             "note": "",
             "favicon_url": f"{parsed.scheme}://{parsed.netloc}/favicon.ico",
             "folder_path": folder_path,
+            "created_at": _parse_add_date(attrs.get("add_date", "")),
         }
         self.items.append(item)
         self._last_item = item
@@ -148,7 +166,9 @@ def build_bookmarks(links: list, folders: list) -> str:
 
     def emit_link(lk, level: int) -> None:
         tags = escape(",".join(t.name for t in lk.tags), quote=True)
-        ts = int(lk.created_at.timestamp())
+        # `created_at` est de l'UTC naïf : sans fuseau explicite, `timestamp()`
+        # l'interprète en heure locale, décalée dès que TZ est posé.
+        ts = int(lk.created_at.replace(tzinfo=timezone.utc).timestamp())
         lines.append(
             f'{pad(level)}<DT><A HREF="{escape(lk.url, quote=True)}" ADD_DATE="{ts}" '
             f'TAGS="{tags}">{escape(lk.title)}</A>'

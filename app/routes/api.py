@@ -8,7 +8,7 @@ from typing import List, Optional
 from ..database import get_session
 from ..models import Folder, Link, LinkTagLink, Tag, User
 from ..ratelimit import rate_limit
-from ..utils import descendant_folder_ids, resolve_api_user
+from ..utils import build_folder_tree, descendant_folder_ids, resolve_api_user
 from ..demo import assert_link_quota
 from .links import (MAX_DESC_LEN, MAX_TAGS_PER_LINK, _fetch_meta,
                     _fts_escape, _safe_url, create_link, extract_and_store_reader)
@@ -200,38 +200,21 @@ async def api_list_folders(
     user: User = Depends(_get_api_user),
     session: Session = Depends(get_session),
 ):
-    rows = session.execute(
-        text("""
-            SELECT f.id, f.name, f.parent_id, f.sort_order, COUNT(l.id) AS cnt
-            FROM folders f
-            LEFT JOIN links l ON l.folder_id = f.id
-            WHERE f.user_id = :uid
-            GROUP BY f.id, f.name, f.parent_id, f.sort_order
-            ORDER BY f.sort_order, f.name
-        """),
+    folders = list(session.exec(select(Folder).where(Folder.user_id == user.id)).all())
+    counts = dict(session.execute(
+        text(
+            "SELECT folder_id, COUNT(*) FROM links"
+            " WHERE user_id = :uid AND folder_id IS NOT NULL GROUP BY folder_id"
+        ),
         {"uid": user.id},
-    ).fetchall()
-
-    folders = [{"id": r[0], "name": r[1], "parent_id": r[2], "sort_order": r[3], "count": r[4]} for r in rows]
-
-    result: list = []
-
-    def add_folder(f, d):
-        result.append({**f, "depth": d})
-        children = sorted(
-            [x for x in folders if x["parent_id"] == f["id"]],
-            key=lambda x: (x["sort_order"], x["name"]),
-        )
-        for child in children:
-            add_folder(child, d + 1)
-
-    for root in sorted(
-        [f for f in folders if f["parent_id"] is None],
-        key=lambda x: (x["sort_order"], x["name"]),
-    ):
-        add_folder(root, 0)
-
-    return {"folders": result}
+    ).fetchall())
+    # Même parcours que la barre latérale web : un dossier dont le parent a
+    # disparu est rattaché à la racine au lieu de manquer à l'appli mobile.
+    return {"folders": [
+        {"id": f.id, "name": f.name, "parent_id": f.parent_id, "sort_order": f.sort_order,
+         "count": counts.get(f.id, 0), "depth": depth}
+        for f, depth in build_folder_tree(folders)
+    ]}
 
 
 @router.get("/groups")

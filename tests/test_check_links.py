@@ -72,3 +72,30 @@ def test_deux_lancements_rapproches_ne_lancent_qu_une_verification(monkeypatch):
     asyncio.run(st.check_links_run(user=user))
     asyncio.run(st.check_links_run(user=user))
     assert spawned == ["check-links-4242"]
+
+
+def test_progression_compte_en_sql_sans_charger_les_liens(session, user_with_links):
+    """Le compteur interrogé toutes les 2 s chargeait chaque lien complet."""
+    from datetime import datetime
+
+    from sqlalchemy import event
+
+    links = session.exec(st.select(Link).where(Link.user_id == user_with_links.id)).all()
+    for lk in links[:3]:
+        lk.is_broken = True
+        lk.last_checked_at = datetime(2026, 1, 1)
+    links[3].last_checked_at = datetime(2026, 1, 1)
+    session.commit()
+    user_id = user_with_links.id
+    session.expunge_all()
+    user = session.get(User, user_id)
+
+    loaded = []
+    listener = lambda target, _ctx: loaded.append(target.id)  # noqa: E731
+    event.listen(Link, "load", listener)
+    try:
+        out = asyncio.run(st.check_links_status(user=user, session=session))
+    finally:
+        event.remove(Link, "load", listener)
+    assert (out["broken_count"], out["checked_count"]) == (3, 4)
+    assert loaded == []

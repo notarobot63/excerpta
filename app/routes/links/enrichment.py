@@ -4,11 +4,10 @@ import logging
 from urllib.parse import urljoin, urlparse
 
 from bs4 import BeautifulSoup
-from sqlmodel import Session, select
+from sqlmodel import Session
 
 from ...database import engine as db_engine
-from ...models import Link, LinkTagLink, Tag
-from ...utils import refresh_link_fts
+from ...models import Link
 from .constants import MAX_DESC_LEN, MAX_TITLE_LEN
 from .net_guard import _MAX_HTML_BYTES, _TooLarge, _assert_public_url, _read_limited, _safe_stream, _safe_url
 
@@ -100,13 +99,20 @@ async def _fetch_meta(url: str) -> dict:
         return {"title": "", "description": "", "favicon_url": ""}
 
 
-async def _fetch_and_update_meta(link_id: int, url: str) -> None:
-    """Récupère les métadonnées en arrière-plan et complète les champs vides du lien."""
+async def _fetch_and_update_meta(link_id: int, url: str) -> bool:
+    """Récupère les métadonnées et complète les champs vides du lien.
+
+    Seul chemin d'enrichissement : création, import, synchro FreshRSS et
+    rafraîchissement en masse passent tous par ici. Quatre copies de ce bloc
+    avaient divergé, et trois d'entre elles stockaient `og:description` sans
+    plafond. L'index FTS suit par le déclencheur `links_au`.
+    Retourne True si le lien a été modifié.
+    """
     meta = await _fetch_meta(url)
     with Session(db_engine) as s:
         link = s.get(Link, link_id)
         if not link:
-            return
+            return False
         changed = False
         if (not link.title or link.title == url) and meta.get("title"):
             link.title = meta["title"][:MAX_TITLE_LEN]
@@ -122,10 +128,18 @@ async def _fetch_and_update_meta(link_id: int, url: str) -> None:
             changed = True
         if changed:
             s.add(link)
-            s.flush()
-            tags = list(s.exec(
-                select(Tag).join(LinkTagLink, LinkTagLink.tag_id == Tag.id)
-                .where(LinkTagLink.link_id == link.id)
-            ).all())
-            refresh_link_fts(s, link, tags)
             s.commit()
+        return changed
+
+
+async def refresh_links_meta(links: list[tuple[int, str]]) -> None:
+    """Enrichit une série de liens `(id, url)` l'un après l'autre, en tâche de fond.
+
+    Un échec ne doit pas interrompre la série, mais il est journalisé : les
+    anciennes boucles l'avalaient sans trace.
+    """
+    for link_id, url in links:
+        try:
+            await _fetch_and_update_meta(link_id, url)
+        except Exception:
+            logger.warning("Enrichissement du lien %s en échec", link_id, exc_info=True)

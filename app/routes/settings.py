@@ -1,13 +1,14 @@
 import asyncio
 import io
 import json
+import logging
 from datetime import datetime, timezone
 from typing import Optional
 
 import qrcode
 from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, Request, UploadFile
 from fastapi.responses import HTMLResponse, RedirectResponse, Response, StreamingResponse
-from sqlalchemy import or_, text
+from sqlalchemy import func, or_, text
 from sqlmodel import Session, select
 
 from ..auth import get_current_user
@@ -22,9 +23,12 @@ from ..ratelimit import rate_limit
 from ..templates_cfg import templates
 from ..utils import get_or_create_tags, refresh_link_fts, sidebar_data, slugify
 from .freshrss import forget_freshrss_folder, freshrss_folder
-from .links import _archive_many, _assert_public_url, _fetch_meta, _safe_stream, _safe_url
+from .links import (_archive_many, _assert_public_url, _fetch_and_update_meta,
+                     _safe_stream, _safe_url, refresh_links_meta)
 
 router = APIRouter()
+
+logger = logging.getLogger("excerpta.settings")
 
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
@@ -178,26 +182,10 @@ async def refresh_metadata(
         updated = 0
         for i, (link_id, url) in enumerate(candidates):
             try:
-                meta = await _fetch_meta(url)
-                with Session(db_engine) as session:
-                    link = session.get(Link, link_id)
-                    if link:
-                        changed = False
-                        if not link.thumbnail_url and meta.get("thumbnail_url"):
-                            link.thumbnail_url = meta["thumbnail_url"]
-                            changed = True
-                        if not link.description and meta.get("description"):
-                            link.description = meta["description"]
-                            changed = True
-                        if not link.favicon_url and meta.get("favicon_url"):
-                            link.favicon_url = meta["favicon_url"]
-                            changed = True
-                        if changed:
-                            session.add(link)
-                            session.commit()
-                            updated += 1
+                if await _fetch_and_update_meta(link_id, url):
+                    updated += 1
             except Exception:
-                pass
+                logger.warning("Rafraîchissement du lien %s en échec", link_id, exc_info=True)
             yield f"data: {json.dumps({'total': total, 'current': i + 1, 'updated': updated})}\n\n"
         yield f"data: {json.dumps({'done': True, 'updated': updated})}\n\n"
 
@@ -209,42 +197,6 @@ async def refresh_metadata(
 
 
 # ── Import ────────────────────────────────────────────────────────────────────
-
-async def _refresh_new_links(link_ids: list[int]) -> None:
-    for link_id in link_ids:
-        try:
-            meta = await _fetch_meta_by_id(link_id)
-            if meta is None:
-                continue
-            with Session(db_engine) as session:
-                link = session.get(Link, link_id)
-                if not link:
-                    continue
-                changed = False
-                if not link.thumbnail_url and meta.get("thumbnail_url"):
-                    link.thumbnail_url = meta["thumbnail_url"]
-                    changed = True
-                if not link.description and meta.get("description"):
-                    link.description = meta["description"]
-                    changed = True
-                if not link.favicon_url and meta.get("favicon_url"):
-                    link.favicon_url = meta["favicon_url"]
-                    changed = True
-                if changed:
-                    session.add(link)
-                    session.commit()
-        except Exception:
-            pass
-
-
-async def _fetch_meta_by_id(link_id: int):
-    with Session(db_engine) as session:
-        link = session.get(Link, link_id)
-        if not link:
-            return None
-        url = link.url
-    return await _fetch_meta(url)
-
 
 @router.get("/settings/import", response_class=HTMLResponse)
 async def import_form(
@@ -293,7 +245,7 @@ async def import_links(
         ).fetchall()
     }
 
-    new_link_ids = []
+    new_links: list[tuple[int, str]] = []
     folder_cache: dict = {}
 
     for item in items:
@@ -309,6 +261,8 @@ async def import_links(
             description="",
             favicon_url=item["favicon_url"],
             folder_id=_import_folder(session, user.id, item["folder_path"], folder_cache),
+            **({"created_at": item["created_at"], "updated_at": item["created_at"]}
+               if item["created_at"] else {}),
         )
         session.add(link)
         session.flush()
@@ -321,12 +275,12 @@ async def import_links(
         refresh_link_fts(session, link, tags)
         existing_urls.add(item["url"])
         imported += 1
-        new_link_ids.append(link.id)
+        new_links.append((link.id, link.url))
 
     session.commit()
 
-    if new_link_ids:
-        background_tasks.add_task(_refresh_new_links, new_link_ids)
+    if new_links:
+        background_tasks.add_task(refresh_links_meta, new_links)
 
     return RedirectResponse(url=f"/settings/import?imported={imported}&skipped={skipped}", status_code=303)
 
@@ -349,13 +303,16 @@ async def purge_freshrss(
                 {"fid": folder.id},
             )
             session.execute(
-                text("DELETE FROM fts_links WHERE rowid IN "
-                     "(SELECT id FROM links WHERE folder_id = :fid)"),
-                {"fid": folder.id},
-            )
-            session.execute(
                 text("DELETE FROM links WHERE user_id = :uid AND folder_id = :fid"),
                 {"uid": user.id, "fid": folder.id},
+            )
+            # Les sous-dossiers remontent à la racine, comme à la suppression
+            # d'un dossier : laissés en place, ils désignaient un parent
+            # disparu, invisibles dans l'appli mobile et rattachés au premier
+            # dossier qui réutiliserait cet identifiant.
+            session.execute(
+                text("UPDATE folders SET parent_id = NULL WHERE parent_id = :fid"),
+                {"fid": folder.id},
             )
             session.delete(folder)
         config.synced_count = 0
@@ -395,7 +352,7 @@ async def purge_all(
     session: Session = Depends(get_session),
 ):
     session.execute(text("DELETE FROM link_tags WHERE link_id IN (SELECT id FROM links WHERE user_id = :uid)"), {"uid": user.id})
-    session.execute(text("DELETE FROM fts_links WHERE rowid IN (SELECT id FROM links WHERE user_id = :uid)"), {"uid": user.id})
+    # L'index FTS est vidé par le déclencheur `links_ad`.
     session.execute(text("DELETE FROM links WHERE user_id = :uid"), {"uid": user.id})
     session.execute(text("DELETE FROM tags WHERE user_id = :uid"), {"uid": user.id})
     session.execute(text("DELETE FROM folders WHERE user_id = :uid"), {"uid": user.id})
@@ -470,7 +427,7 @@ async def _run_check_background(user_id: int) -> None:
     _check_jobs[user_id] = {"total": 0, "done": 0, "running": True}
     try:
         with Session(db_engine) as s:
-            link_ids = [lk.id for lk in s.exec(select(Link).where(Link.user_id == user_id)).all()]
+            link_ids = list(s.exec(select(Link.id).where(Link.user_id == user_id)).all())
         _check_jobs[user_id]["total"] = len(link_ids)
         sem = asyncio.Semaphore(_CHECK_CONCURRENCY)
 
@@ -504,14 +461,26 @@ async def _run_check_background(user_id: int) -> None:
         _check_jobs[user_id]["running"] = False
 
 
+def _count_links(session: Session, user_id: int, *conditions) -> int:
+    """Nombre de liens du compte, compté en SQL.
+
+    Compter avec `len(...all())` chargeait chaque lien complet (contenu lecteur
+    et étiquettes compris), et la page de progression interroge ce compteur
+    toutes les deux secondes pendant toute la vérification.
+    """
+    return session.exec(
+        select(func.count()).select_from(Link).where(Link.user_id == user_id, *conditions)
+    ).one()
+
+
 @router.get("/settings/check-links/status")
 async def check_links_status(
     user: User = Depends(get_current_user),
     session: Session = Depends(get_session),
 ):
     job = _check_jobs.get(user.id, {"total": 0, "done": 0, "running": False})
-    broken_count = len(session.exec(select(Link).where(Link.user_id == user.id, Link.is_broken == True)).all())
-    checked_count = len(session.exec(select(Link).where(Link.user_id == user.id, Link.last_checked_at != None)).all())
+    broken_count = _count_links(session, user.id, Link.is_broken == True)  # noqa: E712
+    checked_count = _count_links(session, user.id, Link.last_checked_at != None)  # noqa: E711
     return {
         "total": job["total"],
         "done": job["done"],
@@ -529,8 +498,8 @@ async def check_links_form(
 ):
     job = _check_jobs.get(user.id, {"total": 0, "done": 0, "running": False})
     broken = list(session.exec(select(Link).where(Link.user_id == user.id, Link.is_broken == True)).all())
-    checked_count = len(session.exec(select(Link).where(Link.user_id == user.id, Link.last_checked_at != None)).all())
-    total_count = len(session.exec(select(Link).where(Link.user_id == user.id)).all())
+    checked_count = _count_links(session, user.id, Link.last_checked_at != None)  # noqa: E711
+    total_count = _count_links(session, user.id)
     return templates.TemplateResponse(
         request,
         "settings/check_links.html",
