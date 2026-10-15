@@ -217,14 +217,30 @@ def _safe_url(url: str) -> bool:
         return False
 
 
+# Une IP publique ne suffit pas : l'IP WAN, par réflexion NAT, mène aux services
+# internes redirigés, et tout port d'un hôte public (SSH, Redis...) devient
+# sondable. Seuls les ports web standard sont donc contactés.
+_ALLOWED_PORTS = {80, 443}
+
+
+def _port_allowed(url: str) -> bool:
+    try:
+        return httpx.URL(url).port in (None, *_ALLOWED_PORTS)
+    except Exception:
+        return False
+
+
 async def _assert_public_url(url: str) -> bool:
     """Garde SSRF unique, à appeler avant toute requête sortante.
 
     Combine les deux contrôles auparavant recopiés dans _fetch_meta,
-    proxy_image et _extract_reader : forme de l'URL + IP littérale privée,
-    puis résolution DNS pour les hostnames.
+    proxy_image et _extract_reader : forme de l'URL + port web standard + IP
+    littérale privée, puis résolution DNS pour les hostnames.
+
+    Le port n'est pas contrôlé par `_safe_url` : un favori sur un port exotique
+    reste enregistrable, il n'est simplement jamais récupéré par le serveur.
     """
-    if not _safe_url(url):
+    if not _safe_url(url) or not _port_allowed(url):
         return False
     host = (urlparse(url).hostname or "").strip("[]")
     try:
