@@ -158,6 +158,8 @@ def _public_host(monkeypatch, port: int, *hostnames: str) -> None:
         lambda host, *a, **k: [(2, 1, 6, "", ("127.0.0.1", port))],
     )
     monkeypatch.setattr(links_mod, "_assert_peer_public", lambda resp, url: None)
+    # Les serveurs de test écoutent sur des ports éphémères.
+    monkeypatch.setattr(links_mod, "_port_allowed", lambda url: True)
 
 
 # ── _is_private_host ──────────────────────────────────────────────────────────
@@ -194,6 +196,43 @@ def test_hosts_publics_acceptes(host):
 ])
 def test_safe_url_rejette(url):
     assert links_mod._safe_url(url) is False
+
+
+@pytest.mark.parametrize("url,attendu", [
+    ("https://exemple.org/page", True),
+    ("http://exemple.org:80/", True),
+    ("https://exemple.org:443/", True),
+    ("http://exemple.org:22/", False),
+    ("http://exemple.org:6379/", False),
+    ("https://exemple.org:8443/", False),
+])
+def test_port_allowed(url, attendu):
+    assert links_mod._port_allowed(url) is attendu
+
+
+def test_assert_public_url_refuse_un_port_non_web(monkeypatch):
+    """Hôte public, port SSH : refusé sans même résoudre le nom."""
+    async def ne_doit_pas_resoudre(hostname):
+        raise AssertionError("résolution DNS inattendue")
+    monkeypatch.setattr(links_mod, "_hostname_resolves_public", ne_doit_pas_resoudre)
+    assert asyncio.run(links_mod._assert_public_url("http://exemple.org:22/")) is False
+    assert asyncio.run(links_mod._assert_public_url("http://93.184.216.34:6379/")) is False
+
+
+def test_redirection_vers_un_port_non_web_refusee(externe, http_client, monkeypatch):
+    """Un 302 vers le même hôte public mais un port interne est refusé avant connexion."""
+    redir = _serve(_Redirecteur)
+    _Redirecteur.target = f"http://excerpta-test.invalid:{externe.server_port}/x"
+    try:
+        _public_host(monkeypatch, externe.server_port, "excerpta-test.invalid")
+        monkeypatch.setattr(links_mod, "_port_allowed",
+                            lambda url: httpx.URL(url).port == redir.server_port)
+        url = f"http://excerpta-test.invalid:{redir.server_port}/api"
+        with pytest.raises(links_mod._UnsafeRedirect):
+            asyncio.run(links_mod.safe_request("GET", url, timeout=5))
+        assert TOUCHED == [], f"le port interne a été atteint : {TOUCHED}"
+    finally:
+        redir.shutdown()
 
 
 # ── Redirection ───────────────────────────────────────────────────────────────
