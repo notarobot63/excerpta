@@ -21,7 +21,7 @@ def _fake_network(monkeypatch, module, html: str):
     class _Resp:
         status_code = 200
         url = _PAGE_URL
-        encoding = "utf-8"
+        charset_encoding = "utf-8"
         headers = {"content-type": "text/html; charset=utf-8"}
 
         async def aiter_bytes(self):

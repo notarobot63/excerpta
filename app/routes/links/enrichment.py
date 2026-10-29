@@ -9,7 +9,8 @@ from sqlmodel import Session
 from ...database import engine as db_engine
 from ...models import Link
 from .constants import MAX_DESC_LEN, MAX_TITLE_LEN
-from .net_guard import _MAX_HTML_BYTES, _TooLarge, _assert_public_url, _read_limited, _safe_stream, _safe_url
+from .net_guard import (_MAX_HTML_BYTES, _TooLarge, _assert_public_url, _read_limited, _safe_stream,
+                        _safe_url, decode_html)
 
 logger = logging.getLogger("excerpta.links.enrichment")
 
@@ -31,7 +32,7 @@ async def _fetch_meta(url: str) -> dict:
             except _TooLarge:
                 return {"title": "", "description": "", "favicon_url": ""}
         parsed = urlparse(final_url)
-        soup = BeautifulSoup(body.decode(resp.encoding or "utf-8", errors="replace"), "html.parser")
+        soup = BeautifulSoup(decode_html(resp, body), "html.parser")
         title = soup.find("title")
         desc = soup.find("meta", attrs={"property": "og:description"}) or soup.find(
             "meta", attrs={"name": "description"}

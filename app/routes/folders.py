@@ -9,6 +9,7 @@ from sqlmodel import Session, select
 
 from ..auth import get_current_user
 from ..database import get_session
+from ..demo import demo_rate_limit
 from ..models import Folder, FreshRSSConfig, User
 from ..templates_cfg import templates
 from ..utils import build_folder_tree, creates_cycle, folder_alpha_key, sidebar_data
@@ -101,7 +102,9 @@ async def add_form(
     )
 
 
-@router.post("/folders/add")
+# Débit limité en démo : le contrat de `app/demo.py` plafonne ce que dépose un
+# visiteur, et rien ne bornait le nombre de dossiers créés.
+@router.post("/folders/add", dependencies=[Depends(demo_rate_limit(60, 3600))])
 async def add_folder(
     name: str = Form(...),
     is_public: Optional[str] = Form(default=None),

@@ -13,6 +13,7 @@ from contextlib import asynccontextmanager
 from urllib.parse import urlparse
 
 import httpx
+from bs4 import UnicodeDammit
 
 logger = logging.getLogger("excerpta.links.net_guard")
 
@@ -59,6 +60,23 @@ async def _read_limited(resp: httpx.Response, max_bytes: int) -> bytes:
             raise _TooLarge()
         chunks.append(chunk)
     return b"".join(chunks)
+
+
+def decode_html(resp: httpx.Response, body: bytes) -> str:
+    """Décode une page HTML selon l'en-tête, sinon selon son `<meta charset>`.
+
+    `resp.encoding` vaut `utf-8` dès que Content-Type n'a pas de charset : une
+    page qui ne déclarait le sien (iso-8859-1, windows-1252) que dans le HTML
+    donnait des titres en « Caf� ». UnicodeDammit lit la déclaration du
+    document, et sinon devine.
+    """
+    charset = resp.charset_encoding
+    if charset:
+        try:
+            return body.decode(charset, errors="replace")
+        except LookupError:
+            pass  # charset inconnu de Python : on retombe sur la détection
+    return UnicodeDammit(body, is_html=True).unicode_markup or ""
 
 
 _DNS_CACHE_TTL = 600

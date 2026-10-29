@@ -15,7 +15,7 @@ from ...database import get_session
 from ...models import Link, User
 from ...ratelimit import rate_limit
 from ...templates_cfg import templates
-from .net_guard import _MAX_HTML_BYTES, _TooLarge, _assert_public_url, _read_limited, _safe_stream
+from .net_guard import _MAX_HTML_BYTES, _TooLarge, _assert_public_url, _read_limited, _safe_stream, decode_html
 
 router = APIRouter()
 
@@ -50,13 +50,12 @@ async def _extract_reader(url: str) -> Optional[dict]:
                 body = await _read_limited(resp, _MAX_HTML_BYTES)
             except _TooLarge:
                 return None
-            encoding = resp.encoding or "utf-8"
+            html = decode_html(resp, body)
             final_url = str(resp.url)
     except Exception:
         return None
 
     try:
-        html = body.decode(encoding, errors="replace")
         # `url` fait résoudre les liens et images relatifs contre la page
         # d'origine (après redirections). Sans lui, `src="/img/a.png"` restait
         # relatif et visait Excerpta : images et liens cassés dans le lecteur.
