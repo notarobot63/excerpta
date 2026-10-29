@@ -379,3 +379,17 @@ def test_catalogue_sans_doublon_et_dossiers_declares():
     assert len(urls) == len(set(urls))
     assert all(e["folder"] in demo.DEMO_FOLDERS for e in demo.CATALOG)
     assert set(demo.CATALOG_BY_URL) == set(urls)
+
+
+def test_la_creation_de_dossiers_est_bornee_en_demo(visiteur, monkeypatch):
+    """Le contrat du module plafonne ce que dépose un visiteur : les liens l'étaient,
+    les dossiers non, et un script remplissait la base jusqu'à la purge."""
+    from app import ratelimit
+    monkeypatch.setattr(ratelimit, "_calls", {})
+    codes = [
+        visiteur.post("/folders/add", data={"csrf_token": visiteur.csrf, "name": f"d{i}"},
+                      follow_redirects=False).status_code
+        for i in range(61)
+    ]
+    assert 429 not in codes[:60]
+    assert codes[60] == 429

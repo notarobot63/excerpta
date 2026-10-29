@@ -337,7 +337,9 @@ async def edit_form(
     )
 
 
-@router.post("/links/{link_id}/edit")
+# Une édition peut créer jusqu'à MAX_TAGS_PER_LINK étiquettes : en démo, son débit
+# est borné comme celui de l'ajout.
+@router.post("/links/{link_id}/edit", dependencies=[Depends(demo_rate_limit(60, 3600))])
 async def edit_link(
     request: Request,
     link_id: int,
@@ -547,7 +549,7 @@ async def bulk_move_links(
     return {"ok": True, "folder_id": new_folder_id}
 
 
-@router.post("/links/bulk-tag")
+@router.post("/links/bulk-tag", dependencies=[Depends(demo_rate_limit(60, 3600))])
 async def bulk_tag_links(
     request: Request,
     user: User = Depends(get_current_user),
