@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Excerpta VERSION\n"
 "Report-Msgid-Bugs-To: https://github.com/notarobot63/excerpta/issues\n"
-"POT-Creation-Date: 2026-11-11 15:49+0100\n"
+"POT-Creation-Date: 2026-11-11 15:54+0100\n"
 "PO-Revision-Date: 2026-07-26 14:53+0200\n"
 "Last-Translator: \n"
 "Language: fr\n"
@@ -150,7 +150,7 @@ msgid "Toggle light/dark"
 msgstr "Basculer clair/sombre"
 
 #: app/templates/base.html:209 app/templates/demo/catalogue.html:31
-#: app/templates/links/form.html:118
+#: app/templates/links/form.html:118 app/templates/settings/feed_import.html:94
 msgid "Add"
 msgstr "Ajouter"
 
@@ -307,8 +307,7 @@ msgstr "Nom"
 msgid "Last activity"
 msgstr "Dernière activité"
 
-#: app/templates/admin/users.html:19 app/templates/settings/feed_import.html:43
-#: app/templates/settings/freshrss.html:52
+#: app/templates/admin/users.html:19 app/templates/settings/freshrss.html:52
 msgid "Status"
 msgstr "Statut"
 
@@ -428,7 +427,7 @@ msgid "- None (top level) -"
 msgstr "- Aucun (dossier racine) -"
 
 #: app/templates/folders/form.html:58 app/templates/links/form.html:118
-#: app/templates/settings/feed_import.html:37
+#: app/templates/settings/feed_import.html:51
 #: app/templates/settings/freshrss.html:46 app/templates/settings/index.html:38
 #: app/templates/settings/index.html:135
 msgid "Save"
@@ -808,12 +807,12 @@ msgid "HTTP status code"
 msgstr "Code HTTP"
 
 #: app/templates/settings/feed_import.html:3
-#: app/templates/settings/feed_import.html:7
+#: app/templates/settings/feed_import.html:11
 #: app/templates/settings/index.html:176
 msgid "Feed import"
 msgstr "Import de flux"
 
-#: app/templates/settings/feed_import.html:8
+#: app/templates/settings/feed_import.html:12
 msgid ""
 "Every entry of an RSS or Atom feed becomes a link. For your saved Reddit "
 "posts, copy the private “saved” feed from old.reddit.com/prefs/feeds."
@@ -822,71 +821,87 @@ msgstr ""
 "publications Reddit enregistrées, copiez le flux privé « saved » depuis "
 "old.reddit.com/prefs/feeds."
 
-#: app/templates/settings/feed_import.html:11
+#: app/templates/settings/feed_import.html:15
 #: app/templates/settings/freshrss.html:10
 msgid "Settings saved."
 msgstr "Configuration sauvegardée."
 
-#: app/templates/settings/feed_import.html:14
+#: app/templates/settings/feed_import.html:18
+msgid "Feed removed. Links already imported are kept."
+msgstr "Flux supprimé. Les liens déjà importés sont conservés."
+
+#: app/templates/settings/feed_import.html:21
 #, python-format
 msgid "Sync complete: %(count)s new link(s)."
 msgstr "Synchronisation effectuée : %(count)s nouveau(x) lien(s)."
 
-#: app/templates/settings/feed_import.html:23
+#: app/templates/settings/feed_import.html:24
+msgid "Sync failed, see the error on the feed below."
+msgstr "Échec de la synchronisation, voir l’erreur sur le flux ci-dessous."
+
+#: app/templates/settings/feed_import.html:34
+#: app/templates/settings/feed_import.html:81
 msgid "Feed URL"
 msgstr "URL du flux"
 
-#: app/templates/settings/feed_import.html:24
+#: app/templates/settings/feed_import.html:35
 #: app/templates/settings/freshrss.html:33
 msgid "Leave empty to keep the current one"
 msgstr "Ne pas remplir si inchangé"
 
-#: app/templates/settings/feed_import.html:28
+#: app/templates/settings/feed_import.html:39
+#: app/templates/settings/feed_import.html:86
 #: app/templates/settings/freshrss.html:37
 msgid "Folder name (category)"
 msgstr "Nom du dossier (catégorie)"
 
-#: app/templates/settings/feed_import.html:34
+#: app/templates/settings/feed_import.html:43
+#: app/templates/settings/feed_import.html:90
+msgid "Interval (minutes)"
+msgstr "Intervalle (minutes)"
+
+#: app/templates/settings/feed_import.html:49
 #: app/templates/settings/freshrss.html:43
 msgid "Enable sync"
 msgstr "Activer la synchronisation"
 
-#: app/templates/settings/feed_import.html:45
+#: app/templates/settings/feed_import.html:55
 #: app/templates/settings/freshrss.html:54
 msgid "Last sync:"
 msgstr "Dernière synchronisation :"
 
-#: app/templates/settings/feed_import.html:49
+#: app/templates/settings/feed_import.html:56
 #: app/templates/settings/freshrss.html:58
 msgid "Never"
 msgstr "Jamais"
 
-#: app/templates/settings/feed_import.html:53
+#: app/templates/settings/feed_import.html:57
 #: app/templates/settings/freshrss.html:62
 msgid "Links synced:"
 msgstr "Liens synchronisés :"
 
-#: app/templates/settings/feed_import.html:56
-#: app/templates/settings/freshrss.html:65
-msgid "Enabled:"
-msgstr "Activation :"
+#: app/templates/settings/feed_import.html:60
+msgid "Last error:"
+msgstr "Dernière erreur :"
 
-#: app/templates/settings/feed_import.html:56
-#: app/templates/settings/freshrss.html:65
-msgid "Yes"
-msgstr "Oui"
-
-#: app/templates/settings/feed_import.html:56
-#: app/templates/settings/freshrss.html:65
-msgid "No"
-msgstr "Non"
-
-#: app/templates/settings/feed_import.html:64
+#: app/templates/settings/feed_import.html:66
 #: app/templates/settings/freshrss.html:73
 msgid "Sync now"
 msgstr "Synchroniser maintenant"
 
-#: app/templates/settings/feed_import.html:71
+#: app/templates/settings/feed_import.html:68
+msgid "Remove this feed? Links already imported are kept."
+msgstr "Supprimer ce flux ? Les liens déjà importés sont conservés."
+
+#: app/templates/settings/feed_import.html:70
+msgid "Remove feed"
+msgstr "Supprimer le flux"
+
+#: app/templates/settings/feed_import.html:77
+msgid "Add a feed"
+msgstr "Ajouter un flux"
+
+#: app/templates/settings/feed_import.html:99
 #: app/templates/settings/freshrss.html:80
 msgid "Back to settings"
 msgstr "Retour aux paramètres"
@@ -910,6 +925,18 @@ msgstr "Nom d’utilisateur"
 #: app/templates/settings/freshrss.html:32
 msgid "API token"
 msgstr "Token API"
+
+#: app/templates/settings/freshrss.html:65
+msgid "Enabled:"
+msgstr "Activation :"
+
+#: app/templates/settings/freshrss.html:65
+msgid "Yes"
+msgstr "Oui"
+
+#: app/templates/settings/freshrss.html:65
+msgid "No"
+msgstr "Non"
 
 #: app/templates/settings/import.html:3 app/templates/settings/import.html:7
 msgid "Import links"

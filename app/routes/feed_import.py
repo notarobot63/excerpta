@@ -8,7 +8,7 @@ vues sont mémorisées : un lien supprimé ou purgé ne revient pas.
 """
 import asyncio
 import logging
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from email.utils import parsedate_to_datetime
 from typing import Optional
 
@@ -119,6 +119,14 @@ async def _fetch_feed(url: str) -> list[dict]:
     return parse_feed(resp.content)
 
 
+MIN_INTERVAL, MAX_INTERVAL = 5, 1440  # minutes ; plancher pour ne pas marteler les sites
+
+
+def _now() -> datetime:
+    return datetime.now(timezone.utc).replace(tzinfo=None)
+
+
+# Par compte : deux flux d'un même compte peuvent porter la même URL.
 _sync_locks: dict[int, asyncio.Lock] = {}
 
 
@@ -166,7 +174,8 @@ async def sync_feed(config: FeedImportConfig, session: Session) -> int:
 
         # Le plus récent d'abord, borné : le flux ne rend que ses dernières entrées.
         config.seen_urls = "\n".join(list(dict.fromkeys(urls + seen))[:_MAX_SEEN])
-        config.last_sync = datetime.now(timezone.utc).replace(tzinfo=None)
+        config.last_sync = _now()
+        config.last_error = ""
         config.synced_count += len(new_links)
         session.add(config)
         session.commit()
@@ -176,24 +185,6 @@ async def sync_feed(config: FeedImportConfig, session: Session) -> int:
         return len(new_links)
 
 
-async def sync_all_feeds() -> None:
-    with Session(engine) as session:
-        ids = list(session.exec(
-            select(FeedImportConfig.id)
-            .join(User, User.id == FeedImportConfig.user_id)
-            .where(FeedImportConfig.is_enabled == True, User.is_active == True)  # noqa: E712
-        ).all())
-    for cid in ids:
-        try:
-            with Session(engine) as session:
-                cfg = session.get(FeedImportConfig, cid)
-                if cfg and cfg.feed_url:
-                    added = await sync_feed(cfg, session)
-                    logger.info("Feed import user_id=%d : +%d links", cfg.user_id, added)
-        except Exception as exc:
-            logger.error("Feed import error config_id=%d : %s", cid, _sync_error(exc))
-
-
 def _sync_error(exc: Exception) -> str:
     """Message sans l'URL du flux (elle porte un jeton) : les nôtres, ou le type d'erreur."""
     if isinstance(exc, RuntimeError):
@@ -201,10 +192,64 @@ def _sync_error(exc: Exception) -> str:
     return f"Feed unreachable or invalid response ({type(exc).__name__})"
 
 
+async def _sync_recording_error(config: FeedImportConfig, session: Session) -> int:
+    """sync_feed, en notant l'échec sur le flux (affiché dans les réglages).
+
+    L'heure de la tentative est notée aussi : un flux en erreur attend son
+    intervalle au lieu d'être retenté chaque minute.
+    """
+    try:
+        return await sync_feed(config, session)
+    except Exception as exc:
+        session.rollback()
+        config.last_error, config.last_sync = _sync_error(exc)[:500], _now()
+        session.add(config)
+        session.commit()
+        raise
+
+
+def _is_due(config: FeedImportConfig, now: datetime) -> bool:
+    return config.last_sync is None or config.last_sync + timedelta(minutes=config.interval_minutes) <= now
+
+
+async def sync_due_feeds() -> None:
+    """Synchronise les flux actifs dont l'intervalle est écoulé (comptes actifs seulement)."""
+    now = _now()
+    with Session(engine) as session:
+        due = [c.id for c in session.exec(
+            select(FeedImportConfig)
+            .join(User, User.id == FeedImportConfig.user_id)
+            .where(FeedImportConfig.is_enabled == True, User.is_active == True)  # noqa: E712
+        ).all() if c.feed_url and _is_due(c, now)]
+    for cid in due:
+        try:
+            with Session(engine) as session:
+                cfg = session.get(FeedImportConfig, cid)
+                if cfg:
+                    added = await _sync_recording_error(cfg, session)
+                    logger.info("Feed import #%d user_id=%d : +%d links", cid, cfg.user_id, added)
+        except Exception as exc:
+            logger.error("Feed import error #%d : %s", cid, _sync_error(exc))
+
+
 # ── Page de configuration ─────────────────────────────────────────────────────
 
-def _config(session: Session, user_id: int) -> Optional[FeedImportConfig]:
-    return session.exec(select(FeedImportConfig).where(FeedImportConfig.user_id == user_id)).first()
+def _owned(session: Session, user_id: int, feed_id: int) -> FeedImportConfig:
+    config = session.get(FeedImportConfig, feed_id)
+    if not config or config.user_id != user_id:
+        raise HTTPException(status_code=404)
+    return config
+
+
+def _interval(raw: int) -> int:
+    return min(max(raw, MIN_INTERVAL), MAX_INTERVAL)
+
+
+async def _checked_url(raw: str) -> str:
+    url = raw.strip()[:2000]
+    if url and not await _assert_public_url(url):
+        raise HTTPException(status_code=400, detail="Invalid feed URL or private address")
+    return url
 
 
 @settings_router.get("/settings/feed-import", response_class=HTMLResponse)
@@ -213,50 +258,84 @@ async def feed_import_form(
     current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session),
 ):
+    feeds = session.exec(
+        select(FeedImportConfig).where(FeedImportConfig.user_id == current_user.id).order_by(FeedImportConfig.id)
+    ).all()
     return templates.TemplateResponse(
         request,
         "settings/feed_import.html",
-        {"user": current_user, "config": _config(session, current_user.id),
+        {"user": current_user, "feeds": feeds, "min_interval": MIN_INTERVAL, "max_interval": MAX_INTERVAL,
          **sidebar_data(session, current_user.id)},
     )
 
 
-@settings_router.post("/settings/feed-import")
+@settings_router.post("/settings/feed-import", dependencies=[Depends(rate_limit(20, 3600))])
+async def feed_import_add(
+    feed_url: str = Form(...),
+    group_name: str = Form("Reddit"),
+    interval_minutes: int = Form(30),
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session),
+):
+    url = await _checked_url(feed_url)
+    if not url:
+        raise HTTPException(status_code=400, detail="Missing feed URL")
+    session.add(FeedImportConfig(
+        user_id=current_user.id, feed_url=encrypt(url), group_name=group_name.strip()[:200] or "Reddit",
+        interval_minutes=_interval(interval_minutes), is_enabled=True,
+    ))
+    session.commit()
+    return RedirectResponse(url="/settings/feed-import?saved=1", status_code=303)
+
+
+@settings_router.post("/settings/feed-import/{feed_id}")
 async def feed_import_save(
+    feed_id: int,
     feed_url: str = Form(""),
     group_name: str = Form("Reddit"),
+    interval_minutes: int = Form(30),
     is_enabled: Optional[str] = Form(default=None),
     current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session),
 ):
-    config = _config(session, current_user.id) or FeedImportConfig(user_id=current_user.id)
-    url = feed_url.strip()
+    config = _owned(session, current_user.id, feed_id)
+    url = await _checked_url(feed_url)
     if url:  # vide = garder l'URL actuelle (elle n'est jamais réaffichée)
-        if not await _assert_public_url(url):
-            raise HTTPException(status_code=400, detail="Invalid feed URL or private address")
-        url = url[:2000]
-        if not config.feed_url or decrypt(config.feed_url) != url:
-            # Nouveau flux : compteurs et URL vues repartent de zéro.
-            config.last_sync, config.synced_count, config.seen_urls = None, 0, ""
+        if decrypt(config.feed_url) != url:
+            # Nouveau flux : compteurs, erreur et URL vues repartent de zéro.
+            config.last_sync, config.synced_count, config.seen_urls, config.last_error = None, 0, "", ""
         config.feed_url = encrypt(url)
     config.group_name = group_name.strip()[:200] or "Reddit"
+    config.interval_minutes = _interval(interval_minutes)
     config.is_enabled = is_enabled is not None
     session.add(config)
     session.commit()
     return RedirectResponse(url="/settings/feed-import?saved=1", status_code=303)
 
 
-@settings_router.post("/settings/feed-import/sync-now", dependencies=[Depends(rate_limit(3, 3600))])
-async def feed_import_sync_now(
+@settings_router.post("/settings/feed-import/{feed_id}/delete")
+async def feed_import_delete(
+    feed_id: int,
     current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session),
 ):
-    config = _config(session, current_user.id)
-    if not config or not config.feed_url:
-        raise HTTPException(status_code=400, detail="Missing feed configuration")
+    # Les liens déjà importés restent, avec leur dossier.
+    session.delete(_owned(session, current_user.id, feed_id))
+    session.commit()
+    return RedirectResponse(url="/settings/feed-import?deleted=1", status_code=303)
+
+
+@settings_router.post("/settings/feed-import/{feed_id}/sync-now", dependencies=[Depends(rate_limit(10, 3600))])
+async def feed_import_sync_now(
+    feed_id: int,
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session),
+):
+    config = _owned(session, current_user.id, feed_id)
     try:
-        added = await sync_feed(config, session)
+        added = await _sync_recording_error(config, session)
     except Exception as exc:
-        logger.warning("Feed import failed user_id=%d : %s", current_user.id, _sync_error(exc))
-        raise HTTPException(status_code=502, detail=_sync_error(exc))
+        # L'erreur est affichée sur la carte du flux plutôt qu'en page d'erreur brute.
+        logger.warning("Feed import failed #%d : %s", feed_id, _sync_error(exc))
+        return RedirectResponse(url="/settings/feed-import?failed=1", status_code=303)
     return RedirectResponse(url=f"/settings/feed-import?synced={added}", status_code=303)

@@ -284,6 +284,15 @@ def init_db():
         fi_cols = {r[1] for r in con.execute("PRAGMA table_info(feed_import_configs)").fetchall()}
         if "seen_urls" not in fi_cols:
             con.execute("ALTER TABLE feed_import_configs ADD COLUMN seen_urls TEXT NOT NULL DEFAULT ''")
+        if "interval_minutes" not in fi_cols:
+            con.execute("ALTER TABLE feed_import_configs ADD COLUMN interval_minutes INTEGER NOT NULL DEFAULT 30")
+        if "last_error" not in fi_cols:
+            con.execute("ALTER TABLE feed_import_configs ADD COLUMN last_error TEXT NOT NULL DEFAULT ''")
+        # v1.5.0 : un seul flux par compte (index unique) ; plusieurs désormais.
+        for _seq, name, unique, *_ in con.execute("PRAGMA index_list(feed_import_configs)").fetchall():
+            if name == "ix_feed_import_configs_user_id" and unique:
+                con.execute("DROP INDEX ix_feed_import_configs_user_id")
+                con.execute("CREATE INDEX ix_feed_import_configs_user_id ON feed_import_configs (user_id)")
 
     # Étiquettes : normalisation de la casse avant de poser l'unicité.
     if _merge_tag_case_duplicates(con):

@@ -36,7 +36,7 @@ from .routes import api as api_router
 from .routes.freshrss import settings_router as freshrss_settings_router
 from .routes.freshrss import api_router as freshrss_api_router
 from .routes.freshrss import sync_all_enabled
-from .routes.feed_import import settings_router as feed_import_router, sync_all_feeds
+from .routes.feed_import import settings_router as feed_import_router, sync_due_feeds
 from .routes.links import warm_img_cache, set_http_client as links_set_client
 
 logger = logging.getLogger("excerpta")
@@ -68,6 +68,17 @@ class StrictHostMiddleware:
         await self.app(scope, receive, send)
 
 
+async def _feed_import_loop():
+    # Chaque flux a son intervalle : réveil chaque minute, seuls les flux échus partent.
+    await asyncio.sleep(60)
+    while True:
+        try:
+            await sync_due_feeds()
+        except Exception:
+            logger.exception("Error in the feed import loop")
+        await asyncio.sleep(60)
+
+
 async def _freshrss_loop():
     await asyncio.sleep(60)  # délai initial au démarrage
     while True:
@@ -75,10 +86,6 @@ async def _freshrss_loop():
             await sync_all_enabled()
         except Exception:
             logger.exception("Error in the FreshRSS sync loop")
-        try:
-            await sync_all_feeds()
-        except Exception:
-            logger.exception("Error in the feed import loop")
         await asyncio.sleep(settings.freshrss_sync_interval * 60)
 
 
@@ -97,12 +104,14 @@ async def lifespan(app: FastAPI):
         cleanup_freshrss_tag()
         task = asyncio.create_task(_freshrss_loop())
         task_warmup = asyncio.create_task(warm_img_cache())
+        task_feeds = asyncio.create_task(_feed_import_loop())
         try:
             yield
         finally:
             task.cancel()
             task_warmup.cancel()
-            for t in [task, task_warmup]:
+            task_feeds.cancel()
+            for t in [task, task_warmup, task_feeds]:
                 try:
                     await t
                 except asyncio.CancelledError:

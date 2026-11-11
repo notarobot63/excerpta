@@ -129,3 +129,94 @@ def test_refused_url_error_does_not_leak_token(monkeypatch):
     with pytest.raises(RuntimeError) as exc:
         asyncio.run(fi._fetch_feed("https://www.reddit.com/saved.rss?feed=SECRET"))
     assert "SECRET" not in str(exc.value)
+
+
+def test_is_due_follows_each_interval():
+    from datetime import datetime, timedelta
+    now = datetime(2026, 11, 11, 12, 0)
+    assert fi._is_due(FeedImportConfig(user_id=1), now)  # jamais synchronisé
+    recent = FeedImportConfig(user_id=1, interval_minutes=60, last_sync=now - timedelta(minutes=30))
+    assert not fi._is_due(recent, now)
+    assert fi._is_due(recent, now + timedelta(minutes=30))
+    assert fi._interval(1) == fi.MIN_INTERVAL and fi._interval(10**6) == fi.MAX_INTERVAL
+
+
+def test_sync_error_is_recorded_on_the_feed(session, env, monkeypatch):
+    _user, config = env
+
+    async def _fail(url):
+        raise RuntimeError("Feed returned HTTP 403")
+
+    monkeypatch.setattr(fi, "_fetch_feed", _fail)
+    with pytest.raises(RuntimeError):
+        asyncio.run(fi._sync_recording_error(config, session))
+    session.refresh(config)
+    assert config.last_error == "Feed returned HTTP 403" and config.last_sync is not None
+
+
+@pytest.fixture
+def web(engine, monkeypatch):
+    import re
+    from fastapi.testclient import TestClient
+    from sqlmodel import Session
+    from app.auth import get_current_user
+    from app.database import get_session
+    from app.main import app
+
+    with Session(engine) as s:
+        me, other = User(oidc_sub="me", public_slug="me"), User(oidc_sub="other", public_slug="other")
+        s.add(me), s.add(other)
+        s.commit()
+        s.add(FeedImportConfig(user_id=me.id, feed_url=encrypt("https://a.example/rss"), group_name="Reddit"))
+        s.add(FeedImportConfig(user_id=other.id, feed_url=encrypt("https://b.example/rss"), group_name="Autre"))
+        s.commit()
+        uid = me.id
+
+    def _get_session():
+        with Session(engine) as s:
+            yield s
+
+    def _get_user():
+        with Session(engine) as s:
+            u = s.get(User, uid)
+            s.expunge(u)
+            return u
+
+    async def _public(url):
+        return True
+
+    monkeypatch.setattr(fi, "_assert_public_url", _public)
+    app.dependency_overrides[get_session] = _get_session
+    app.dependency_overrides[get_current_user] = _get_user
+    client = TestClient(app, base_url="https://testserver")  # cookie de session Secure
+    page = client.get("/settings/feed-import")
+    client.csrf = re.search(r'name="csrf_token" value="([^"]+)"', page.text).group(1)
+    yield client, engine, uid
+    app.dependency_overrides.clear()
+
+
+def test_several_feeds_per_account_and_ownership(web):
+    from sqlmodel import Session
+    client, engine, uid = web
+    r = client.post("/settings/feed-import", data={
+        "csrf_token": client.csrf, "feed_url": "https://c.example/atom", "group_name": "Blog",
+        "interval_minutes": "2"}, follow_redirects=False)
+    assert r.status_code == 303
+    with Session(engine) as s:
+        feeds = s.exec(select(FeedImportConfig).order_by(FeedImportConfig.id)).all()
+        mine = [f for f in feeds if f.user_id == uid]
+        other_id = next(f.id for f in feeds if f.user_id != uid)
+    assert [f.group_name for f in mine] == ["Reddit", "Blog"]
+    assert mine[1].interval_minutes == fi.MIN_INTERVAL and mine[1].is_enabled
+
+    page = client.get("/settings/feed-import").text
+    assert "Reddit" in page and "Blog" in page and "Autre" not in page
+    assert "c.example" not in page  # l'URL (et son jeton) n'est jamais réaffichée
+
+    for path in (f"/settings/feed-import/{other_id}", f"/settings/feed-import/{other_id}/delete"):
+        assert client.post(path, data={"csrf_token": client.csrf}, follow_redirects=False).status_code == 404
+
+    assert client.post(f"/settings/feed-import/{mine[1].id}/delete", data={"csrf_token": client.csrf},
+                       follow_redirects=False).status_code == 303
+    with Session(engine) as s:
+        assert s.exec(select(FeedImportConfig).where(FeedImportConfig.user_id == uid)).all()[0].group_name == "Reddit"

@@ -2,6 +2,10 @@
 
 {% block title %}{{ _("Feed import") }} - Excerpta{% endblock %}
 
+{% set field = "width:100%;padding:0.5rem;border:1px solid var(--border);border-radius:4px;background:var(--bg-secondary);color:inherit;" %}
+{% set label = "display:block;font-size:0.85rem;color:var(--text-muted);margin-bottom:0.25rem;" %}
+{% set muted = "font-size:0.85rem;color:var(--text-muted);margin:0 0 0.25rem;" %}
+
 {% block content %}
 <div class="form-card" style="max-width: 700px;">
   <h2 style="font-size: 1.1rem; font-weight: 600; margin: 0 0 1.25rem;">{{ _("Feed import") }}</h2>
@@ -10,61 +14,85 @@
   {% if request.query_params.get('saved') is not none %}
   <p style="font-size:0.85rem;color:var(--color-success);margin:0 0 0.75rem;">✓ {{ _("Settings saved.") }}</p>
   {% endif %}
+  {% if request.query_params.get('deleted') is not none %}
+  <p style="font-size:0.85rem;color:var(--color-success);margin:0 0 0.75rem;">✓ {{ _("Feed removed. Links already imported are kept.") }}</p>
+  {% endif %}
   {% if request.query_params.get('synced') is not none %}
   <p style="font-size:0.85rem;color:var(--color-success);margin:0 0 0.75rem;">✓ {{ _("Sync complete: %(count)s new link(s).", count=request.query_params.get('synced')|int) }}</p>
   {% endif %}
+  {% if request.query_params.get('failed') is not none %}
+  <p style="font-size:0.85rem;color:var(--danger);margin:0 0 0.75rem;">{{ _("Sync failed, see the error on the feed below.") }}</p>
+  {% endif %}
+
+  {% for feed in feeds %}
+  <hr style="border:none;border-top:1px solid var(--border);margin:1.5rem 0">
+
+  <h3 style="font-size:0.95rem;font-weight:600;margin:0 0 0.75rem;">{{ feed.group_name }}</h3>
+  <form action="/settings/feed-import/{{ feed.id }}" method="post">
+    {{ csrf_input(request) }}
+    <div style="margin-bottom: 0.75rem;">
+      <label for="feed_url_{{ feed.id }}" style="{{ label }}">{{ _("Feed URL") }}</label>
+      <input type="password" id="feed_url_{{ feed.id }}" name="feed_url" value="" autocomplete="off" style="{{ field }}" placeholder="{{ _("Leave empty to keep the current one") }}">
+    </div>
+    <div style="display:flex;gap:0.75rem;margin-bottom:0.75rem;flex-wrap:wrap;">
+      <div style="flex:2;min-width:12rem;">
+        <label for="group_name_{{ feed.id }}" style="{{ label }}">{{ _("Folder name (category)") }}</label>
+        <input type="text" id="group_name_{{ feed.id }}" name="group_name" value="{{ feed.group_name }}" style="{{ field }}">
+      </div>
+      <div style="flex:1;min-width:8rem;">
+        <label for="interval_{{ feed.id }}" style="{{ label }}">{{ _("Interval (minutes)") }}</label>
+        <input type="number" id="interval_{{ feed.id }}" name="interval_minutes" value="{{ feed.interval_minutes }}" min="{{ min_interval }}" max="{{ max_interval }}" style="{{ field }}">
+      </div>
+    </div>
+    <div style="margin-bottom: 1rem;display:flex;align-items:center;gap:0.5rem;">
+      <input type="checkbox" name="is_enabled" id="is_enabled_{{ feed.id }}" {% if feed.is_enabled %}checked{% endif %} style="accent-color:var(--primary);">
+      <label for="is_enabled_{{ feed.id }}" style="font-size:0.85rem;color:var(--text-muted);">{{ _("Enable sync") }}</label>
+    </div>
+    <button type="submit" class="btn btn-primary btn-sm">{{ _("Save") }}</button>
+  </form>
+
+  <p style="{{ muted }}margin-top:1rem;">
+    {{ _("Last sync:") }}
+    {% if feed.last_sync %}{{ feed.last_sync|localedatetime }}{% else %}{{ _("Never") }}{% endif %}
+    · {{ _("Links synced:") }} {{ feed.synced_count }}
+  </p>
+  {% if feed.last_error %}
+  <p style="font-size:0.85rem;color:var(--danger);margin:0 0 0.25rem;">{{ _("Last error:") }} {{ feed.last_error }}</p>
+  {% endif %}
+
+  <div style="display:flex;gap:0.5rem;margin-top:0.75rem;flex-wrap:wrap;">
+    <form action="/settings/feed-import/{{ feed.id }}/sync-now" method="post">
+      {{ csrf_input(request) }}
+      <button type="submit" class="btn btn-ghost btn-sm"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;margin-right:0.3rem;"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M3 21v-5h5"/></svg>{{ _("Sync now") }}</button>
+    </form>
+    <form action="/settings/feed-import/{{ feed.id }}/delete" method="post" data-confirm="{{ _("Remove this feed? Links already imported are kept.") }}">
+      {{ csrf_input(request) }}
+      <button type="submit" class="btn btn-danger btn-sm">{{ _("Remove feed") }}</button>
+    </form>
+  </div>
+  {% endfor %}
 
   <hr style="border:none;border-top:1px solid var(--border);margin:1.5rem 0">
 
+  <h3 style="font-size:0.9rem;font-weight:600;margin:0 0 0.75rem;color:var(--text-muted)">{{ _("Add a feed") }}</h3>
   <form action="/settings/feed-import" method="post">
     {{ csrf_input(request) }}
-
     <div style="margin-bottom: 0.75rem;">
-      <label for="feed_url" style="display:block;font-size:0.85rem;color:var(--text-muted);margin-bottom:0.25rem;">{{ _("Feed URL") }}</label>
-      <input type="password" id="feed_url" name="feed_url" value="" autocomplete="off" style="width:100%;padding:0.5rem;border:1px solid var(--border);border-radius:4px;background:var(--bg-secondary);color:inherit;" placeholder="{{ _("Leave empty to keep the current one") if config and config.feed_url else 'https://' }}">
+      <label for="new_feed_url" style="{{ label }}">{{ _("Feed URL") }}</label>
+      <input type="password" id="new_feed_url" name="feed_url" value="" required autocomplete="off" style="{{ field }}" placeholder="https://">
     </div>
-
-    <div style="margin-bottom: 0.75rem;">
-      <label style="display:block;font-size:0.85rem;color:var(--text-muted);margin-bottom:0.25rem;">{{ _("Folder name (category)") }}</label>
-      <input type="text" name="group_name" value="{{ config.group_name if config else 'Reddit' }}" style="width:100%;padding:0.5rem;border:1px solid var(--border);border-radius:4px;background:var(--bg-secondary);color:inherit;">
+    <div style="display:flex;gap:0.75rem;margin-bottom:1rem;flex-wrap:wrap;">
+      <div style="flex:2;min-width:12rem;">
+        <label for="new_group_name" style="{{ label }}">{{ _("Folder name (category)") }}</label>
+        <input type="text" id="new_group_name" name="group_name" value="{{ 'Reddit' if not feeds else '' }}" required style="{{ field }}">
+      </div>
+      <div style="flex:1;min-width:8rem;">
+        <label for="new_interval" style="{{ label }}">{{ _("Interval (minutes)") }}</label>
+        <input type="number" id="new_interval" name="interval_minutes" value="30" min="{{ min_interval }}" max="{{ max_interval }}" style="{{ field }}">
+      </div>
     </div>
-
-    <div style="margin-bottom: 1rem;display:flex;align-items:center;gap:0.5rem;">
-      <input type="checkbox" name="is_enabled" id="is_enabled" {% if config and config.is_enabled %}checked{% endif %} style="accent-color:var(--primary);">
-      <label for="is_enabled" style="font-size:0.85rem;color:var(--text-muted);">{{ _("Enable sync") }}</label>
-    </div>
-
-    <button type="submit" class="btn btn-primary">{{ _("Save") }}</button>
+    <button type="submit" class="btn btn-primary">{{ _("Add") }}</button>
   </form>
-
-  {% if config %}
-  <hr style="border:none;border-top:1px solid var(--border);margin:1.5rem 0">
-
-  <h3 style="font-size:0.9rem;font-weight:600;margin:0 0 0.75rem;color:var(--text-muted)">{{ _("Status") }}</h3>
-  <p style="font-size:0.85rem;color:var(--text-muted);margin:0 0 0.25rem;">
-    {{ _("Last sync:") }}
-    {% if config.last_sync %}
-      {{ config.last_sync|localedatetime }}
-    {% else %}
-      {{ _("Never") }}
-    {% endif %}
-  </p>
-  <p style="font-size:0.85rem;color:var(--text-muted);margin:0 0 0.25rem;">
-    {{ _("Links synced:") }} {{ config.synced_count }}
-  </p>
-  <p style="font-size:0.85rem;color:var(--text-muted);margin:0 0 0.25rem;">
-    {{ _("Enabled:") }} {{ _("Yes") if config.is_enabled else _("No") }}
-  </p>
-
-  {% if config.feed_url %}
-  <hr style="border:none;border-top:1px solid var(--border);margin:1.5rem 0">
-
-  <form action="/settings/feed-import/sync-now" method="post">
-    {{ csrf_input(request) }}
-    <button type="submit" class="btn btn-ghost btn-sm"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;margin-right:0.3rem;"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M3 21v-5h5"/></svg>{{ _("Sync now") }}</button>
-  </form>
-  {% endif %}
-  {% endif %}
 
   <hr style="border:none;border-top:1px solid var(--border);margin:1.5rem 0">
 
