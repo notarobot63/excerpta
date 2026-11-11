@@ -216,6 +216,7 @@ async def delete_user(
     # Contient l'URL, l'identifiant et le jeton (chiffré) FreshRSS du compte, et
     # référence users.id : oublié ici, il survivait à la suppression du compte.
     session.execute(text("DELETE FROM freshrss_configs WHERE user_id=:id"), {"id": uid})
+    session.execute(text("DELETE FROM feed_import_configs WHERE user_id=:id"), {"id": uid})
     session.execute(text("DELETE FROM users       WHERE id=:id"), {"id": uid})
     session.commit()
     _log.warning("admin#%s deleted user#%s (%s) and all their data", admin.id, uid, target_name)

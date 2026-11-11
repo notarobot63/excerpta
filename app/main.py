@@ -36,6 +36,7 @@ from .routes import api as api_router
 from .routes.freshrss import settings_router as freshrss_settings_router
 from .routes.freshrss import api_router as freshrss_api_router
 from .routes.freshrss import sync_all_enabled
+from .routes.feed_import import settings_router as feed_import_router, sync_all_feeds
 from .routes.links import warm_img_cache, set_http_client as links_set_client
 
 logger = logging.getLogger("excerpta")
@@ -74,6 +75,10 @@ async def _freshrss_loop():
             await sync_all_enabled()
         except Exception:
             logger.exception("Error in the FreshRSS sync loop")
+        try:
+            await sync_all_feeds()
+        except Exception:
+            logger.exception("Error in the feed import loop")
         await asyncio.sleep(settings.freshrss_sync_interval * 60)
 
 
@@ -223,6 +228,7 @@ app.include_router(admin_router.router, dependencies=_csrf + _no_demo)
 app.include_router(api_router.router)  # JSON API - pas de CSRF, auth par X-API-Key
 app.include_router(freshrss_settings_router, dependencies=_csrf + _no_demo)
 app.include_router(freshrss_api_router)  # JSON API FreshRSS - pas de CSRF
+app.include_router(feed_import_router, dependencies=_csrf + _no_demo)  # URL fournie : fermé en démo
 
 
 @app.get("/robots.txt", include_in_schema=False)

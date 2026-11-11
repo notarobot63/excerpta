@@ -53,6 +53,7 @@
 
 ### Integrations
 - **FreshRSS sync**: automatic import of starred articles every N minutes (configurable)
+- **RSS/Atom feed import**: every entry of a feed becomes a link in a dedicated folder; built for Reddit's private "saved" feed (old.reddit.com/prefs/feeds), imported with the discussion link. Same interval as FreshRSS
 - **Browser bookmarklet** for quick add from any page
 - **Android app** (excerpta-android): built-in configuration QR code (`GET /settings/android-qr.png`)
 

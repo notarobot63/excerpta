@@ -121,3 +121,16 @@ class FreshRSSConfig(SQLModel, table=True):
     is_enabled: bool = Field(default=False)
     last_sync: Optional[datetime] = Field(default=None)
     synced_count: int = Field(default=0)
+
+
+class FeedImportConfig(SQLModel, table=True):
+    """Flux RSS/Atom dont chaque entrée devient un lien (ex. éléments enregistrés Reddit)."""
+    __tablename__ = "feed_import_configs"
+    id: Optional[int] = Field(default=None, primary_key=True)
+    user_id: int = Field(foreign_key="users.id", unique=True, index=True)
+    # Chiffrée : un flux privé porte son jeton d'accès dans l'URL.
+    feed_url: str = Field(default="")
+    group_name: str = Field(default="Reddit")
+    is_enabled: bool = Field(default=False)
+    last_sync: Optional[datetime] = Field(default=None)
+    synced_count: int = Field(default=0)

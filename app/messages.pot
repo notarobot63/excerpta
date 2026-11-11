@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-09-02 21:47+0200\n"
+"POT-Creation-Date: 2026-11-11 15:22+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -206,7 +206,7 @@ msgid "Signed up"
 msgstr ""
 
 #: app/templates/admin/user_detail.html:20
-#: app/templates/settings/index.html:182
+#: app/templates/settings/index.html:183
 msgid "Data"
 msgstr ""
 
@@ -306,7 +306,8 @@ msgstr ""
 msgid "Last activity"
 msgstr ""
 
-#: app/templates/admin/users.html:19 app/templates/settings/freshrss.html:52
+#: app/templates/admin/users.html:19 app/templates/settings/feed_import.html:43
+#: app/templates/settings/freshrss.html:52
 msgid "Status"
 msgstr ""
 
@@ -415,6 +416,7 @@ msgid "- None (top level) -"
 msgstr ""
 
 #: app/templates/folders/form.html:58 app/templates/links/form.html:118
+#: app/templates/settings/feed_import.html:37
 #: app/templates/settings/freshrss.html:46 app/templates/settings/index.html:38
 #: app/templates/settings/index.html:135
 msgid "Save"
@@ -744,7 +746,7 @@ msgid "Link check"
 msgstr ""
 
 #: app/templates/settings/check_links.html:7
-#: app/templates/settings/index.html:191
+#: app/templates/settings/index.html:192
 msgid "Check links"
 msgstr ""
 
@@ -793,16 +795,89 @@ msgstr ""
 msgid "HTTP status code"
 msgstr ""
 
-#: app/templates/settings/freshrss.html:7
-msgid "FreshRSS sync"
+#: app/templates/settings/feed_import.html:3
+#: app/templates/settings/feed_import.html:7
+#: app/templates/settings/index.html:176
+msgid "Feed import"
 msgstr ""
 
+#: app/templates/settings/feed_import.html:8
+msgid ""
+"Every entry of an RSS or Atom feed becomes a link. For your saved Reddit "
+"posts, copy the private “saved” feed from old.reddit.com/prefs/feeds."
+msgstr ""
+
+#: app/templates/settings/feed_import.html:11
 #: app/templates/settings/freshrss.html:10
 msgid "Settings saved."
 msgstr ""
 
+#: app/templates/settings/feed_import.html:14
 #: app/templates/settings/freshrss.html:13
 msgid "Sync complete."
+msgstr ""
+
+#: app/templates/settings/feed_import.html:23
+msgid "Feed URL"
+msgstr ""
+
+#: app/templates/settings/feed_import.html:24
+#: app/templates/settings/freshrss.html:33
+msgid "Leave empty to keep the current one"
+msgstr ""
+
+#: app/templates/settings/feed_import.html:28
+#: app/templates/settings/freshrss.html:37
+msgid "Folder name (category)"
+msgstr ""
+
+#: app/templates/settings/feed_import.html:34
+#: app/templates/settings/freshrss.html:43
+msgid "Enable sync"
+msgstr ""
+
+#: app/templates/settings/feed_import.html:45
+#: app/templates/settings/freshrss.html:54
+msgid "Last sync:"
+msgstr ""
+
+#: app/templates/settings/feed_import.html:49
+#: app/templates/settings/freshrss.html:58
+msgid "Never"
+msgstr ""
+
+#: app/templates/settings/feed_import.html:53
+#: app/templates/settings/freshrss.html:62
+msgid "Links synced:"
+msgstr ""
+
+#: app/templates/settings/feed_import.html:56
+#: app/templates/settings/freshrss.html:65
+msgid "Enabled:"
+msgstr ""
+
+#: app/templates/settings/feed_import.html:56
+#: app/templates/settings/freshrss.html:65
+msgid "Yes"
+msgstr ""
+
+#: app/templates/settings/feed_import.html:56
+#: app/templates/settings/freshrss.html:65
+msgid "No"
+msgstr ""
+
+#: app/templates/settings/feed_import.html:64
+#: app/templates/settings/freshrss.html:73
+msgid "Sync now"
+msgstr ""
+
+#: app/templates/settings/feed_import.html:71
+#: app/templates/settings/freshrss.html:80
+msgid "Back to settings"
+msgstr ""
+
+#: app/templates/settings/freshrss.html:7
+msgid "FreshRSS sync"
 msgstr ""
 
 #: app/templates/settings/freshrss.html:22
@@ -815,50 +890,6 @@ msgstr ""
 
 #: app/templates/settings/freshrss.html:32
 msgid "API token"
-msgstr ""
-
-#: app/templates/settings/freshrss.html:33
-msgid "Leave empty to keep the current one"
-msgstr ""
-
-#: app/templates/settings/freshrss.html:37
-msgid "Folder name (category)"
-msgstr ""
-
-#: app/templates/settings/freshrss.html:43
-msgid "Enable sync"
-msgstr ""
-
-#: app/templates/settings/freshrss.html:54
-msgid "Last sync:"
-msgstr ""
-
-#: app/templates/settings/freshrss.html:58
-msgid "Never"
-msgstr ""
-
-#: app/templates/settings/freshrss.html:62
-msgid "Links synced:"
-msgstr ""
-
-#: app/templates/settings/freshrss.html:65
-msgid "Enabled:"
-msgstr ""
-
-#: app/templates/settings/freshrss.html:65
-msgid "Yes"
-msgstr ""
-
-#: app/templates/settings/freshrss.html:65
-msgid "No"
-msgstr ""
-
-#: app/templates/settings/freshrss.html:73
-msgid "Sync now"
-msgstr ""
-
-#: app/templates/settings/freshrss.html:80
-msgid "Back to settings"
 msgstr ""
 
 #: app/templates/settings/import.html:3 app/templates/settings/import.html:7
@@ -889,7 +920,7 @@ msgstr ""
 msgid "Bookmarks file (.html)"
 msgstr ""
 
-#: app/templates/settings/import.html:29 app/templates/settings/index.html:190
+#: app/templates/settings/import.html:29 app/templates/settings/index.html:191
 msgid "Import"
 msgstr ""
 
@@ -990,7 +1021,7 @@ msgstr ""
 msgid "Integrations"
 msgstr ""
 
-#: app/templates/settings/index.html:185
+#: app/templates/settings/index.html:186
 #, python-format
 msgid ""
 "Archiving %(num)d link in the background (rate-limited for Wayback). The "
@@ -1001,78 +1032,78 @@ msgid_plural ""
 msgstr[0] ""
 msgstr[1] ""
 
-#: app/templates/settings/index.html:188
+#: app/templates/settings/index.html:189
 msgid "Export (HTML)"
 msgstr ""
 
-#: app/templates/settings/index.html:193
+#: app/templates/settings/index.html:194
 msgid ""
 "Archive every link not archived yet on the Wayback Machine? Runs in the "
 "background, rate-limited."
 msgstr ""
 
-#: app/templates/settings/index.html:195
+#: app/templates/settings/index.html:196
 msgid "Archive the unarchived"
 msgstr ""
 
-#: app/templates/settings/index.html:198
+#: app/templates/settings/index.html:199
 #, python-format
 msgid "Rebuild the search index for %(num)d link?"
 msgid_plural "Rebuild the search index for %(num)d links?"
 msgstr[0] ""
 msgstr[1] ""
 
-#: app/templates/settings/index.html:200
+#: app/templates/settings/index.html:201
 msgid "Rebuild the search index"
 msgstr ""
 
-#: app/templates/settings/index.html:204
+#: app/templates/settings/index.html:205
 msgid "Refresh metadata"
 msgstr ""
 
-#: app/templates/settings/index.html:214
+#: app/templates/settings/index.html:215
 msgid "Starting…"
 msgstr ""
 
-#: app/templates/settings/index.html:215
-msgid "Network error."
-msgstr ""
-
 #: app/templates/settings/index.html:216
-#, python-brace-format
-msgid "{n} link(s) updated."
+msgid "Network error."
 msgstr ""
 
 #: app/templates/settings/index.html:217
 #, python-brace-format
+msgid "{n} link(s) updated."
+msgstr ""
+
+#: app/templates/settings/index.html:218
+#, python-brace-format
 msgid "{n} updated"
 msgstr ""
 
-#: app/templates/settings/index.html:267
+#: app/templates/settings/index.html:268
 msgid "Danger zone"
 msgstr ""
 
-#: app/templates/settings/index.html:273
+#: app/templates/settings/index.html:274
 msgid "Delete every link in the FreshRSS folder and reset the sync counter?"
 msgstr ""
 
-#: app/templates/settings/index.html:275
+#: app/templates/settings/index.html:276
 msgid "Purge FreshRSS links"
 msgstr ""
 
-#: app/templates/settings/index.html:277
+#: app/templates/settings/index.html:278
 msgid "Deletes every link in the configured FreshRSS folder."
 msgstr ""
 
-#: app/templates/settings/index.html:282
+#: app/templates/settings/index.html:283
 msgid "Delete ALL your links, tags and folders? This cannot be undone."
 msgstr ""
 
-#: app/templates/settings/index.html:284
+#: app/templates/settings/index.html:285
 msgid "Purge all data"
 msgstr ""
 
-#: app/templates/settings/index.html:286
+#: app/templates/settings/index.html:287
 msgid "Permanently deletes all your links, tags and folders."
 msgstr ""
 
