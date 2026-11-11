@@ -2,8 +2,9 @@
 
 Pensé pour le flux privé des éléments enregistrés Reddit (le lien d'une
 entrée y est la discussion), mais vaut pour tout flux. Contrairement à
-FreshRSS, rien n'est renvoyé à la source : le dossier est retrouvé par son
-nom, et un renommage en fait seulement créer un nouveau.
+FreshRSS, rien n'est renvoyé à la source : le dossier (racine) est retrouvé
+par son nom, et un renommage en fait seulement créer un nouveau. Les URL déjà
+vues sont mémorisées : un lien supprimé ou purgé ne revient pas.
 """
 import asyncio
 import logging
@@ -25,7 +26,8 @@ from ..models import FeedImportConfig, Folder, Link, User
 from ..ratelimit import rate_limit
 from ..templates_cfg import templates
 from ..utils import sidebar_data
-from .links import _assert_public_url, refresh_links_meta, safe_request
+from .links import _assert_public_url, _UnsafeRedirect, refresh_links_meta, safe_request
+from .links.constants import MAX_DESC_LEN, MAX_TITLE_LEN
 
 logger = logging.getLogger("excerpta.feed_import")
 
@@ -35,6 +37,9 @@ _ATOM = "{http://www.w3.org/2005/Atom}"
 # Reddit refuse les agents génériques (429) ; un nom d'application explicite passe.
 _HEADERS = {"User-Agent": "Excerpta/1.0 (feed import)"}
 _MAX_ENTRIES = 1000
+_MAX_SEEN = 5000
+_RSS1 = "{http://purl.org/rss/1.0/}"
+_DC = "{http://purl.org/dc/elements/1.1/}"
 
 
 def _naive_utc(dt: Optional[datetime]) -> Optional[datetime]:
@@ -59,10 +64,15 @@ def _parse_date(raw: Optional[str]) -> Optional[datetime]:
         return None
 
 
-def _html_text(raw: Optional[str]) -> str:
+def _text(el) -> str:
+    """Tout le texte d'un élément, enfants compris (contenu Atom de type xhtml)."""
+    return "".join(el.itertext()).strip() if el is not None else ""
+
+
+def _html_text(raw: str) -> str:
     if not raw:
         return ""
-    return BeautifulSoup(raw, "html.parser").get_text(" ", strip=True)[:2000]
+    return BeautifulSoup(raw, "html.parser").get_text(" ", strip=True)[:MAX_DESC_LEN]
 
 
 def parse_feed(body: bytes) -> list[dict]:
@@ -82,24 +92,28 @@ def parse_feed(body: bytes) -> list[dict]:
                 break
         entries.append({
             "url": url,
-            "title": (entry.findtext(f"{_ATOM}title") or "").strip(),
-            "description": _html_text(entry.findtext(f"{_ATOM}content") or entry.findtext(f"{_ATOM}summary")),
+            "title": _text(entry.find(f"{_ATOM}title")),
+            "description": _html_text(_text(entry.find(f"{_ATOM}content")) or _text(entry.find(f"{_ATOM}summary"))),
             "published": _parse_date(entry.findtext(f"{_ATOM}published") or entry.findtext(f"{_ATOM}updated")),
         })
-    for item in root.iter("item"):
-        entries.append({
-            "url": (item.findtext("link") or "").strip(),
-            "title": (item.findtext("title") or "").strip(),
-            "description": _html_text(item.findtext("description")),
-            "published": _parse_date(item.findtext("pubDate")),
-        })
+    # RSS 2.0 (sans espace de noms) et RSS 1.0 / RDF
+    for ns in ("", _RSS1):
+        for item in root.iter(f"{ns}item"):
+            entries.append({
+                "url": _text(item.find(f"{ns}link")),
+                "title": _text(item.find(f"{ns}title")),
+                "description": _html_text(_text(item.find(f"{ns}description"))),
+                "published": _parse_date(item.findtext("pubDate") or item.findtext(f"{_DC}date")),
+            })
     return [e for e in entries if e["url"].startswith("http")][:_MAX_ENTRIES]
 
 
 async def _fetch_feed(url: str) -> list[dict]:
-    if not await _assert_public_url(url):
-        raise RuntimeError("Invalid feed URL or private address")
-    resp = await safe_request("GET", url, headers=_HEADERS)
+    # Les messages de la garde SSRF citent l'URL, donc le jeton du flux : remplacés.
+    try:
+        resp = await safe_request("GET", url, headers=_HEADERS)
+    except _UnsafeRedirect:
+        raise RuntimeError("Feed URL refused (private address or unsafe redirect)")
     if resp.status_code != 200:
         raise RuntimeError(f"Feed returned HTTP {resp.status_code}")
     return parse_feed(resp.content)
@@ -116,15 +130,18 @@ async def sync_feed(config: FeedImportConfig, session: Session) -> int:
         entries = await _fetch_feed(decrypt(config.feed_url))
 
         folder = session.exec(
-            select(Folder).where(Folder.user_id == config.user_id, Folder.name == config.group_name)
+            select(Folder).where(Folder.user_id == config.user_id, Folder.name == config.group_name,
+                                 Folder.parent_id == None)  # noqa: E711
         ).first()
         if not folder:
             folder = Folder(user_id=config.user_id, name=config.group_name)
             session.add(folder)
             session.flush()
 
+        seen = config.seen_urls.split("\n") if config.seen_urls else []
         urls = [e["url"] for e in entries]
-        existing = set(session.exec(
+        existing = set(seen)
+        existing |= set(session.exec(
             select(Link.url).where(Link.user_id == config.user_id, Link.url.in_(urls))
         ).all()) if urls else set()
 
@@ -136,7 +153,7 @@ async def sync_feed(config: FeedImportConfig, session: Session) -> int:
             link = Link(
                 user_id=config.user_id,
                 url=e["url"],
-                title=(e["title"] or e["url"])[:500],
+                title=(e["title"] or e["url"])[:MAX_TITLE_LEN],
                 description=e["description"],
                 folder_id=folder.id,
                 **({"created_at": created, "updated_at": created} if created else {}),
@@ -147,6 +164,8 @@ async def sync_feed(config: FeedImportConfig, session: Session) -> int:
         if new_links:
             session.flush()
 
+        # Le plus récent d'abord, borné : le flux ne rend que ses dernières entrées.
+        config.seen_urls = "\n".join(list(dict.fromkeys(urls + seen))[:_MAX_SEEN])
         config.last_sync = datetime.now(timezone.utc).replace(tzinfo=None)
         config.synced_count += len(new_links)
         session.add(config)
@@ -160,7 +179,9 @@ async def sync_feed(config: FeedImportConfig, session: Session) -> int:
 async def sync_all_feeds() -> None:
     with Session(engine) as session:
         ids = list(session.exec(
-            select(FeedImportConfig.id).where(FeedImportConfig.is_enabled == True)  # noqa: E712
+            select(FeedImportConfig.id)
+            .join(User, User.id == FeedImportConfig.user_id)
+            .where(FeedImportConfig.is_enabled == True, User.is_active == True)  # noqa: E712
         ).all())
     for cid in ids:
         try:
@@ -170,10 +191,11 @@ async def sync_all_feeds() -> None:
                     added = await sync_feed(cfg, session)
                     logger.info("Feed import user_id=%d : +%d links", cfg.user_id, added)
         except Exception as exc:
-            logger.error("Feed import error config_id=%d : %s", cid, exc)
+            logger.error("Feed import error config_id=%d : %s", cid, _sync_error(exc))
 
 
 def _sync_error(exc: Exception) -> str:
+    """Message sans l'URL du flux (elle porte un jeton) : les nôtres, ou le type d'erreur."""
     if isinstance(exc, RuntimeError):
         return str(exc)
     return f"Feed unreachable or invalid response ({type(exc).__name__})"
@@ -212,7 +234,11 @@ async def feed_import_save(
     if url:  # vide = garder l'URL actuelle (elle n'est jamais réaffichée)
         if not await _assert_public_url(url):
             raise HTTPException(status_code=400, detail="Invalid feed URL or private address")
-        config.feed_url = encrypt(url[:2000])
+        url = url[:2000]
+        if not config.feed_url or decrypt(config.feed_url) != url:
+            # Nouveau flux : compteurs et URL vues repartent de zéro.
+            config.last_sync, config.synced_count, config.seen_urls = None, 0, ""
+        config.feed_url = encrypt(url)
     config.group_name = group_name.strip()[:200] or "Reddit"
     config.is_enabled = is_enabled is not None
     session.add(config)
@@ -231,6 +257,6 @@ async def feed_import_sync_now(
     try:
         added = await sync_feed(config, session)
     except Exception as exc:
-        logger.warning("Feed import failed user_id=%d", current_user.id, exc_info=True)
+        logger.warning("Feed import failed user_id=%d : %s", current_user.id, _sync_error(exc))
         raise HTTPException(status_code=502, detail=_sync_error(exc))
     return RedirectResponse(url=f"/settings/feed-import?synced={added}", status_code=303)

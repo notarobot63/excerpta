@@ -131,6 +131,9 @@ class FeedImportConfig(SQLModel, table=True):
     # Chiffrée : un flux privé porte son jeton d'accès dans l'URL.
     feed_url: str = Field(default="")
     group_name: str = Field(default="Reddit")
+    # URL déjà importées (une par ligne, les plus récentes d'abord) : un lien
+    # supprimé ou purgé ne revient pas tant qu'il reste dans le flux.
+    seen_urls: str = Field(default="")
     is_enabled: bool = Field(default=False)
     last_sync: Optional[datetime] = Field(default=None)
     synced_count: int = Field(default=0)

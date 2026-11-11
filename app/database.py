@@ -278,6 +278,13 @@ def init_db():
                     (encrypt(token), row_id),
                 )
 
+    if con.execute(
+        "SELECT name FROM sqlite_master WHERE type='table' AND name='feed_import_configs'"
+    ).fetchone():
+        fi_cols = {r[1] for r in con.execute("PRAGMA table_info(feed_import_configs)").fetchall()}
+        if "seen_urls" not in fi_cols:
+            con.execute("ALTER TABLE feed_import_configs ADD COLUMN seen_urls TEXT NOT NULL DEFAULT ''")
+
     # Étiquettes : normalisation de la casse avant de poser l'unicité.
     if _merge_tag_case_duplicates(con):
         _rebuild_fts(con)

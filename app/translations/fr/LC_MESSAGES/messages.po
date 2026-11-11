@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Excerpta VERSION\n"
 "Report-Msgid-Bugs-To: https://github.com/notarobot63/excerpta/issues\n"
-"POT-Creation-Date: 2026-11-11 15:22+0100\n"
+"POT-Creation-Date: 2026-11-11 15:49+0100\n"
 "PO-Revision-Date: 2026-07-26 14:53+0200\n"
 "Last-Translator: \n"
 "Language: fr\n"
@@ -818,8 +818,8 @@ msgid ""
 "Every entry of an RSS or Atom feed becomes a link. For your saved Reddit "
 "posts, copy the private “saved” feed from old.reddit.com/prefs/feeds."
 msgstr ""
-"Chaque entrée d’un flux RSS ou Atom devient un lien. Pour vos publications "
-"Reddit enregistrées, copiez le flux privé « saved » depuis "
+"Chaque entrée d’un flux RSS ou Atom devient un lien. Pour vos "
+"publications Reddit enregistrées, copiez le flux privé « saved » depuis "
 "old.reddit.com/prefs/feeds."
 
 #: app/templates/settings/feed_import.html:11
@@ -828,9 +828,9 @@ msgid "Settings saved."
 msgstr "Configuration sauvegardée."
 
 #: app/templates/settings/feed_import.html:14
-#: app/templates/settings/freshrss.html:13
-msgid "Sync complete."
-msgstr "Synchronisation effectuée."
+#, python-format
+msgid "Sync complete: %(count)s new link(s)."
+msgstr "Synchronisation effectuée : %(count)s nouveau(x) lien(s)."
 
 #: app/templates/settings/feed_import.html:23
 msgid "Feed URL"
@@ -894,6 +894,10 @@ msgstr "Retour aux paramètres"
 #: app/templates/settings/freshrss.html:7
 msgid "FreshRSS sync"
 msgstr "Synchronisation FreshRSS"
+
+#: app/templates/settings/freshrss.html:13
+msgid "Sync complete."
+msgstr "Synchronisation effectuée."
 
 #: app/templates/settings/freshrss.html:22
 msgid "FreshRSS server URL"

@@ -11,7 +11,7 @@
   <p style="font-size:0.85rem;color:var(--color-success);margin:0 0 0.75rem;">✓ {{ _("Settings saved.") }}</p>
   {% endif %}
   {% if request.query_params.get('synced') is not none %}
-  <p style="font-size:0.85rem;color:var(--color-success);margin:0 0 0.75rem;">✓ {{ _("Sync complete.") }}</p>
+  <p style="font-size:0.85rem;color:var(--color-success);margin:0 0 0.75rem;">✓ {{ _("Sync complete: %(count)s new link(s).", count=request.query_params.get('synced')|int) }}</p>
   {% endif %}
 
   <hr style="border:none;border-top:1px solid var(--border);margin:1.5rem 0">

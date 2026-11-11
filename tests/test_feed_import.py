@@ -97,3 +97,35 @@ def test_sync_imports_into_folder_once(session, env):
     imported = next(l for l in links if "un_post" in l.url)
     assert imported.folder_id == folder.id and imported.title == "Un post"
     assert config.synced_count == 1 and config.last_sync is not None
+
+
+def test_deleted_link_is_not_reimported(session, env):
+    user, config = env
+    assert asyncio.run(fi.sync_feed(config, session)) == 2
+    for link in session.exec(select(Link).where(Link.user_id == user.id)).all():
+        session.delete(link)
+    session.commit()
+    assert asyncio.run(fi.sync_feed(config, session)) == 0
+
+
+def test_parse_atom_xhtml_content_and_rss1():
+    xhtml = b"""<feed xmlns="http://www.w3.org/2005/Atom"><entry><title>T</title>
+      <link href="https://e.org/x"/><content type="xhtml"><div xmlns="http://www.w3.org/1999/xhtml">
+      <p>Texte riche</p></div></content></entry></feed>"""
+    assert fi.parse_feed(xhtml)[0]["description"] == "Texte riche"
+    rdf = b"""<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns="http://purl.org/rss/1.0/"
+      xmlns:dc="http://purl.org/dc/elements/1.1/"><item rdf:about="https://e.org/r"><title>R</title>
+      <link>https://e.org/r</link><dc:date>2026-11-04T10:00:00Z</dc:date></item></rdf:RDF>"""
+    entries = fi.parse_feed(rdf)
+    assert [e["url"] for e in entries] == ["https://e.org/r"]
+    assert entries[0]["published"].isoformat() == "2026-11-04T10:00:00"
+
+
+def test_refused_url_error_does_not_leak_token(monkeypatch):
+    async def _refuse(method, url, **kw):
+        raise fi._UnsafeRedirect(f"URL refusée : {url}")
+
+    monkeypatch.setattr(fi, "safe_request", _refuse)
+    with pytest.raises(RuntimeError) as exc:
+        asyncio.run(fi._fetch_feed("https://www.reddit.com/saved.rss?feed=SECRET"))
+    assert "SECRET" not in str(exc.value)
