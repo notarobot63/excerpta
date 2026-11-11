@@ -1,7 +1,8 @@
 """Scraping des métadonnées d'une URL (titre, description, favicon, vignette)
 et mise à jour asynchrone d'un lien nouvellement créé."""
 import logging
-from urllib.parse import urljoin, urlparse
+import re
+from urllib.parse import urlencode, urljoin, urlparse, urlsplit
 
 from bs4 import BeautifulSoup
 from sqlmodel import Session
@@ -10,12 +11,54 @@ from ...database import engine as db_engine
 from ...models import Link
 from .constants import MAX_DESC_LEN, MAX_TITLE_LEN
 from .net_guard import (_MAX_HTML_BYTES, _TooLarge, _assert_public_url, _read_limited, _safe_stream,
-                        _safe_url, decode_html)
+                        _safe_url, decode_html, safe_request)
 
 logger = logging.getLogger("excerpta.links.enrichment")
 
 
+_REDDIT_HOSTS = {"reddit.com", "www.reddit.com", "old.reddit.com", "new.reddit.com", "np.reddit.com", "redd.it"}
+_REDDIT_HEADERS = {"User-Agent": "Excerpta/1.0 (link preview)"}
+
+
+async def _reddit_meta(url: str) -> dict | None:
+    """Titre d'un post Reddit par son oEmbed public.
+
+    Reddit sert à un serveur une page « Please wait for verification » au
+    lieu du post : le titre enregistré devenait « Reddit ». Les liens de
+    partage (/r/<sub>/s/<code>, redd.it) sont d'abord résolus par leur
+    redirection. None : laisser le scraping générique essayer.
+    """
+    try:
+        path = urlsplit(url).path
+        if "/s/" in path or urlsplit(url).hostname == "redd.it":
+            path = urlsplit(str((await safe_request("HEAD", url, headers=_REDDIT_HEADERS)).url)).path
+        if "/comments/" not in path:
+            return None  # oEmbed ne couvre que les posts et commentaires
+        post = "https://www.reddit.com" + path
+        resp = await safe_request("GET", "https://www.reddit.com/oembed?" + urlencode({"url": post}),
+                                  headers=_REDDIT_HEADERS)
+        data = resp.json() if resp.status_code == 200 else {}
+    except Exception:
+        logger.warning("Reddit oEmbed failed for %s", url, exc_info=True)
+        return None
+    title = (data.get("title") or "").strip()
+    if not title:
+        return None
+    sub = re.search(r"/r/([^/]+)", path)
+    author = data.get("author_name") or ""
+    return {
+        "title": title,
+        "description": " · ".join(p for p in (f"r/{sub.group(1)}" if sub else "", f"u/{author}" if author else "") if p),
+        "favicon_url": "https://www.reddit.com/favicon.ico",
+        "thumbnail_url": "",
+    }
+
+
 async def _fetch_meta(url: str) -> dict:
+    if urlsplit(url).hostname in _REDDIT_HOSTS:
+        meta = await _reddit_meta(url)
+        if meta:
+            return meta
     if not await _assert_public_url(url):
         return {"title": "", "description": "", "favicon_url": ""}
     try:
