@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Excerpta VERSION\n"
 "Report-Msgid-Bugs-To: https://github.com/notarobot63/excerpta/issues\n"
-"POT-Creation-Date: 2026-11-11 15:54+0100\n"
+"POT-Creation-Date: 2026-11-11 16:09+0100\n"
 "PO-Revision-Date: 2026-07-26 14:53+0200\n"
 "Last-Translator: \n"
 "Language: fr\n"
@@ -814,12 +814,11 @@ msgstr "Import de flux"
 
 #: app/templates/settings/feed_import.html:12
 msgid ""
-"Every entry of an RSS or Atom feed becomes a link. For your saved Reddit "
-"posts, copy the private “saved” feed from old.reddit.com/prefs/feeds."
+"Every entry of an RSS or Atom feed becomes a link, filed in the folder of"
+" your choice."
 msgstr ""
-"Chaque entrée d’un flux RSS ou Atom devient un lien. Pour vos "
-"publications Reddit enregistrées, copiez le flux privé « saved » depuis "
-"old.reddit.com/prefs/feeds."
+"Chaque entrée d’un flux RSS ou Atom devient un lien, rangé dans le "
+"dossier de votre choix."
 
 #: app/templates/settings/feed_import.html:15
 #: app/templates/settings/freshrss.html:10
@@ -900,6 +899,10 @@ msgstr "Supprimer le flux"
 #: app/templates/settings/feed_import.html:77
 msgid "Add a feed"
 msgstr "Ajouter un flux"
+
+#: app/templates/settings/feed_import.html:87
+msgid "Feeds"
+msgstr "Flux"
 
 #: app/templates/settings/feed_import.html:99
 #: app/templates/settings/freshrss.html:80

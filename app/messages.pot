@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-11-11 15:54+0100\n"
+"POT-Creation-Date: 2026-11-11 16:09+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -802,8 +802,8 @@ msgstr ""
 
 #: app/templates/settings/feed_import.html:12
 msgid ""
-"Every entry of an RSS or Atom feed becomes a link. For your saved Reddit "
-"posts, copy the private “saved” feed from old.reddit.com/prefs/feeds."
+"Every entry of an RSS or Atom feed becomes a link, filed in the folder of"
+" your choice."
 msgstr ""
 
 #: app/templates/settings/feed_import.html:15
@@ -884,6 +884,10 @@ msgstr ""
 
 #: app/templates/settings/feed_import.html:77
 msgid "Add a feed"
+msgstr ""
+
+#: app/templates/settings/feed_import.html:87
+msgid "Feeds"
 msgstr ""
 
 #: app/templates/settings/feed_import.html:99

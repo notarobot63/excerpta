@@ -9,7 +9,7 @@
 {% block content %}
 <div class="form-card" style="max-width: 700px;">
   <h2 style="font-size: 1.1rem; font-weight: 600; margin: 0 0 1.25rem;">{{ _("Feed import") }}</h2>
-  <p style="font-size:0.85rem;color:var(--text-muted);margin:0 0 0.75rem;">{{ _("Every entry of an RSS or Atom feed becomes a link. For your saved Reddit posts, copy the private “saved” feed from old.reddit.com/prefs/feeds.") }}</p>
+  <p style="font-size:0.85rem;color:var(--text-muted);margin:0 0 0.75rem;">{{ _("Every entry of an RSS or Atom feed becomes a link, filed in the folder of your choice.") }}</p>
 
   {% if request.query_params.get('saved') is not none %}
   <p style="font-size:0.85rem;color:var(--color-success);margin:0 0 0.75rem;">✓ {{ _("Settings saved.") }}</p>
@@ -84,7 +84,7 @@
     <div style="display:flex;gap:0.75rem;margin-bottom:1rem;flex-wrap:wrap;">
       <div style="flex:2;min-width:12rem;">
         <label for="new_group_name" style="{{ label }}">{{ _("Folder name (category)") }}</label>
-        <input type="text" id="new_group_name" name="group_name" value="{{ 'Reddit' if not feeds else '' }}" required style="{{ field }}">
+        <input type="text" id="new_group_name" name="group_name" value="{{ _("Feeds") if not feeds else '' }}" required style="{{ field }}">
       </div>
       <div style="flex:1;min-width:8rem;">
         <label for="new_interval" style="{{ label }}">{{ _("Interval (minutes)") }}</label>

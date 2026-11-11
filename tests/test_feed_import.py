@@ -8,18 +8,17 @@ import app.routes.feed_import as fi
 from app.crypto import encrypt
 from app.models import FeedImportConfig, Folder, Link, User
 
-# Forme du flux privé « saved » de Reddit : le lien d'une entrée est la discussion.
 ATOM = b"""<?xml version="1.0" encoding="UTF-8"?>
 <feed xmlns="http://www.w3.org/2005/Atom">
   <entry>
     <title>Un post</title>
-    <link href="https://www.reddit.com/r/selfhosted/comments/abc/un_post/" />
+    <link href="https://forum.example/r/selfhosted/comments/abc/un_post/" />
     <content type="html">&lt;p&gt;Corps du post&lt;/p&gt;</content>
     <published>2026-11-01T10:00:00+00:00</published>
   </entry>
   <entry>
     <title>Un commentaire</title>
-    <link rel="alternate" href="https://www.reddit.com/r/x/comments/def/t/c1/" />
+    <link rel="alternate" href="https://forum.example/r/x/comments/def/t/c1/" />
     <updated>2026-11-02T10:00:00Z</updated>
   </entry>
 </feed>"""
@@ -34,8 +33,8 @@ RSS = b"""<rss version="2.0"><channel>
 def test_parse_atom_keeps_discussion_link_and_date():
     entries = fi.parse_feed(ATOM)
     assert [e["url"] for e in entries] == [
-        "https://www.reddit.com/r/selfhosted/comments/abc/un_post/",
-        "https://www.reddit.com/r/x/comments/def/t/c1/",
+        "https://forum.example/r/selfhosted/comments/abc/un_post/",
+        "https://forum.example/r/x/comments/def/t/c1/",
     ]
     assert entries[0]["description"] == "Corps du post"
     assert entries[0]["published"].isoformat() == "2026-11-01T10:00:00"
@@ -68,13 +67,13 @@ def env(session, monkeypatch):
     user = User(oidc_sub="feed", public_slug="feed")
     session.add(user)
     session.commit()
-    config = FeedImportConfig(user_id=user.id, feed_url=encrypt("https://www.reddit.com/saved.rss?feed=t"),
+    config = FeedImportConfig(user_id=user.id, feed_url=encrypt("https://feeds.example/private.rss?token=t"),
                               is_enabled=True)
     session.add(config)
     session.commit()
 
     async def _fetch(url):
-        assert url == "https://www.reddit.com/saved.rss?feed=t"  # URL bien déchiffrée
+        assert url == "https://feeds.example/private.rss?token=t"  # URL bien déchiffrée
         return fi.parse_feed(ATOM)
 
     monkeypatch.setattr(fi, "_fetch_feed", _fetch)
@@ -85,13 +84,13 @@ def env(session, monkeypatch):
 def test_sync_imports_into_folder_once(session, env):
     user, config = env
     # Déjà enregistré à la main : ni doublon, ni déplacement.
-    session.add(Link(user_id=user.id, url="https://www.reddit.com/r/x/comments/def/t/c1/"))
+    session.add(Link(user_id=user.id, url="https://forum.example/r/x/comments/def/t/c1/"))
     session.commit()
 
     assert asyncio.run(fi.sync_feed(config, session)) == 1
     assert asyncio.run(fi.sync_feed(config, session)) == 0
 
-    folder = session.exec(select(Folder).where(Folder.user_id == user.id, Folder.name == "Reddit")).one()
+    folder = session.exec(select(Folder).where(Folder.user_id == user.id, Folder.name == "Feeds")).one()
     links = session.exec(select(Link).where(Link.user_id == user.id)).all()
     assert len(links) == 2
     imported = next(l for l in links if "un_post" in l.url)
@@ -127,7 +126,7 @@ def test_refused_url_error_does_not_leak_token(monkeypatch):
 
     monkeypatch.setattr(fi, "safe_request", _refuse)
     with pytest.raises(RuntimeError) as exc:
-        asyncio.run(fi._fetch_feed("https://www.reddit.com/saved.rss?feed=SECRET"))
+        asyncio.run(fi._fetch_feed("https://feeds.example/private.rss?token=SECRET"))
     assert "SECRET" not in str(exc.value)
 
 
@@ -167,7 +166,7 @@ def web(engine, monkeypatch):
         me, other = User(oidc_sub="me", public_slug="me"), User(oidc_sub="other", public_slug="other")
         s.add(me), s.add(other)
         s.commit()
-        s.add(FeedImportConfig(user_id=me.id, feed_url=encrypt("https://a.example/rss"), group_name="Reddit"))
+        s.add(FeedImportConfig(user_id=me.id, feed_url=encrypt("https://a.example/rss"), group_name="Veille"))
         s.add(FeedImportConfig(user_id=other.id, feed_url=encrypt("https://b.example/rss"), group_name="Autre"))
         s.commit()
         uid = me.id
@@ -206,11 +205,11 @@ def test_several_feeds_per_account_and_ownership(web):
         feeds = s.exec(select(FeedImportConfig).order_by(FeedImportConfig.id)).all()
         mine = [f for f in feeds if f.user_id == uid]
         other_id = next(f.id for f in feeds if f.user_id != uid)
-    assert [f.group_name for f in mine] == ["Reddit", "Blog"]
+    assert [f.group_name for f in mine] == ["Veille", "Blog"]
     assert mine[1].interval_minutes == fi.MIN_INTERVAL and mine[1].is_enabled
 
     page = client.get("/settings/feed-import").text
-    assert "Reddit" in page and "Blog" in page and "Autre" not in page
+    assert "Veille" in page and "Blog" in page and "Autre" not in page
     assert "c.example" not in page  # l'URL (et son jeton) n'est jamais réaffichée
 
     for path in (f"/settings/feed-import/{other_id}", f"/settings/feed-import/{other_id}/delete"):
@@ -219,4 +218,4 @@ def test_several_feeds_per_account_and_ownership(web):
     assert client.post(f"/settings/feed-import/{mine[1].id}/delete", data={"csrf_token": client.csrf},
                        follow_redirects=False).status_code == 303
     with Session(engine) as s:
-        assert s.exec(select(FeedImportConfig).where(FeedImportConfig.user_id == uid)).all()[0].group_name == "Reddit"
+        assert s.exec(select(FeedImportConfig).where(FeedImportConfig.user_id == uid)).all()[0].group_name == "Veille"

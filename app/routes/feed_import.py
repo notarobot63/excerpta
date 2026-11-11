@@ -1,8 +1,6 @@
 """Import d'un flux RSS/Atom : chaque entrée devient un lien.
 
-Pensé pour le flux privé des éléments enregistrés Reddit (le lien d'une
-entrée y est la discussion), mais vaut pour tout flux. Contrairement à
-FreshRSS, rien n'est renvoyé à la source : le dossier (racine) est retrouvé
+Contrairement à FreshRSS, rien n'est renvoyé à la source : le dossier (racine) est retrouvé
 par son nom, et un renommage en fait seulement créer un nouveau. Les URL déjà
 vues sont mémorisées : un lien supprimé ou purgé ne revient pas.
 """
@@ -34,7 +32,7 @@ logger = logging.getLogger("excerpta.feed_import")
 settings_router = APIRouter()
 
 _ATOM = "{http://www.w3.org/2005/Atom}"
-# Reddit refuse les agents génériques (429) ; un nom d'application explicite passe.
+# Agent explicite : certains sites refusent les agents génériques.
 _HEADERS = {"User-Agent": "Excerpta/1.0 (feed import)"}
 _MAX_ENTRIES = 1000
 _MAX_SEEN = 5000
@@ -272,7 +270,7 @@ async def feed_import_form(
 @settings_router.post("/settings/feed-import", dependencies=[Depends(rate_limit(20, 3600))])
 async def feed_import_add(
     feed_url: str = Form(...),
-    group_name: str = Form("Reddit"),
+    group_name: str = Form("Feeds"),
     interval_minutes: int = Form(30),
     current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session),
@@ -281,7 +279,7 @@ async def feed_import_add(
     if not url:
         raise HTTPException(status_code=400, detail="Missing feed URL")
     session.add(FeedImportConfig(
-        user_id=current_user.id, feed_url=encrypt(url), group_name=group_name.strip()[:200] or "Reddit",
+        user_id=current_user.id, feed_url=encrypt(url), group_name=group_name.strip()[:200] or "Feeds",
         interval_minutes=_interval(interval_minutes), is_enabled=True,
     ))
     session.commit()
@@ -292,7 +290,7 @@ async def feed_import_add(
 async def feed_import_save(
     feed_id: int,
     feed_url: str = Form(""),
-    group_name: str = Form("Reddit"),
+    group_name: str = Form("Feeds"),
     interval_minutes: int = Form(30),
     is_enabled: Optional[str] = Form(default=None),
     current_user: User = Depends(get_current_user),
@@ -305,7 +303,7 @@ async def feed_import_save(
             # Nouveau flux : compteurs, erreur et URL vues repartent de zéro.
             config.last_sync, config.synced_count, config.seen_urls, config.last_error = None, 0, "", ""
         config.feed_url = encrypt(url)
-    config.group_name = group_name.strip()[:200] or "Reddit"
+    config.group_name = group_name.strip()[:200] or "Feeds"
     config.interval_minutes = _interval(interval_minutes)
     config.is_enabled = is_enabled is not None
     session.add(config)

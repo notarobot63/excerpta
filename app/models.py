@@ -124,14 +124,14 @@ class FreshRSSConfig(SQLModel, table=True):
 
 
 class FeedImportConfig(SQLModel, table=True):
-    """Flux RSS/Atom dont chaque entrée devient un lien (ex. éléments enregistrés Reddit).
+    """Flux RSS/Atom dont chaque entrée devient un lien.
     Plusieurs par compte, chacun avec son dossier et son intervalle."""
     __tablename__ = "feed_import_configs"
     id: Optional[int] = Field(default=None, primary_key=True)
     user_id: int = Field(foreign_key="users.id", index=True)
     # Chiffrée : un flux privé porte son jeton d'accès dans l'URL.
     feed_url: str = Field(default="")
-    group_name: str = Field(default="Reddit")
+    group_name: str = Field(default="Feeds")
     # URL déjà importées (une par ligne, les plus récentes d'abord) : un lien
     # supprimé ou purgé ne revient pas tant qu'il reste dans le flux.
     seen_urls: str = Field(default="")
